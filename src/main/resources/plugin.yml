@@ -1,0 +1,19 @@
+name: TinyEmpires
+version: ${project.version}
+main: dev.sucrose.tinyempires.TinyEmpires
+api-version: 1.16
+depend: [dynmap]
+commands:
+  convert:
+    description: Convert diamonds to coins
+  gift:
+    description: Gift coins to player
+  pay:
+    description: OP - Pay coins to play
+  take:
+    description: OP - Take coins from player
+  empire:
+    description: Empire command
+    aliases: [e]
+  clearcache:
+    description: OP - Clear cache for debugging
