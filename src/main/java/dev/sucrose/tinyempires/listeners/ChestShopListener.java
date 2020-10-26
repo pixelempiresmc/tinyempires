@@ -6,14 +6,12 @@ import dev.sucrose.tinyempires.models.TEChunk;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import org.bukkit.*;
-import org.bukkit.block.Block;
-import org.bukkit.block.Chest;
-import org.bukkit.block.DoubleChest;
-import org.bukkit.block.Sign;
+import org.bukkit.block.*;
 import org.bukkit.block.data.Directional;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
@@ -26,7 +24,7 @@ import java.util.UUID;
 public class ChestShopListener implements Listener {
 
     @EventHandler
-    public static void onPlayerPlaceBlock(BlockPlaceEvent event) {
+    public void onPlayerPlaceBlock(BlockPlaceEvent event) {
         // store chest as belonging to player if chunk exists
         final Player player = event.getPlayer();
         final TEPlayer tePlayer = TEPlayer.getTEPlayer(player.getUniqueId());
@@ -35,7 +33,7 @@ public class ChestShopListener implements Listener {
             return;
         }
 
-        final Location location = player.getLocation();
+        final Location location = event.getBlockPlaced().getLocation();
         if (!(event.getBlock().getType() == Material.CHEST))
             return;
 
@@ -55,19 +53,48 @@ public class ChestShopListener implements Listener {
     }
 
     @EventHandler
-    public static void onInventoryClick(InventoryClickEvent event) {
-        final Player player = (Player) event.getWhoClicked();
-        final Inventory inventory = event.getClickedInventory();
-        if (inventory == null) {
-            player.sendMessage(ChatColor.RED
-                + "ERROR: Clicked inventory fetched as null. Please notify a developer and we will tend to this " +
-                "promptly."
-            );
+    public void onPlayerBreakBlock(BlockBreakEvent event) {
+        // store chest as belonging to player if chunk exists
+        final Player player = event.getPlayer();
+        final TEPlayer tePlayer = TEPlayer.getTEPlayer(player.getUniqueId());
+        if (tePlayer == null) {
+            player.sendMessage(ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
             return;
         }
 
-        if (inventory.getType() != InventoryType.CHEST)
+        final Location location = event.getBlock().getLocation();
+        if (!(event.getBlock().getType() == Material.CHEST))
             return;
+
+        final World world = location.getWorld();
+        if (world == null) {
+            player.sendMessage(ErrorUtils.COULD_NOT_FETCH_WORLD);
+            return;
+        }
+
+        TEChest.removeChestToPlayerMapping(
+                location.getWorld().getName(),
+                location.getBlockX(),
+                location.getBlockY(),
+                location.getBlockZ()
+        );
+    }
+
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent event) {
+        System.out.println("Inventory clicked");
+        final Player player = (Player) event.getWhoClicked();
+        final Inventory inventory = event.getClickedInventory();
+        // event triggers even if cursor was not on slot, return
+        if (inventory == null) {
+            System.out.println("Inventory was null");
+            return;
+        }
+
+        if (inventory.getType() != InventoryType.CHEST) {
+            System.out.println("Inventory clicked was not a chest");
+            return;
+        }
 
         final Location location = inventory.getLocation();
         if (location == null) {
@@ -79,14 +106,24 @@ public class ChestShopListener implements Listener {
         }
 
         final TEChunk chunk = TEChunk.getChunk(location.getChunk());
-        if (chunk.getType() != ChunkType.TRADING)
+        if (chunk == null
+                || chunk.getType() != ChunkType.TRADING)
             return;
 
+        System.out.println("Clicked on a chest in a trading chunk!");
         // fetch/check slot price for single and double chest cases
-        final Chest chest = (Chest) inventory.getLocation().getBlock().getState();
-        final Vector directionVector = ((Directional) chest).getFacing().getDirection();
+        final BlockState blockState = location.getBlock().getState();
+        // return if clicked block wasn't a chest
+        if (!(blockState instanceof Chest))
+            return;
+
+        final Chest chest = (Chest) blockState;
+        final Vector directionVector = ((Directional) chest.getBlockData()).getFacing().getDirection();
         double costPerSlot;
+        System.out.println("Vector: " + directionVector.toString());
         if (inventory.getHolder() instanceof DoubleChest) {
+            System.out.println("Chest is a double chest");
+
             final DoubleChest doubleChest = (DoubleChest) inventory.getHolder();
 
             if (doubleChest.getRightSide() == null
@@ -159,13 +196,17 @@ public class ChestShopListener implements Listener {
                 ? leftSignPrice
                 : rightSignPrice;
         } else if (inventory.getHolder() instanceof Chest) {
-            // add chest direction vector to location to get would-be sign location
-            final Block signBlock = chest.getWorld().getBlockAt(
-                chest.getLocation().add(directionVector)
-            );
+            System.out.println("Inventory holder is a single chest");
 
-            if (!(signBlock instanceof Sign))
+            // add chest direction vector to location to get would-be sign location
+            // Location#add mutates location but returns original
+            final Location signLocation = chest.getLocation().add(directionVector);
+            final Block signBlock = chest.getWorld().getBlockAt(signLocation);
+
+            if (!(signBlock instanceof Sign)) {
+                System.out.println("Chest did not have a sign");
                 return;
+            }
 
             try {
                 costPerSlot = Double.parseDouble(((Sign) signBlock.getState()).getLine(3));
@@ -174,6 +215,8 @@ public class ChestShopListener implements Listener {
             }
         } else {
             // inventory holder is not a chest type
+            System.out.println("Inventory holder is not a chest");
+
             return;
         }
 
@@ -199,8 +242,10 @@ public class ChestShopListener implements Listener {
             return;
         }
 
-        if (!chestOwnerId.equals(player.getUniqueId()))
+        if (!chestOwnerId.equals(player.getUniqueId())) {
+            System.out.printf("Chest owner ID (%s) does not equal clicker ID (%s)\n", chestOwnerId, player.getUniqueId());
             return;
+        }
 
         // fetch slot and return if no items clicked
         final int clickedSlotIndex = event.getSlot();

@@ -79,7 +79,7 @@ public final class TinyEmpires extends JavaPlugin {
 
     private void registerEvents(Listener ...listeners) {
         final PluginManager pluginManager = getServer().getPluginManager();
-        for (Listener listener : listeners)
+        for (final Listener listener : listeners)
             pluginManager.registerEvents(listener, this);
     }
 

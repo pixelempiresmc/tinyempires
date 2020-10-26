@@ -38,6 +38,7 @@ public class DiscordBot extends ListenerAdapter {
         String token = "";
         try {
             File file = new File("plugins/TinyEmpires/discord_bot_token.txt");
+            System.out.println("Full file path: " + file.getAbsolutePath());
             Scanner reader = new Scanner(file);
             token = reader.nextLine();
             reader.close();

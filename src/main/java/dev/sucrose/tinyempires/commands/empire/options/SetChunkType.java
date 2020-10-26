@@ -35,7 +35,7 @@ public class SetChunkType implements EmpireCommandOption {
             return;
         }
 
-        if (tePlayer.getPosition().hasPermission(Permission.CHUNKS)) {
+        if (!tePlayer.getPosition().hasPermission(Permission.CHUNKS)) {
             sender.sendMessage(ErrorUtils.generatePermissionError(Permission.CHUNKS));
             return;
         }
@@ -51,7 +51,7 @@ public class SetChunkType implements EmpireCommandOption {
         String typeName = args[0];
         ChunkType type;
         try {
-            type = ChunkType.valueOf(typeName);
+            type = ChunkType.valueOf(typeName.toUpperCase());
         } catch (Exception ignore) {
             sender.sendMessage(ChatColor.RED + String.format(
                 "'%s' is not a chunk type (%s)",
@@ -102,7 +102,6 @@ public class SetChunkType implements EmpireCommandOption {
         chunk.setType(type);
         DrawEmpire.setMarkerType(world.getName(), chunk.getX(), chunk.getZ(), type);
 
-        empire.acceptPlayerJoinRequest(tePlayer);
         empire.broadcast(ChatColor.GREEN, String.format(
             "%s%s set the chunk at %d, %d in the %s to be a %s chunk",
             sender.getName(),

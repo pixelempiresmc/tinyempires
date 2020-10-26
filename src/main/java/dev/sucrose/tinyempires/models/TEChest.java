@@ -40,7 +40,7 @@ public class TEChest {
                 .append("x", x)
                 .append("y", y)
                 .append("z", z)
-                .append("owner", owner)
+                .append("owner", owner.toString())
         );
         chestToPlayerCache.put(coordinatesToCacheKey(world, x, y, z), owner);
     }

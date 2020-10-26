@@ -46,19 +46,20 @@ public class ChunkMarker {
 
     private static String generateChunkDescription(Empire empire, int x, int z) {
         return String.format(
-            "<div style=\"font-family:Verdana;line-spacing:1.5;\">"
-            + "<h2>%s</h2>"
+            "<div style=\"font-family:Verdana;line-height:1.5;\">"
+            + "<h2 style=\"margin: 2px 0px;\">%s</h2>"
             + "%s<br />"
             + "Reserve: %.1f<br />"
-            + "%s members <br />"
+            + "%s member%s <br />"
             + "%d, %d"
             + "</div>",
             empire.getName(),
             empire.getDescription() == null ? "<i>No description</i>" : empire.getDescription(),
             empire.getReserve(),
             empire.getMembers().size(),
-            x,
-            z
+            empire.getMembers().size() > 1 ? "s" : "",
+            x * 16 + 8,
+            z * 16 + 8
         );
     }
 

@@ -23,7 +23,6 @@ public class TEChunk {
     private final int x;
     private final int z;
     private Empire empire;
-    private final Map<String, UUID> chestToPlayerOwner = new HashMap<>();
     private ChunkType type;
 
     static {
@@ -112,10 +111,9 @@ public class TEChunk {
             .append("x", x)
             .append("z", z)
             .append("empire", empire.getId())
-            .append("chests", new HashMap<>())
             .append("type", ChunkType.NONE.name());
-        empire.takeReserveCoins(CHUNK_COST);
         collection.insertOne(document);
+        chunkCache.put(chunkToKey(world, x, z), new TEChunk(document));
     }
 
     public void delete() {
@@ -125,7 +123,7 @@ public class TEChunk {
                 .append("z", z)
         );
         DrawEmpire.removeChunk(this);
-        chunkCache.remove(this);
+        chunkCache.remove(chunkToKey(world, x, z));
     }
 
     public TEChunk(Document document) {
@@ -135,9 +133,6 @@ public class TEChunk {
         z = document.getInteger("z");
         type = ChunkType.valueOf(document.getString("type"));
         empire = Empire.getEmpire(document.getObjectId("empire"));
-        final Document chestToPlayer = document.get("chests", Document.class);
-        for (String coordinates : chestToPlayer.keySet())
-            chestToPlayerOwner.put(coordinates, UUID.fromString(chestToPlayer.getString(coordinates)));
     }
 
     private void save(Document document) {
@@ -177,29 +172,8 @@ public class TEChunk {
         save(new Document("empire", empire.getId()));
     }
 
-    private void saveChestToPlayerOwner() {
-        Document document = new Document();
-        for (String name : chestToPlayerOwner.keySet())
-            document.put(name, chestToPlayerOwner.get(name).toString());
-        save(new Document("chests", document));
-    }
-
     private String chunkCoordinateToBlock(int x, int y, int z) {
         return String.format("%d %d %d", x, y, z);
-    }
-
-    public UUID getChestToPlayerOwner(int x, int y, int z) {
-        return chestToPlayerOwner.get(chunkCoordinateToBlock(x, y, z));
-    }
-
-    public void putChestToPlayerOwner(int x, int y, int z, UUID owner) {
-        chestToPlayerOwner.put(chunkCoordinateToBlock(x, y, z), owner);
-        saveChestToPlayerOwner();
-    }
-
-    public void removeChestToPlayerOwner(int x, int y, int z) {
-        chestToPlayerOwner.remove(chunkCoordinateToBlock(x, y, z));
-        saveChestToPlayerOwner();
     }
 
     public ChunkType getType() {

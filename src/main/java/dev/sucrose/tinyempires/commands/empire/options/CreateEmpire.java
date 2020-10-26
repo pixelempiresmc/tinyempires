@@ -10,6 +10,7 @@ import org.bson.types.ObjectId;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 
+import java.util.Locale;
 import java.util.UUID;
 
 public class CreateEmpire implements EmpireCommandOption {
@@ -44,13 +45,19 @@ public class CreateEmpire implements EmpireCommandOption {
             return;
         }
 
+        final Location location = sender.getLocation();
+        final Chunk chunk = location.getChunk();
+        final TEChunk teChunk = TEChunk.getChunk(chunk);
+        if (teChunk != null) {
+            sender.sendMessage(ChatColor.RED + "This chunk is already owned by another empire");
+            return;
+        }
+
         // all checks passed, make empire
         try {
-            final Location location = sender.getLocation();
             final World world = location.getWorld();
             if (world == null)
                 throw new NullPointerException("World found as undefined when fetching player location");
-            final Chunk chunk = location.getChunk();
             final ObjectId id = Empire.createEmpire(empireName, tePlayer);
             tePlayer.setEmpireId(id);
 

@@ -75,6 +75,7 @@ public class DrawEmpire {
         } else {
             eraseChunkBorderIfExists(world, x, z - 1, Direction.DOWN);
         }
+
         putChunkMarker(empire, world, x, z, marker);
     }
 
@@ -92,7 +93,7 @@ public class DrawEmpire {
         final String world = chunk.getWorld();
         final int x = chunk.getX();
         final int z = chunk.getZ();
-        chunkMarkers.remove(chunk.toString());
+        chunkMarkers.remove(TEChunk.serialize(world, x, z));
 
         if (TEChunk.chunkExists(world, x + 1, z))
             getChunkMarker(world, x + 1, z).makeBorder(Direction.LEFT);
@@ -105,7 +106,6 @@ public class DrawEmpire {
 
         if (TEChunk.chunkExists(world, x, z - 1))
             getChunkMarker(world, x, z - 1).makeBorder(Direction.DOWN);
-
     }
 
     private static ChunkMarker getChunkMarker(String world, int x, int z) {

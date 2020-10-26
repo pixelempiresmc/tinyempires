@@ -171,6 +171,7 @@ public class Empire {
     private void save(Document document) {
         collection.updateOne(new Document("_id", id), new Document("$set", document));
         updateMemberScoreboards();
+        DrawEmpire.updateEmpireChunkDescriptions(this);
     }
 
     public String getName() {
@@ -218,7 +219,6 @@ public class Empire {
     }
 
     public void removeMember(TEPlayer player) {
-        System.out.println(members.size());
         for (int index = 0; index < members.size(); index++) {
             System.out.println(index);
             if (members.get(index).getPlayerUUID().equals(player.getPlayerUUID())) {
