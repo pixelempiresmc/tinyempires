@@ -9,7 +9,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,9 +31,19 @@ public class EmpireCommand implements CommandExecutor {
         options.put("leave", new LeaveEmpire());
         options.put("contribute", new ContributeToEmpire());
         options.put("desc", new ChangeEmpireDescription());
-        options.put("delete", new DeleteEmpirePosition());
+        options.put("delpos", new DeleteEmpirePosition());
         options.put("withdraw", new WithdrawEmpireReserve());
         options.put("autoclaim", new AutoClaimEmpireChunk());
+        options.put("unclaim", new UnclaimEmpireChunk());
+        options.put("owner", new TransferEmpireOwner());
+        options.put("assign", new AssignEmpirePosition());
+        options.put("law", new OpenEmpireLaw());
+        options.put("editlaw", new EditEmpireLaw());
+        options.put("newlaw", new CreateEmpireLaw());
+        options.put("repeal", new DeleteEmpireLaw());
+        options.put("tax", new Tax());
+        options.put("forgive", new Forgive());
+        options.put("fine", new Fine());
     }
 
     @Override
@@ -49,7 +58,6 @@ public class EmpireCommand implements CommandExecutor {
         if (options.containsKey(option)) {
             final String[] argsToPass = new String[args.length - 1];
             System.arraycopy(args, 1, argsToPass, 0, args.length - 1);
-            System.out.println(Arrays.toString(argsToPass));
             options.get(option).execute((Player) sender, argsToPass);
             return true;
         }

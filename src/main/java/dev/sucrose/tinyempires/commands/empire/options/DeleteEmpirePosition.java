@@ -5,6 +5,7 @@ import dev.sucrose.tinyempires.models.EmpireCommandOption;
 import dev.sucrose.tinyempires.models.Permission;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
+import dev.sucrose.tinyempires.utils.StringUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
@@ -17,7 +18,7 @@ public class DeleteEmpirePosition implements EmpireCommandOption {
 
     @Override
     public void execute(Player sender, String[] args) {
-        // /e deleteposition <name>
+        // /e delpos <name>
         final UUID senderUUID = sender.getUniqueId();
         final TEPlayer tePlayer = TEPlayer.getTEPlayer(senderUUID);
         if (tePlayer == null) {
@@ -31,17 +32,17 @@ public class DeleteEmpirePosition implements EmpireCommandOption {
             return;
         }
 
-        if (tePlayer.getPosition().hasPermission(Permission.POSITIONS)) {
+        if (!tePlayer.hasPermission(Permission.POSITIONS)) {
             sender.sendMessage(ErrorUtils.generatePermissionError(Permission.POSITIONS));
             return;
         }
 
-        if (args.length < 2) {
-            sender.sendMessage(ChatColor.RED + "/e deleteposition <name>");
+        if (args.length < 1) {
+            sender.sendMessage(ChatColor.RED + "/e delpos <name>");
             return;
         }
 
-        String position = args[0];
+        final String position = StringUtils.buildWordsFromArray(args, 0);
         if (empire.getPosition(position) == null) {
             sender.sendMessage(ChatColor.RED + String.format(
                 "'%s' is not a position in the empire (%s)",
@@ -51,10 +52,11 @@ public class DeleteEmpirePosition implements EmpireCommandOption {
             return;
         }
 
-        StringBuilder membersWithPosition = new StringBuilder();
+        final StringBuilder membersWithPosition = new StringBuilder();
         int index = 0;
         for (TEPlayer player : empire.getMembers()) {
-            if (player.getPositionName().equals(position))
+            if (player.getPositionName() != null
+                    && player.getPositionName().equals(position))
                 membersWithPosition.append(player.getName()).append(index < empire.getMembers().size() - 1 ? ", " :
                     "");
             index++;

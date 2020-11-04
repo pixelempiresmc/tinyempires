@@ -39,7 +39,7 @@ public class EditEmpirePosition implements EmpireCommandOption {
             return;
         }
 
-        if (tePlayer.getPosition().hasPermission(Permission.POSITIONS)) {
+        if (!tePlayer.hasPermission(Permission.POSITIONS)) {
             sender.sendMessage(ErrorUtils.generatePermissionError(Permission.POSITIONS));
             return;
         }
@@ -78,7 +78,7 @@ public class EditEmpirePosition implements EmpireCommandOption {
         empire.broadcast(ChatColor.GREEN, String.format(
             "%s %s the permission %s %s",
             sender.getName(),
-            currentState ? "gave" : "revoked",
+            currentState ? "gave" : "removed",
             currentState ? "to" : "from",
             permission.name().toLowerCase()
         ));

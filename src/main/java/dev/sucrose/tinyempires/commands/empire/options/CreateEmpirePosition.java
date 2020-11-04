@@ -5,6 +5,7 @@ import dev.sucrose.tinyempires.models.EmpireCommandOption;
 import dev.sucrose.tinyempires.models.Permission;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
+import dev.sucrose.tinyempires.utils.StringUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
@@ -29,7 +30,7 @@ public class CreateEmpirePosition implements EmpireCommandOption {
             return;
         }
 
-        if (tePlayer.getPosition().hasPermission(Permission.POSITIONS)) {
+        if (!tePlayer.hasPermission(Permission.POSITIONS)) {
             sender.sendMessage(ErrorUtils.generatePermissionError(Permission.POSITIONS));
             return;
         }
@@ -39,7 +40,7 @@ public class CreateEmpirePosition implements EmpireCommandOption {
             return;
         }
 
-        String position = args[0];
+        final String position = StringUtils.buildWordsFromArray(args, 0);
         if (empire.getPosition(position) != null) {
             sender.sendMessage(ChatColor.RED + String.format(
                 "Position %s already exists (%s)",

@@ -2,6 +2,7 @@ package dev.sucrose.tinyempires.models;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.result.InsertOneResult;
+import com.mongodb.lang.Nullable;
 import dev.sucrose.tinyempires.TinyEmpires;
 import dev.sucrose.tinyempires.utils.DrawEmpire;
 import org.bson.Document;
@@ -26,34 +27,51 @@ public class Empire {
     private double reserve;
     private String description;
     private Color color;
+    private UUID owner;
     private final List<TEPlayer> members = new ArrayList<>();
     private final Map<String, Position> positions = new HashMap<>();
+    // name of law to law
+    private final Map<String, Law> laws = new HashMap<>();
+    private final Map<UUID, Double> memberDebt = new HashMap<>();
 
     // Wars are only twenty minutes and can be stored in memory
     private Empire atWarWith = null;
     private Boolean isAttackerInWar;
 
+    static {
+        fillCache();
+    }
+
+    public static void fillCache() {
+        for (final Document document : collection.find()) {
+            final Empire empire = new Empire(document);
+            empireCache.put(
+                empire.getId(),
+                empire
+            );
+        }
+    }
+
     public static ObjectId createEmpire(String name, TEPlayer tePlayer) {
+        final String uuidString = tePlayer.getPlayerUUID().toString();
         final Document document = new Document("name", name)
             .append("reserve", 0.0d)
             .append("description", null)
-            .append("color", Color.values()[new Random().nextInt(Color.values().length)].name())
+            .append("color", Color.values()[new Random().nextInt(Color.values().length - 1)].name())
             .append("members", new ArrayList<String>() {{
-                add(tePlayer.getPlayerUUID().toString());
+                add(uuidString);
             }})
-            .append("positions", new HashMap<String, List<String>>() {{
-                put(
-                    "Creator",
-                    new ArrayList<String>() {{
-                        add(Permission.ADMIN.name());
-                    }}
-                );
-            }});
-        tePlayer.setPositionName("Creator");
+            .append("positions", new Document())
+            .append("laws", new Document())
+            .append("debt", new Document())
+            .append("owner", uuidString);
         final InsertOneResult result = collection.insertOne(document);
         if (result.getInsertedId() == null)
             throw new NullPointerException("Unable to insert document");
-        return result.getInsertedId().asObjectId().getValue();
+        final ObjectId id = result.getInsertedId().asObjectId().getValue();
+        final Empire empire = new Empire(document);
+        empireCache.put(id, empire);
+        return id;
     }
 
     public static void clearCache() {
@@ -70,40 +88,38 @@ public class Empire {
         name = document.getString("name");
         reserve = document.getDouble("reserve");
         description = document.getString("description");
+        owner = UUID.fromString(document.getString("owner"));
         color = Color.valueOf(document.getString("color"));
+        final Document lawDocument = document.get("laws", Document.class);
+        for (final String lawName : lawDocument.keySet())
+            laws.put(lawName, new Law(lawDocument.get(lawName, Document.class)));
+
+        final Document memberDebtDocument = document.get("debt", Document.class);
+        for (final Map.Entry<String, Object> entry : memberDebtDocument.entrySet())
+            memberDebt.put(UUID.fromString(entry.getKey()), (Double) entry.getValue());
+
         for (final String memberUUID : document.getList("members", String.class))
             members.add(TEPlayer.getTEPlayer(UUID.fromString(memberUUID)));
+
         final Document positionsDocument = document.get("positions", Document.class);
         for (final String positionName : positionsDocument.keySet())
             positions.put(positionName, new Position(positionsDocument.getList(positionName, String.class)));
     }
 
     public static Empire getEmpire(String name) {
-        // check cache for player
+        // check cache for empire
         for (Empire empire : empireCache.values()) {
             if (empire.getName().equals(name))
                 return empire;
         }
-        // if cache miss fetch from mongo
-        final Document document = collection.find(new Document("name", name)).first();
-        if (document == null)
-            return null;
-        final Empire empire = new Empire(document);
-        empireCache.put(empire.getId(), empire);
-        return empire;
+        return null;
     }
 
     public static Empire getEmpire(ObjectId id) {
-        // check cache for player
+        // check cache for empire
         if (empireCache.containsKey(id))
             return empireCache.get(id);
-        // if cache miss fetch from mongo
-        final Document document = collection.find(new Document("_id", id)).first();
-        if (document == null)
-            return null;
-        final Empire empire = new Empire(document);
-        empireCache.put(id, empire);
-        return empire;
+        return null;
     }
 
     private void updateMemberScoreboards() {
@@ -284,7 +300,8 @@ public class Empire {
 
     public void removePosition(String position) {
         for (TEPlayer member : members) {
-            if (member.getPositionName().equals(position)) {
+            if (member.getPositionName() != null
+                    && member.getPositionName().equals(position)) {
                 member.updatePlayerScoreboard();
                 member.setPositionName(null);
             }
@@ -303,6 +320,104 @@ public class Empire {
 
     public static Map<UUID, ObjectId> getPlayerToEmpireJoinRequest() {
         return playerToEmpireJoinRequest;
+    }
+
+    public void setOwner(UUID owner) {
+        this.owner = owner;
+        save(new Document("owner", owner.toString()));
+    }
+
+    public UUID getOwner() {
+        return owner;
+    }
+
+    public Set<Map.Entry<String, Law>> getLaws() {
+        return laws.entrySet();
+    }
+
+    public Law getLaw(String name) {
+        return laws.get(name);
+    }
+
+    private void putLaw(String name, Law law) {
+        laws.put(name, law);
+        collection.updateOne(
+            new Document("_id", id),
+            new Document(
+                "$set",
+                new Document(
+                    "laws." + name,
+                    law.toDocument()
+                )
+            )
+        );
+    }
+
+    public void editLaw(String name, List<String> pages) {
+        putLaw(name, new Law(pages, getLaw(name).getAuthor()));
+    }
+
+    public void addLaw(String name, String author, List<String> pages) {
+        putLaw(name, new Law(pages, author));
+    }
+
+    public void removeLaw(String name) {
+        laws.remove(name);
+        collection.updateOne(
+            new Document("_id", id),
+            new Document("$unset", new Document("laws." + name, 1))
+        );
+    }
+
+    public void tax(Double amount) {
+        members.forEach(m -> {
+            final Double debt = memberDebt.get(m.getPlayerUUID());
+            memberDebt.put(
+                m.getPlayerUUID(),
+                (debt != null ? debt : 0) + amount);
+        });
+
+        final Document document = new Document();
+        for (final Map.Entry<UUID, Double> entry : memberDebt.entrySet())
+            document.put(entry.getKey().toString(), entry.getValue());
+
+        collection.updateOne(
+            new Document("_id", id),
+            new Document("$set", new Document("debt", document))
+        );
+    }
+
+    @Nullable
+    public Double getDebt(UUID payer) {
+        return memberDebt.get(payer);
+    }
+
+    public Set<Map.Entry<UUID, Double>> getDebtEntries() {
+        return memberDebt.entrySet();
+    }
+
+    public void addDebt(UUID payer, double amount) {
+        final double debt = (memberDebt.containsKey(payer) ? memberDebt.get(payer) : 0) + amount;
+        memberDebt.put(payer, debt);
+        collection.updateOne(
+            new Document("_id", id),
+            new Document("$set", new Document("debt." + payer.toString(), debt))
+        );
+    }
+
+    public void removeDebt(UUID payer, double amount) {
+        double debt = memberDebt.get(payer) - amount;
+        if (debt == 0)
+            memberDebt.remove(payer);
+        else
+            memberDebt.put(
+                payer,
+                debt
+            );
+        collection.updateOne(
+            new Document("_id", id),
+            new Document("$set", new Document("debt." + payer.toString(), debt))
+        );
     }
 
 }

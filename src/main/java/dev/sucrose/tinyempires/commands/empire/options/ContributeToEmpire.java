@@ -58,11 +58,16 @@ public class ContributeToEmpire implements EmpireCommandOption {
         // checks passed, distribute coins
         tePlayer.takeCoins(amount);
         empire.giveReserveCoins(amount);
+        if (empire.getDebt(tePlayer.getPlayerUUID()) != null)
+            empire.removeDebt(tePlayer.getPlayerUUID(), amount);
 
-        empire.broadcast(ChatColor.GREEN, String.format(
-            "%s contributed %.1f coins to the empire's reserve",
+        empire.broadcastText(ChatColor.GREEN + String.format(
+            "%s contributed %.1f coins to the empire's reserve%s",
             sender.getName(),
-            amount
+            amount,
+            empire.getDebt(tePlayer.getPlayerUUID()) != null
+                ? String.format(" (%.1f coins still indebted)", empire.getDebt(tePlayer.getPlayerUUID()))
+                : ""
         ));
     }
 

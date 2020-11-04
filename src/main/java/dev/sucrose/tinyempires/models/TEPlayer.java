@@ -1,19 +1,16 @@
 package dev.sucrose.tinyempires.models;
 
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.result.InsertOneResult;
 import dev.sucrose.tinyempires.TinyEmpires;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Chunk;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.*;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 
 public class TEPlayer {
@@ -29,6 +26,17 @@ public class TEPlayer {
     private String position;
     private boolean jumpedInAdvancement;
 
+    static {
+        fillCache();
+    }
+
+    public static void fillCache() {
+        for (final Document document : collection.find()) {
+            final TEPlayer player = new TEPlayer(document);
+            playerCache.put(player.getPlayerUUID(), player);
+        }
+    }
+
     public static TEPlayer createPlayer(UUID uuid, String name) {
         final Document document = new Document();
         document.put("uuid", uuid.toString());
@@ -38,23 +46,16 @@ public class TEPlayer {
         document.put("position", null);
         document.put("jumped_in", false);
         collection.insertOne(document);
+        playerCache.put(uuid, new TEPlayer(document));
         return getTEPlayer(uuid);
     }
 
     public static TEPlayer getTEPlayer(String name) {
-        // check cache for player
         for (final TEPlayer p : playerCache.values()) {
-            System.out.printf("%s %s", p.getPlayerUUID(), p.getName());
             if (p.getName().equals(name))
                 return p;
         }
-        // if cache miss fetch from mongo
-        final Document document = collection.find(new Document("name", name)).first();
-        if (document == null)
-            return null;
-        final TEPlayer tePlayer = new TEPlayer(document);
-        playerCache.put(tePlayer.getPlayerUUID(), tePlayer);
-        return tePlayer;
+        return null;
     }
 
     public static void clearCache() {
@@ -65,13 +66,7 @@ public class TEPlayer {
         // check cache for player
         if (playerCache.containsKey(uuid))
             return playerCache.get(uuid);
-        final Document document = collection.find(new Document("uuid", uuid.toString())).first();
-        // if cache miss fetch from mongo
-        if (document == null)
-            return null;
-        final TEPlayer tePlayer = new TEPlayer(document);
-        playerCache.put(uuid, tePlayer);
-        return tePlayer;
+        return null;
     }
 
     public TEPlayer(Document document) {
@@ -130,9 +125,12 @@ public class TEPlayer {
 
         // empire reserve
         if (empire != null) {
-            objective.getScore("Reserve: " + ChatColor.GREEN + String.format("%.1f coins",
-                getEmpire().getReserve())).setScore(line++);
-            objective.getScore("Position: " + ChatColor.GREEN + position).setScore(line++);
+            objective.getScore("Reserve: " + ChatColor.GREEN + String.format(
+                "%.1f coins",
+                getEmpire().getReserve()
+            )).setScore(line++);
+            objective.getScore("Position: " + (position == null ? ChatColor.GRAY + "Unassigned" :
+                ChatColor.GREEN + position)).setScore(line++);
         }
 
         // player empire
@@ -216,6 +214,11 @@ public class TEPlayer {
         return getEmpire().getPosition(position);
     }
 
+    public boolean hasPermission(Permission permission) {
+        final Position position = getPosition();
+        return isOwner() || (position != null && position.hasPermission(permission));
+    }
+
     public void setPositionName(String position) {
         this.position = position;
         save(new Document("position", position));
@@ -230,5 +233,8 @@ public class TEPlayer {
         save(new Document("jumped_in", jumpedInAdvancement));
     }
 
+    public boolean isOwner() {
+        return getEmpire().getOwner().equals(playerUUID);
+    }
 
 }

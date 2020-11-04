@@ -19,8 +19,17 @@ public class AutoClaimEmpireChunk implements EmpireCommandOption {
     private static final Set<UUID> autoclaimers = new HashSet<>();
 
     public static void claimChunkForEmpire(String claimer, String world, int x, int z, Empire empire) {
+        double start = System.nanoTime();
         TEChunk.createTEChunk(world, x, z, empire);
+        double end = System.nanoTime();
+        System.out.printf("TEChunk#createTEChunk took %s milliseconds\n", (end - start) / 1000000);
+
+        start = System.nanoTime();
         DrawEmpire.drawChunk(empire, world, x, z);
+        end = System.nanoTime();
+        System.out.printf("DrawEmpire#drawChunk took %s milliseconds\n", (end - start) / 1000000);
+
+        start = System.nanoTime();
         empire.takeReserveCoins(TEChunk.CHUNK_COST);
         empire.broadcast(ChatColor.GREEN, String.format(
             "%s claimed a new chunk for %.1f coins at %d, %d",
@@ -29,6 +38,8 @@ public class AutoClaimEmpireChunk implements EmpireCommandOption {
             x * 16,
             z * 16
         ));
+        end = System.nanoTime();
+        System.out.printf("empire#broadcast and #takeReserveCoins took %s milliseconds\n", (end - start) / 1000000);
     }
 
     public static boolean isAutoclaiming(UUID uuid) {
@@ -55,7 +66,7 @@ public class AutoClaimEmpireChunk implements EmpireCommandOption {
             return;
         }
 
-        if (!tePlayer.getPosition().hasPermission(Permission.CHUNKS)) {
+        if (!tePlayer.hasPermission(Permission.CHUNKS)) {
             sender.sendMessage(ErrorUtils.generatePermissionError(Permission.CHUNKS));
             return;
         }

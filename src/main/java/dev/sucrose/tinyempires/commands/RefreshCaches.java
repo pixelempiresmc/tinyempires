@@ -11,7 +11,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
-public class DebugClearCache implements CommandExecutor {
+public class RefreshCaches implements CommandExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
@@ -20,10 +20,10 @@ public class DebugClearCache implements CommandExecutor {
             return false;
         }
 
-        Empire.clearCache();
-        TEPlayer.clearCache();
-        TEChest.clearCache();
-        TEChunk.clearCache();
+        Empire.fillCache();
+        TEPlayer.fillCache();
+        TEChest.fillCache();
+        TEChunk.fillCache();
 
         sender.sendMessage(ChatColor.GREEN + "Cleared empire, player, chest-to-player mapping and chunk caches");
         return true;

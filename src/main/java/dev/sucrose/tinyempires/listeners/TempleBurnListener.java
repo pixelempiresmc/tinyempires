@@ -18,7 +18,7 @@ public class TempleBurnListener implements Listener {
     private static UUID lastPlayerToThrowItem;
 
     @EventHandler
-    public static void onTempleBurnListener(EntityCombustEvent event) {
+    public void onTempleBurnListener(EntityCombustEvent event) {
         if (!(event.getEntity() instanceof Item))
             return;
         final Location location = event.getEntity().getLocation();
@@ -32,7 +32,7 @@ public class TempleBurnListener implements Listener {
     }
 
     @EventHandler
-    public static void onPlayerThrowItem(PlayerDropItemEvent event) {
+    public void onPlayerThrowItem(PlayerDropItemEvent event) {
         lastPlayerToThrowItem = event.getPlayer().getUniqueId();
     }
 

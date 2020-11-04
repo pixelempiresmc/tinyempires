@@ -17,7 +17,7 @@ public class ChunkMarker {
     private static int drawIndex = 0;
     private final Map<Direction, PolyLineMarker> borders = new EnumMap<>(Direction.class);
     private final AreaMarker marker;
-    private final Empire empire;
+    private Empire empire;
     private final int x;
     private final int z;
     private final String world;
@@ -97,10 +97,10 @@ public class ChunkMarker {
     public void makeBorder(Direction direction) {
         double[] xCoords = new double[2];
         double[] zCoords = new double[2];
-        final int leftX    = x * 16;
-        final int rightX   = leftX + 16;
-        final int topZ     = z * 16;
-        final int bottomZ  = topZ + 16;
+        final int leftX    = x * 16 + 1;
+        final int rightX   = leftX + 14;
+        final int topZ     = z * 16 + 1;
+        final int bottomZ  = topZ + 14;
 
         switch (direction) {
             case UP:
@@ -147,8 +147,13 @@ public class ChunkMarker {
         return borders.get(direction) != null;
     }
 
+    public void deleteBorders() {
+        borders.values().forEach(PolyLineMarker::deleteMarker);
+    }
+
     public void erase() {
         marker.deleteMarker();
+        deleteBorders();
     }
 
     public void updateColor() {
@@ -178,6 +183,12 @@ public class ChunkMarker {
             DrawEmpire.getMarkerAPI().getMarkerIcon(type == ChunkType.TRADING ? "chest" : "temple"),
             false
         );
+    }
+
+    public void setEmpire(Empire empire) {
+        this.empire = empire;
+        updateDescription();
+        updateColor();
     }
 
 }

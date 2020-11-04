@@ -34,7 +34,7 @@ public class AcceptEmpireMember implements EmpireCommandOption {
             return;
         }
 
-        if (tePlayer.getPosition().hasPermission(Permission.INVITES)) {
+        if (!tePlayer.hasPermission(Permission.INVITES)) {
             sender.sendMessage(ErrorUtils.generatePermissionError(Permission.INVITES));
             return;
         }

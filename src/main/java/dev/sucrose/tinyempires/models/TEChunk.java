@@ -26,8 +26,10 @@ public class TEChunk {
     private ChunkType type;
 
     static {
-        System.out.println("Filling chunk cache");
-        // fill cache from mongo
+        fillCache();
+    }
+
+    public static void fillCache() {
         for (final Document document : collection.find()) {
             final TEChunk chunk = new TEChunk(document);
             chunkCache.put(chunkToKey(chunk.getWorld(), chunk.getX(), chunk.getZ()), chunk);
@@ -46,7 +48,22 @@ public class TEChunk {
     }
 
     public static void deleteChunks(ObjectId empire) {
+        final TEChunk[] chunks = chunkCache.values().toArray(new TEChunk[0]);
+        for (int i = chunks.length - 1; i >= 0; i--) {
+            final TEChunk chunk = chunks[i];
+            if (chunk.getEmpire().getId().equals(empire))
+                chunkCache.remove(chunkToKey(chunk.getWorld(), chunk.getX(), chunk.getZ()));
+        }
         collection.deleteMany(new Document("empire", empire));
+    }
+
+    public static void deleteChunk(TEChunk chunk) {
+        collection.deleteOne(
+            new Document("world", chunk.getWorld())
+                .append("x", chunk.getX())
+                .append("z", chunk.getZ())
+        );
+        chunkCache.remove(chunkToKey(chunk.getWorld(), chunk.getX(), chunk.getZ()));
     }
 
     public static List<TEChunk> getEmpireChunks(ObjectId id) {
@@ -112,8 +129,8 @@ public class TEChunk {
             .append("z", z)
             .append("empire", empire.getId())
             .append("type", ChunkType.NONE.name());
-        collection.insertOne(document);
         chunkCache.put(chunkToKey(world, x, z), new TEChunk(document));
+        collection.insertOne(document);
     }
 
     public void delete() {
@@ -133,6 +150,27 @@ public class TEChunk {
         z = document.getInteger("z");
         type = ChunkType.valueOf(document.getString("type"));
         empire = Empire.getEmpire(document.getObjectId("empire"));
+    }
+
+    public boolean isAdjacentChunkTheSameEmpire(Direction direction) {
+        final TEChunk chunk = getAdjacentChunk(direction);
+        return chunk != null && chunk.getEmpire().getId().equals(empire.getId());
+    }
+
+    public TEChunk getAdjacentChunk(Direction direction) {
+        return getChunk(
+            world,
+            x + (direction == Direction.RIGHT
+                ? 1
+                : direction == Direction.LEFT
+                    ? -1
+                    : 0),
+            z - (direction == Direction.DOWN
+                ? 1
+                : direction == Direction.UP
+                        ? -1
+                        : 0)
+        );
     }
 
     private void save(Document document) {

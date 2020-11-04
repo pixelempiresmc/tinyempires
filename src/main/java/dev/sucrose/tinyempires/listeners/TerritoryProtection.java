@@ -76,28 +76,28 @@ public class TerritoryProtection implements Listener {
         ));
     }
 
-    @EventHandler
-    public void onPlayerInteract(PlayerInteractEvent event) {
-        final Player player = event.getPlayer();
-        final TEPlayer tePlayer = TEPlayer.getTEPlayer(player.getUniqueId());
-        final Chunk chunk = player.getLocation().getChunk();
-        final TEChunk teChunk = TEChunk.getChunk(chunk);
-
-        if (tePlayer == null) {
-            player.sendMessage(ChatColor.RED + ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
-            return;
-        }
-
-        // return if no empire owns chunk
-        if (playerInChunkOwner(tePlayer, teChunk))
-            return;
-
-        // different empire, cancel event
-        event.setCancelled(true);
-        player.sendMessage(ChatColor.RED + String.format(
-            "You are in the empire of %s and you cannot interact with blocks",
-            teChunk.getEmpire().getName()
-        ));
-    }
+//    @EventHandler
+//    public void onPlayerInteract(PlayerInteractEvent event) {
+//        final Player player = event.getPlayer();
+//        final TEPlayer tePlayer = TEPlayer.getTEPlayer(player.getUniqueId());
+//        final Chunk chunk = player.getLocation().getChunk();
+//        final TEChunk teChunk = TEChunk.getChunk(chunk);
+//
+//        if (tePlayer == null) {
+//            player.sendMessage(ChatColor.RED + ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
+//            return;
+//        }
+//
+//        // return if no empire owns chunk
+//        if (playerInChunkOwner(tePlayer, teChunk))
+//            return;
+//
+//        // different empire, cancel event
+//        event.setCancelled(true);
+//        player.sendMessage(ChatColor.RED + String.format(
+//            "You are in the empire of %s and you cannot interact with blocks",
+//            teChunk.getEmpire().getName()
+//        ));
+//    }
 
 }

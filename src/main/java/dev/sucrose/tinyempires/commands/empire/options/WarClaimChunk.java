@@ -2,6 +2,7 @@ package dev.sucrose.tinyempires.commands.empire.options;
 
 import dev.sucrose.tinyempires.TinyEmpires;
 import dev.sucrose.tinyempires.models.*;
+import dev.sucrose.tinyempires.utils.DrawEmpire;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -57,13 +58,29 @@ public class WarClaimChunk implements EmpireCommandOption {
             return;
         }
 
+        // only perimeter chunks can be attacked
+        if (chunk.isAdjacentChunkTheSameEmpire(Direction.UP)
+                && chunk.isAdjacentChunkTheSameEmpire(Direction.DOWN)
+                && chunk.isAdjacentChunkTheSameEmpire(Direction.LEFT)
+                && chunk.isAdjacentChunkTheSameEmpire(Direction.RIGHT)) {
+            sender.sendMessage(ChatColor.RED + "Only perimeter chunks can be attacked in war");
+            return;
+        }
+
         conquerTaskIds.put(
             chunk.toString(),
             Bukkit.getScheduler().scheduleSyncRepeatingTask(
                 TinyEmpires.getInstance(),
                 new Runnable() {
-                    // +1 because task runs instantly
-                    private int timer = Empire.TIME_TO_CONQUER_CHUNK_SECONDS + 1;
+                    private int timer = Empire.TIME_TO_CONQUER_CHUNK_SECONDS;
+
+                    private void cancelTask() {
+                        Bukkit.getScheduler().cancelTask(conquerTaskIds.remove(chunk.toString()));
+                    }
+
+                    private void broadcast(List<Player> players, String message) {
+                        players.forEach(p -> p.sendMessage(message));
+                    }
 
                     @Override
                     public void run() {
@@ -75,8 +92,8 @@ public class WarClaimChunk implements EmpireCommandOption {
 
                             // return if chunk is different
                             if (!pGameChunk.getWorld().getName().equals(gameChunk.getWorld().getName())
-                                    || pGameChunk.getX() == gameChunk.getX()
-                                    || pGameChunk.getZ() == gameChunk.getZ())
+                                    || pGameChunk.getX() != gameChunk.getX()
+                                    || pGameChunk.getZ() != gameChunk.getZ())
                                 return;
 
                             playersInChunk.add(player);
@@ -100,13 +117,21 @@ public class WarClaimChunk implements EmpireCommandOption {
 
                         // no conflict left, send nothing to defenders
                         if (defenders == 0 && attackers == 0) {
-                            Bukkit.getScheduler().cancelTask(conquerTaskIds.get(chunk.toString()));
+                            cancelTask();
                             return;
                         }
 
-                        if (attackers > 0
-                                && defenders == 0
-                                && timer == 0) {
+                        if (defenders > 0) {
+                            broadcast(
+                                playersInChunk,
+                                ChatColor.YELLOW + "Defender has contested chunk!"
+                            );
+                            cancelTask();
+                            return;
+                        }
+
+                        // if there is at least one attacker is left, no defenders and timer ends take chunk
+                        if (timer == 0) {
                             empire.broadcast(ChatColor.GREEN, String.format(
                                 "Enemy chunk from %s at %d, %d conquered by %s!",
                                 defender.getName(),
@@ -127,38 +152,24 @@ public class WarClaimChunk implements EmpireCommandOption {
                                 empire.getName()
                             ));
                             chunk.setEmpire(empire);
+                            DrawEmpire.setEmpire(chunk.getWorld(), chunk.getX(), chunk.getZ(), empire);
+                            cancelTask();
                             return;
                         }
 
-                        for (final Player player : playersInChunk) {
-                            // attackers gone but defenders still left
-                            if (attackers == 0) {
-                                player.sendMessage(ChatColor.GREEN +
-                                    "All attackers have been defeated! Chunk is no longer contested");
-                                continue;
-                            }
-
-                            if (defenders > 0) {
-                                player.sendMessage(ChatColor.DARK_RED + String.format(
-                                    "%d defender%s is contesting the chunk!",
-                                    defenders,
-                                    defenders > 1 ? "s" : ""
-                                ));
-                                continue;
-                            }
-
-                            // attackers are still contesting, no defenders
-                            player.sendMessage(ChatColor.GREEN + String.format(
-                                "%d member%s contesting the chunk, %d seconds left",
-                                attackers,
-                                attackers > 1 ? "s" : "",
-                                timer--
-                            ));
-                        }
+                        broadcast(
+                            playersInChunk,
+                            ChatColor.DARK_GREEN + String.format(
+                                "%s second%s left to conquer chunk...",
+                                timer,
+                                timer > 1 ? "s" : ""
+                            )
+                        );
+                        timer--;
                     }
                 },
-            20,
-            0
+            0,
+            20
             )
         );
     }

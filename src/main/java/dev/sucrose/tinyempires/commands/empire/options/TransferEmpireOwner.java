@@ -6,21 +6,19 @@ import dev.sucrose.tinyempires.models.TEChunk;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.DrawEmpire;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
-import dev.sucrose.tinyempires.utils.StringUtils;
 import org.bson.types.ObjectId;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 
-import java.util.Locale;
 import java.util.UUID;
 
-public class CreateEmpire implements EmpireCommandOption {
+public class TransferEmpireOwner implements EmpireCommandOption {
 
     @Override
     public void execute(Player sender, String[] args) {
-        // /e create <name>
+        // /e owner <player>
         if (args.length < 1) {
-            sender.sendMessage(ChatColor.RED + "/e create <name>");
+            sender.sendMessage(ChatColor.RED + "/e owner <player>");
             return;
         }
 
@@ -31,13 +29,13 @@ public class CreateEmpire implements EmpireCommandOption {
             return;
         }
 
-        if (tePlayer.isInEmpire()) {
+        if (!tePlayer.isInEmpire()) {
             sender.sendMessage(ChatColor.RED + "You must leave your empire before creating one");
             return;
         }
 
         // no parsing necessary so no try/catch
-        final String empireName = StringUtils.buildWordsFromArray(args, 0);
+        String empireName = args[0];
         if (Empire.getEmpire(empireName) != null) {
             sender.sendMessage(ChatColor.RED + String.format(
                 "Empire with the name '%s' already exists",
@@ -55,7 +53,6 @@ public class CreateEmpire implements EmpireCommandOption {
         }
 
         // all checks passed, make empire
-        final Empire empire;
         try {
             final World world = location.getWorld();
             if (world == null)
@@ -64,7 +61,7 @@ public class CreateEmpire implements EmpireCommandOption {
             tePlayer.setEmpireId(id);
 
             // insert initial empire chunk
-            empire = Empire.getEmpire(id);
+            final Empire empire = Empire.getEmpire(id);
             if (empire == null)
                 throw new NullPointerException("Unable to fetch newly created empire and establish first chunk");
             TEChunk.createTEChunk(world.getName(), chunk.getX(), chunk.getZ(), empire);
@@ -75,10 +72,10 @@ public class CreateEmpire implements EmpireCommandOption {
             return;
         }
 
-        Bukkit.broadcastMessage(String.format(
+        Bukkit.broadcastMessage(ChatColor.YELLOW + String.format(
             "%s has created the empire of %s!",
-            ChatColor.BOLD + sender.getDisplayName() + ChatColor.WHITE,
-            "" + empire.getChatColor() + ChatColor.BOLD + empireName + ChatColor.WHITE
+            sender.getDisplayName(),
+            empireName
         ));
     }
 

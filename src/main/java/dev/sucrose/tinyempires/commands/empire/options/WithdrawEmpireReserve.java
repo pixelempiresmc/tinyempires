@@ -28,7 +28,7 @@ public class WithdrawEmpireReserve implements EmpireCommandOption {
             return;
         }
 
-        if (!tePlayer.getPosition().hasPermission(Permission.RESERVE)) {
+        if (!tePlayer.hasPermission(Permission.RESERVE)) {
             sender.sendMessage(ErrorUtils.generatePermissionError(Permission.RESERVE));
             return;
         }

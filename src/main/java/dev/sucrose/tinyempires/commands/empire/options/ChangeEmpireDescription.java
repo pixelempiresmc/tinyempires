@@ -5,6 +5,7 @@ import dev.sucrose.tinyempires.models.EmpireCommandOption;
 import dev.sucrose.tinyempires.models.Permission;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
+import dev.sucrose.tinyempires.utils.StringUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
@@ -28,7 +29,7 @@ public class ChangeEmpireDescription implements EmpireCommandOption {
             return;
         }
 
-        if (!tePlayer.getPosition().hasPermission(Permission.EDIT)) {
+        if (!tePlayer.hasPermission(Permission.EDIT)) {
             sender.sendMessage(ErrorUtils.generatePermissionError(Permission.EDIT));
             return;
         }
@@ -38,12 +39,12 @@ public class ChangeEmpireDescription implements EmpireCommandOption {
             return;
         }
 
-        final String description = args[0];
+        final String description = StringUtils.buildWordsFromArray(args, 0);
         empire.setDescription(description);
         empire.broadcast(ChatColor.GREEN, String.format(
             "%s changed the empire description to %s",
             sender.getName(),
-            description
+            ChatColor.ITALIC + description
         ));
     }
 

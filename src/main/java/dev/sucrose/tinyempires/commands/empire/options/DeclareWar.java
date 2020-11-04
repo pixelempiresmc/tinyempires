@@ -6,6 +6,7 @@ import dev.sucrose.tinyempires.models.EmpireCommandOption;
 import dev.sucrose.tinyempires.models.Permission;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
+import dev.sucrose.tinyempires.utils.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -30,7 +31,7 @@ public class DeclareWar implements EmpireCommandOption {
             return;
         }
 
-        if (tePlayer.getPosition().hasPermission(Permission.WAR)) {
+        if (!tePlayer.getPosition().hasPermission(Permission.WAR)) {
             sender.sendMessage(ErrorUtils.generatePermissionError(Permission.WAR));
             return;
         }
@@ -40,7 +41,12 @@ public class DeclareWar implements EmpireCommandOption {
             return;
         }
 
-        final String empireName = args[0];
+        final String empireName = StringUtils.buildWordsFromArray(args, 0);
+        if (empireName.equals(empire.getName())) {
+            sender.sendMessage(ChatColor.RED + "You cannot declare a war against your own empire");
+            return;
+        }
+
         final Empire defender = Empire.getEmpire(empireName);
         if (defender == null) {
             sender.sendMessage(ChatColor.RED + String.format(
@@ -79,15 +85,16 @@ public class DeclareWar implements EmpireCommandOption {
         empire.broadcast(ChatColor.DARK_GREEN, String.format(
             "%s has made the empire declare war against %s! You have %d minutes to conquer as much as you can!",
             sender.getName(),
-            empireName,
+            "" + defender.getChatColor() + ChatColor.BOLD + empireName + ChatColor.DARK_GREEN,
             Empire.WAR_TIME_MINUTES
         ));
 
         defender.setAtWarWith(empire, false);
         defender.broadcast(ChatColor.DARK_RED, String.format(
-            "%s declared war against the Empire! You have %d minutes to defend them off, and conquer some chunks if " +
+            "%s declared war against the %s! You have %d minutes to defend them off, and conquer some chunks if " +
                 "you can!",
-            empire.getName(),
+            "" + empire.getChatColor() + ChatColor.BOLD + empire.getName() + ChatColor.DARK_RED,
+            "" + defender.getChatColor() + ChatColor.BOLD + defender.getName() + ChatColor.DARK_RED,
             Empire.WAR_TIME_MINUTES
         ));
 

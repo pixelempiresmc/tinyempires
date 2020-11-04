@@ -17,3 +17,11 @@ commands:
     aliases: [e]
   clearcache:
     description: OP - Clear cache for debugging
+  dimension:
+    description: OP - Teleport to the spawn location of another world
+  flyspeed:
+    description: OP - Change player flyspeed
+  invisible:
+    description: OP - Toggle player server invisibility
+  smite:
+    description: OP - Smite player

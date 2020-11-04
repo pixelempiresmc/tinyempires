@@ -41,7 +41,7 @@ public class ChangeEmpireColor implements EmpireCommandOption {
             return;
         }
 
-        if (!tePlayer.getPosition().hasPermission(Permission.EDIT)) {
+        if (!tePlayer.hasPermission(Permission.EDIT)) {
             sender.sendMessage(ErrorUtils.generatePermissionError(Permission.EDIT));
             return;
         }

@@ -201,15 +201,15 @@ public class ChestShopListener implements Listener {
             // add chest direction vector to location to get would-be sign location
             // Location#add mutates location but returns original
             final Location signLocation = chest.getLocation().add(directionVector);
-            final Block signBlock = chest.getWorld().getBlockAt(signLocation);
+            final BlockState sign = signLocation.getBlock().getState();
 
-            if (!(signBlock instanceof Sign)) {
+            if (!(sign instanceof Sign)) {
                 System.out.println("Chest did not have a sign");
                 return;
             }
 
             try {
-                costPerSlot = Double.parseDouble(((Sign) signBlock.getState()).getLine(3));
+                costPerSlot = Double.parseDouble(((Sign) sign).getLine(3));
             } catch (Exception ignore) {
                 return;
             }

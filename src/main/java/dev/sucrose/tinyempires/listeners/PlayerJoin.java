@@ -1,6 +1,9 @@
 package dev.sucrose.tinyempires.listeners;
 
+import dev.sucrose.tinyempires.TinyEmpires;
+import dev.sucrose.tinyempires.commands.godsuite.Invisible;
 import dev.sucrose.tinyempires.models.TEPlayer;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -24,6 +27,13 @@ public class PlayerJoin implements Listener {
             return;
         }
         tePlayer.updatePlayerScoreboard();
+
+        // invisible players
+        for (final UUID uuid : Invisible.getInvisiblePlayers()) {
+            final Player p = Bukkit.getPlayer(uuid);
+            if (p != null)
+                player.hidePlayer(TinyEmpires.getInstance(), p);
+        }
     }
 
 }

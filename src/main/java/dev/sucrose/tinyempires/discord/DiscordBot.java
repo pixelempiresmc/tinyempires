@@ -86,8 +86,7 @@ public class DiscordBot extends ListenerAdapter {
             burntItems.getAmount(),
             burntItems.getType()
                 .toString()
-                .replace('_', ' ')
-                + (burntItems.getAmount() > 1 ? "s" : ""),
+                .replace('_', ' '),
             burnLocation.getX(),
             burnLocation.getY(),
             burnLocation.getZ()

@@ -1,17 +1,11 @@
 package dev.sucrose.tinyempires.commands.empire.options;
 
-import dev.sucrose.tinyempires.models.Empire;
-import dev.sucrose.tinyempires.models.EmpireCommandOption;
-import dev.sucrose.tinyempires.models.Permission;
-import dev.sucrose.tinyempires.models.TEPlayer;
+import dev.sucrose.tinyempires.models.*;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
-import java.util.EnumMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Info implements EmpireCommandOption {
@@ -29,6 +23,14 @@ public class Info implements EmpireCommandOption {
         permDescriptions.put(Permission.WAR, "Can declare and end war");
     }
 
+    private static String getPositionPermissionsString(Position position) {
+        return position
+            .getPermissions()
+            .stream()
+            .map(p -> p.name().toLowerCase())
+            .collect(Collectors.joining(", "));
+    }
+
     @Override
     public void execute(Player sender, String[] args) {
         // /e info
@@ -39,42 +41,90 @@ public class Info implements EmpireCommandOption {
             return;
         }
 
-        sender.sendMessage(ChatColor.GOLD + "=== Info ===");
+        sender.sendMessage(ChatColor.BOLD + "=== Info ===");
         final Empire empire = tePlayer.getEmpire();
         if (empire == null) {
             // if player is not in an empire
-            sender.sendMessage(ChatColor.GOLD + tePlayer.getName());
-            sender.sendMessage(ChatColor.GOLD + "Unaffiliated with empire");
-            sender.sendMessage(ChatColor.GOLD + "" + tePlayer.getBalance() + " coins");
+            sender.sendMessage(tePlayer.getName());
+            sender.sendMessage("Unaffiliated with empire");
+            sender.sendMessage("" + tePlayer.getBalance() + " coins");
             return;
         }
 
-        sender.sendMessage(ChatColor.GOLD + "Empire: " + empire.getChatColor() + empire.getName());
-        sender.sendMessage(ChatColor.GOLD + " " + (empire.getDescription() == null ? "[No description]" :
+        sender.sendMessage("Empire: " + empire.getChatColor() + ChatColor.BOLD + empire.getName());
+        sender.sendMessage(String.format("Reserve: %.1f coins", empire.getReserve()));
+        sender.sendMessage(ChatColor.ITALIC + (empire.getDescription() == null ? "[No description]" :
             empire.getDescription()));
-        sender.sendMessage(ChatColor.GOLD + "- Reserve: " + empire.getReserve() + " coins");
-        sender.sendMessage(ChatColor.GOLD + "Members: ");
-        for (TEPlayer member : empire.getMembers())
-            sender.sendMessage(ChatColor.GOLD + String.format(
-                "%s - %s (%s)",
+        sender.sendMessage("");
+        sender.sendMessage("" + ChatColor.BOLD + "Members: ");
+        for (final TEPlayer member : empire.getMembers())
+            sender.sendMessage(String.format(
+                " - %s%s: %s",
+                member.isOwner()
+                    ? "[OWNER] "
+                    : "",
                 member.getName(),
-                member.getPositionName(),
-                member.getPosition()
-                    .getPermissions()
-                    .stream()
-                    .map(p -> p.name().toLowerCase())
-                    .collect(Collectors.joining(", "))
+                member.getPositionName() == null
+                    ? ChatColor.GRAY + "Unaffiliated"
+                    : member.getPositionName()
+                        + (member.getPosition().getPermissions().size() > 0
+                            ? " (" + getPositionPermissionsString(member.getPosition()) + ")"
+                            : "")
             ));
-        for (String name : empire.getPositionMap().keySet()) {
-            sender.sendMessage(ChatColor.GOLD + name);
-            for (Permission permission : empire.getPositionMap().get(name).getPermissions())
-                sender.sendMessage(ChatColor.GOLD + String.format(
-                    " - %s : %s",
-                    permission.name(),
-                    permDescriptions.get(permission)
-                ));
+
+        sender.sendMessage("");
+        sender.sendMessage("" + ChatColor.BOLD + "Positions");
+        if (empire.getPositionMap().size() == 0) {
+            sender.sendMessage(ChatColor.GRAY + " - No existing positions");
+            return;
         }
 
+        final List<String> sortedPositionKeys = new ArrayList<>(empire.getPositionMap().keySet());
+        // negate Position#compare so list is sorted left to right and is displayed top to bottom
+        sortedPositionKeys.sort((string1, string2) ->
+            -Position.compare(
+                empire.getPosition(string1),
+                empire.getPosition(string2)
+        ));
+
+        for (final String name : sortedPositionKeys)
+            sender.sendMessage(String.format(
+                " - %s %s",
+                name,
+                empire.getPosition(name).getPermissions().size() > 1
+                    ? '(' + getPositionPermissionsString(empire.getPosition(name)) + ')'
+                    : ""
+            ));
+
+        sender.sendMessage("");
+        sender.sendMessage("" + ChatColor.BOLD + "Laws");
+        if (empire.getLaws().size() > 0) {
+            for (final Map.Entry<String, Law> entry : empire.getLaws())
+                sender.sendMessage(String.format(
+                    " - %s (%s)",
+                    entry.getKey(),
+                    entry.getValue().getAuthor()
+                ));
+        } else
+            sender.sendMessage(ChatColor.GRAY + " - " + "No existing laws");
+
+        final Set<Map.Entry<UUID, Double>> debtors = empire.getDebtEntries();
+        if (debtors.size() > 0) {
+            sender.sendMessage("");
+            sender.sendMessage("" + ChatColor.BOLD + "Debt");
+            for (final Map.Entry<UUID, Double> debtor : debtors) {
+                final TEPlayer debtorTEPlayer = TEPlayer.getTEPlayer(debtor.getKey());
+                if (debtorTEPlayer == null)
+                    throw new NullPointerException(String.format(
+                        "Could not find TEPlayer instance for %s", debtor.getKey()
+                    ));
+                sender.sendMessage(ChatColor.RED + String.format(
+                    " - %s: %.1f",
+                    debtorTEPlayer.getName(),
+                    debtor.getValue()
+                ));
+            }
+        }
     }
 
 }

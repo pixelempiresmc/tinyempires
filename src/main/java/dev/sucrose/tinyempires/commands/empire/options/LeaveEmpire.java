@@ -45,15 +45,15 @@ public class LeaveEmpire implements EmpireCommandOption {
 
         // delete empire if no-one is left
         if (empire.getMembers().size() == 0) {
-            Bukkit.broadcastMessage("" + ChatColor.GOLD + ChatColor.BOLD + String.format(
+            Bukkit.broadcastMessage(ChatColor.BOLD + String.format(
                 "Everyone has left the empire of %s and it has now disbanded!",
                 empire.getName()
             ));
-            // erase chunk markers
-            for (final TEChunk chunk : TEChunk.getEmpireChunks(empire.getId()))
+            // erase chunk markers + delete in mongo
+            for (final TEChunk chunk : TEChunk.getEmpireChunks(empire.getId())) {
+                TEChunk.deleteChunk(chunk);
                 DrawEmpire.removeChunk(chunk);
-            // delete chunks in mongo
-            TEChunk.deleteChunks(empire.getId());
+            }
             // delete empire in mongo
             empire.delete();
         }

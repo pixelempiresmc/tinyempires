@@ -11,7 +11,7 @@ import java.util.*;
 
 public class EmpireClaimFill implements EmpireCommandOption {
 
-    private static final int CLAIM_FILL_LIMIT = 100;
+    private static final int CLAIM_FILL_LIMIT = 1000;
 
     private enum FloodFillStatus {
         // chunks successfully calculated and valid
@@ -161,7 +161,7 @@ public class EmpireClaimFill implements EmpireCommandOption {
             return;
         }
 
-        if (!tePlayer.getPosition().hasPermission(Permission.CHUNKS)) {
+        if (!tePlayer.hasPermission(Permission.CHUNKS)) {
             sender.sendMessage(ErrorUtils.generatePermissionError(Permission.CHUNKS));
             return;
         }

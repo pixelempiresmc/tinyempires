@@ -3,18 +3,30 @@ package dev.sucrose.tinyempires;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
-import dev.sucrose.tinyempires.commands.DebugClearCache;
+import dev.sucrose.tinyempires.commands.RefreshCaches;
 import dev.sucrose.tinyempires.commands.economy.Convert;
 import dev.sucrose.tinyempires.commands.economy.Gift;
 import dev.sucrose.tinyempires.commands.economy.Pay;
 import dev.sucrose.tinyempires.commands.economy.Take;
 import dev.sucrose.tinyempires.commands.empire.EmpireCommand;
+import dev.sucrose.tinyempires.commands.empire.options.CreateEmpireLaw;
+import dev.sucrose.tinyempires.commands.empire.options.EditEmpireLaw;
+import dev.sucrose.tinyempires.commands.godsuite.Dimension;
+import dev.sucrose.tinyempires.commands.godsuite.Flyspeed;
+import dev.sucrose.tinyempires.commands.godsuite.Invisible;
+import dev.sucrose.tinyempires.commands.godsuite.Smite;
 import dev.sucrose.tinyempires.discord.DiscordBot;
 import dev.sucrose.tinyempires.listeners.*;
+import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.DrawEmpire;
+import dev.sucrose.tinyempires.utils.ErrorUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.WorldCreator;
 import org.bukkit.command.CommandExecutor;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerEditBookEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -27,11 +39,19 @@ public final class TinyEmpires extends JavaPlugin {
     private static final MongoDatabase database = mongoClient.getDatabase("tinyempires");
     private static Plugin instance;
 
+    // global world-border constants
+    public static final int WORLD_BORDER_LEFT_X = -10752;
+    public static final int WORLD_BORDER_RIGHT_X = 10752;
+    public static final int WORLD_BORDER_TOP_Z = -5376;
+    public static final int WORLD_BORDER_BOTTOM_Z = 5377;
+    public static final int MARGIN = 20;
+
     @Override
     public void onEnable() {
         instance = this;
         System.out.println("" + ChatColor.GREEN + ChatColor.BOLD + "+=== Initialized Tiny Empires ===+");
         DrawEmpire.drawChunks();
+        DrawEmpire.drawBorders(WORLD_BORDER_LEFT_X, WORLD_BORDER_RIGHT_X, WORLD_BORDER_BOTTOM_Z, WORLD_BORDER_TOP_Z);
         registerEvents(
             new ChestShopListener(),
             new EndPortal(),
@@ -40,21 +60,39 @@ public final class TinyEmpires extends JavaPlugin {
             new PlayerMove(),
             new TerritoryProtection(),
             new PreventForeignTNTAndPistons(),
-            new PlayerLeave()
+            new PlayerLeave(),
+            new TempleBurnListener(),
+            new CreateEmpireLaw(),
+            new WorldBorder()
         );
+
+        // load worlds
+        getServer().createWorld(new WorldCreator("chess"));
 
         registerCommand("convert", new Convert());
         registerCommand("gift", new Gift());
         registerCommand("pay", new Pay());
         registerCommand("take", new Take());
         registerCommand("empire", new EmpireCommand());
-        registerCommand("clearcache", new DebugClearCache());
+        registerCommand("clearcache", new RefreshCaches());
+        registerCommand("dimension", new Dimension());
+        registerCommand("flyspeed", new Flyspeed());
+        registerCommand("invisible", new Invisible());
+        registerCommand("smite", new Smite());
 
         try {
             DiscordBot.init();
         } catch (Exception e) {
             System.out.println(ChatColor.DARK_RED + "Failure in initializing discord bot");
             e.printStackTrace();
+        }
+
+        // update player scoreboards
+        for (final Player player : Bukkit.getOnlinePlayers()) {
+            final TEPlayer tePlayer = TEPlayer.getTEPlayer(player.getUniqueId());
+            if (tePlayer == null)
+                throw new NullPointerException(ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
+            tePlayer.updatePlayerScoreboard();
         }
     }
 

@@ -5,7 +5,6 @@ import dev.sucrose.tinyempires.utils.DrawEmpire;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import dev.sucrose.tinyempires.utils.StringUtils;
 import org.bukkit.ChatColor;
-import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import java.util.Arrays;
@@ -14,7 +13,7 @@ import java.util.stream.Collectors;
 
 public class SetChunkType implements EmpireCommandOption {
 
-    private static final double templeAndTradingChunkCost = 10;
+    private static final double TEMPLE_AND_TRADING_CHUNK_COST = 10;
     private static final String types = Arrays.stream(ChunkType.values())
         .map(p -> p.name().toLowerCase())
         .collect(Collectors.joining("/"));
@@ -25,93 +24,66 @@ public class SetChunkType implements EmpireCommandOption {
         final UUID senderUUID = sender.getUniqueId();
         final TEPlayer tePlayer = TEPlayer.getTEPlayer(senderUUID);
         if (tePlayer == null) {
-            sender.sendMessage(ChatColor.RED + ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
+            sender.sendMessage(ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
             return;
         }
 
         final Empire empire = tePlayer.getEmpire();
         if (empire == null) {
-            sender.sendMessage(ChatColor.RED + ErrorUtils.YOU_MUST_BE_IN_AN_EMPIRE);
+            sender.sendMessage(ErrorUtils.YOU_MUST_BE_IN_AN_EMPIRE);
             return;
         }
 
-        if (!tePlayer.getPosition().hasPermission(Permission.CHUNKS)) {
+        if (!tePlayer.hasPermission(Permission.CHUNKS)) {
             sender.sendMessage(ErrorUtils.generatePermissionError(Permission.CHUNKS));
             return;
         }
 
         if (args.length < 1) {
-            sender.sendMessage(ChatColor.RED + String.format(
-                "/e type <%s>",
-                types
-            ));
+            sender.sendMessage(ChatColor.RED + "/e type <type>");
             return;
         }
 
-        String typeName = args[0];
+        final String typeName = args[0];
         ChunkType type;
         try {
             type = ChunkType.valueOf(typeName.toUpperCase());
         } catch (Exception ignore) {
             sender.sendMessage(ChatColor.RED + String.format(
-                "'%s' is not a chunk type (%s)",
+                "'%s' is not a valid chunk type (%s)",
                 typeName,
                 types
             ));
             return;
         }
 
-        // check if chunk is owned by empire
-        TEChunk chunk = TEChunk.getChunk(sender.getLocation().getChunk());
-        if (chunk == null
-                || !chunk.getEmpire().getId().equals(empire.getId())) {
+        final TEChunk chunk = TEChunk.getChunk(sender.getLocation().getChunk());
+        if (chunk.getType().equals(type)) {
             sender.sendMessage(ChatColor.RED + String.format(
-                "Chunk is %s and not your empire",
-                chunk == null
-                    ? "in the wilderness"
-                    : "owned by " + chunk.getEmpire().getName()
+                "Chunk type is already %s",
+                ChatColor.BOLD + type.name()
             ));
             return;
         }
 
-        final World world = sender.getLocation().getWorld();
-        if (world == null) {
-            sender.sendMessage(ErrorUtils.COULD_NOT_FETCH_WORLD);
-            return;
-        }
-
-        if (type != ChunkType.NONE
-                && empire.getReserve() < templeAndTradingChunkCost) {
+        if (empire.getReserve() < TEMPLE_AND_TRADING_CHUNK_COST) {
             sender.sendMessage(ChatColor.RED + String.format(
-                "Empire needs %.1f more coins to make %s chunk (%.1f required, %.1f in reserve)",
-                templeAndTradingChunkCost - empire.getReserve(),
-                typeName,
-                templeAndTradingChunkCost,
+                "Empire lacks enough coins to change chunk type. (%.1f required, %.1f in reserve)",
+                TEMPLE_AND_TRADING_CHUNK_COST,
                 empire.getReserve()
-            ));
-        }
-
-        if (type == chunk.getType()) {
-            sender.sendMessage(ChatColor.RED + String.format(
-                "Chunk is already of type '%s'",
-                typeName
             ));
             return;
         }
 
         chunk.setType(type);
-        DrawEmpire.setMarkerType(world.getName(), chunk.getX(), chunk.getZ(), type);
-
+        DrawEmpire.setMarkerType(chunk.getWorld(), chunk.getX(), chunk.getZ(), type);
         empire.broadcast(ChatColor.GREEN, String.format(
-            "%s%s set the chunk at %d, %d in the %s to be a %s chunk",
+            "%s set the type of the chunk at %d, %d in %s to be %s",
             sender.getName(),
-            type != ChunkType.NONE
-                ? String.format(" spent %.1f coins to", templeAndTradingChunkCost)
-                : "",
             chunk.getWorldX(),
             chunk.getWorldZ(),
-            StringUtils.worldDirToName(world.getName()),
-            typeName
+            StringUtils.worldDirToName(chunk.getWorld()),
+            ChatColor.BOLD + type.name().toLowerCase()
         ));
     }
 
