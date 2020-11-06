@@ -3,10 +3,11 @@ package dev.sucrose.tinyempires.utils;
 import dev.sucrose.tinyempires.models.*;
 import org.bson.types.ObjectId;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.dynmap.DynmapAPI;
-import org.dynmap.markers.MarkerAPI;
-import org.dynmap.markers.MarkerSet;
-import org.dynmap.markers.PolyLineMarker;
+import org.dynmap.markers.*;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,6 +20,7 @@ public class DrawEmpire {
     private static final MarkerSet markerSet;
     private static final Map<String, ChunkMarker> chunkMarkers = new HashMap<>();
     private static final Map<ObjectId, List<String>> empireChunkMarkers = new HashMap<>();
+    private static final Map<ObjectId, Icon> empireHomeMarkers = new HashMap<>();
 
     static {
         assert dynmap != null;
@@ -74,9 +76,65 @@ public class DrawEmpire {
         );
     }
 
-    public static void drawChunks() {
-        for (TEChunk chunk : TEChunk.getChunks())
+    @Nullable
+    private static String colorToFlagIcon(Color color) {
+        switch (color) {
+            case BLUE:
+            case DARK_AQUA:
+            case DARK_BLUE:
+            case AQUA:
+                return "blue";
+            case DARK_GRAY:
+            case BLACK:
+            case GRAY:
+            case WHITE:
+                return "black";
+            case DARK_GREEN:
+            case GREEN:
+                return "green";
+            case DARK_PURPLE:
+                return "purple";
+            case LIGHT_PURPLE:
+                return "pink";
+            case DARK_RED:
+            case RED:
+                return "red";
+            case GOLD:
+                return "orange";
+            case YELLOW:
+                return "yellow";
+            default:
+                return null;
+        }
+    }
+
+    public static void draw() {
+        for (final TEChunk chunk : TEChunk.getChunks())
             drawChunk(chunk.getEmpire(), chunk.getWorld(), chunk.getX(), chunk.getZ());
+        for (final Empire empire : Empire.getEmpires()) {
+            final Location homeLocation = empire.getHomeLocation();
+            if (homeLocation.getWorld() == null)
+                throw new NullPointerException("Could not get home location world for empire " + empire.getId() + " " +
+                    "when drawing home marker");
+
+            empireHomeMarkers.put(
+                empire.getId(),
+                new Icon(
+                    empire,
+                    empire.getName(),
+                    colorToFlagIcon(empire.getColor()),
+                    homeLocation.getWorld().getName(),
+                    homeLocation.getBlockX(),
+                    homeLocation.getBlockZ()
+                )
+            );
+        }
+    }
+
+    public static void moveEmpireHomeMarker(ObjectId empire, String world, int x, int z) {
+        if (!empireHomeMarkers.containsKey(empire))
+            throw new NullPointerException("Could not get home marker for empire");
+        empireHomeMarkers.get(empire).move(world, x, z);
     }
 
     private static boolean chunkEmpiresDiffer(TEChunk chunk, int x, int z) {

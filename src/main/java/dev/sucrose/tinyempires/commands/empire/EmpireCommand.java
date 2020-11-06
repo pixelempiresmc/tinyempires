@@ -44,6 +44,8 @@ public class EmpireCommand implements CommandExecutor {
         options.put("tax", new Tax());
         options.put("forgive", new Forgive());
         options.put("fine", new Fine());
+        options.put("home", new Home());
+        options.put("sethome", new SetHome());
     }
 
     @Override

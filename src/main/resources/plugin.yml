@@ -15,6 +15,8 @@ commands:
   empire:
     description: Empire command
     aliases: [e]
+  arena:
+    description: Hold matches in arenas around the map
   clearcache:
     description: OP - Clear cache for debugging
   dimension:
@@ -25,3 +27,5 @@ commands:
     description: OP - Toggle player server invisibility
   smite:
     description: OP - Smite player
+  olympus:
+    description: OP - Teleport to Olympus

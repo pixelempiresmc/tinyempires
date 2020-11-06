@@ -9,6 +9,8 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import java.util.*;
@@ -28,6 +30,7 @@ public class Empire {
     private String description;
     private Color color;
     private UUID owner;
+    private Location homeLocation;
     private final List<TEPlayer> members = new ArrayList<>();
     private final Map<String, Position> positions = new HashMap<>();
     // name of law to law
@@ -52,7 +55,8 @@ public class Empire {
         }
     }
 
-    public static ObjectId createEmpire(String name, TEPlayer tePlayer) {
+    public static ObjectId createEmpire(String name, String homeWorld, double homeX, double homeY, double homeZ,
+                                        TEPlayer tePlayer) {
         final String uuidString = tePlayer.getPlayerUUID().toString();
         final Document document = new Document("name", name)
             .append("reserve", 0.0d)
@@ -64,7 +68,12 @@ public class Empire {
             .append("positions", new Document())
             .append("laws", new Document())
             .append("debt", new Document())
-            .append("owner", uuidString);
+            .append("owner", uuidString)
+            .append("home", new Document("world", homeWorld)
+                .append("x", homeX)
+                .append("y", homeY)
+                .append("z", homeZ)
+            );
         final InsertOneResult result = collection.insertOne(document);
         if (result.getInsertedId() == null)
             throw new NullPointerException("Unable to insert document");
@@ -90,6 +99,15 @@ public class Empire {
         description = document.getString("description");
         owner = UUID.fromString(document.getString("owner"));
         color = Color.valueOf(document.getString("color"));
+
+        final Document homeLocationDocument = document.get("home", Document.class);
+        homeLocation = new Location(
+            Bukkit.getWorld(homeLocationDocument.getString("world")),
+            homeLocationDocument.getDouble("x"),
+            homeLocationDocument.getDouble("y"),
+            homeLocationDocument.getDouble("z")
+        );
+
         final Document lawDocument = document.get("laws", Document.class);
         for (final String lawName : lawDocument.keySet())
             laws.put(lawName, new Law(lawDocument.get(lawName, Document.class)));
@@ -120,6 +138,10 @@ public class Empire {
         if (empireCache.containsKey(id))
             return empireCache.get(id);
         return null;
+    }
+
+    public static Collection<Empire> getEmpires() {
+        return empireCache.values();
     }
 
     private void updateMemberScoreboards() {
@@ -419,5 +441,28 @@ public class Empire {
             new Document("$set", new Document("debt." + payer.toString(), debt))
         );
     }
+
+    public Location getHomeLocation() {
+        return homeLocation;
+    }
+
+    public void setHomeLocation(Location homeLocation) throws NullPointerException {
+        final World world = homeLocation.getWorld();
+        if (world == null)
+            throw new NullPointerException("Fetched world as null from argument location");
+
+        this.homeLocation = homeLocation;
+        collection.updateOne(
+            new Document("_id", id),
+            new Document(
+                "$set",
+                new Document("home.world", homeLocation.getWorld().getName())
+                    .append("home.x", homeLocation.getX())
+                    .append("home.y", homeLocation.getY())
+                    .append("home.z", homeLocation.getZ())
+            )
+        );
+    }
+
 
 }

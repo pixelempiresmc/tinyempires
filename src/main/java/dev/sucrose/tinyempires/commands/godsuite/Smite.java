@@ -48,14 +48,14 @@ public class Smite implements CommandExecutor {
                 sender.sendMessage(ChatColor.RED + "Damage must be between 1 and 20 hearts");
                 return false;
             }
-            player.damage(damage);
+            player.setHealth(player.getHealth() - damage);
         }
 
         player.getWorld().strikeLightning(player.getLocation());
-        Bukkit.broadcastMessage(ChatColor.GOLD + String.format(
+        Bukkit.broadcastMessage("" + ChatColor.GOLD + ChatColor.BOLD + String.format(
             "%s was smitten by the god %s!",
             name,
-            player.getName()
+            sender.getName()
         ));
         return true;
     }

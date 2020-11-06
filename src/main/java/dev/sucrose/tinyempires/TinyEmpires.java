@@ -4,17 +4,14 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import dev.sucrose.tinyempires.commands.RefreshCaches;
+import dev.sucrose.tinyempires.commands.arena.Arena;
 import dev.sucrose.tinyempires.commands.economy.Convert;
 import dev.sucrose.tinyempires.commands.economy.Gift;
 import dev.sucrose.tinyempires.commands.economy.Pay;
 import dev.sucrose.tinyempires.commands.economy.Take;
 import dev.sucrose.tinyempires.commands.empire.EmpireCommand;
 import dev.sucrose.tinyempires.commands.empire.options.CreateEmpireLaw;
-import dev.sucrose.tinyempires.commands.empire.options.EditEmpireLaw;
-import dev.sucrose.tinyempires.commands.godsuite.Dimension;
-import dev.sucrose.tinyempires.commands.godsuite.Flyspeed;
-import dev.sucrose.tinyempires.commands.godsuite.Invisible;
-import dev.sucrose.tinyempires.commands.godsuite.Smite;
+import dev.sucrose.tinyempires.commands.godsuite.*;
 import dev.sucrose.tinyempires.discord.DiscordBot;
 import dev.sucrose.tinyempires.listeners.*;
 import dev.sucrose.tinyempires.models.TEPlayer;
@@ -26,7 +23,6 @@ import org.bukkit.WorldCreator;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerEditBookEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -50,7 +46,7 @@ public final class TinyEmpires extends JavaPlugin {
     public void onEnable() {
         instance = this;
         System.out.println("" + ChatColor.GREEN + ChatColor.BOLD + "+=== Initialized Tiny Empires ===+");
-        DrawEmpire.drawChunks();
+        DrawEmpire.draw();
         DrawEmpire.drawBorders(WORLD_BORDER_LEFT_X, WORLD_BORDER_RIGHT_X, WORLD_BORDER_BOTTOM_Z, WORLD_BORDER_TOP_Z);
         registerEvents(
             new ChestShopListener(),
@@ -63,7 +59,8 @@ public final class TinyEmpires extends JavaPlugin {
             new PlayerLeave(),
             new TempleBurnListener(),
             new CreateEmpireLaw(),
-            new WorldBorder()
+            new WorldBorder(),
+            new Arena()
         );
 
         // load worlds
@@ -79,6 +76,8 @@ public final class TinyEmpires extends JavaPlugin {
         registerCommand("flyspeed", new Flyspeed());
         registerCommand("invisible", new Invisible());
         registerCommand("smite", new Smite());
+        registerCommand("arena", new Arena());
+        registerCommand("olympus", new Olympus());
 
         try {
             DiscordBot.init();

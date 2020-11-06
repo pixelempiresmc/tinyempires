@@ -21,6 +21,7 @@ public class TransferEmpireOwner implements EmpireCommandOption {
             sender.sendMessage(ChatColor.RED + "/e owner <player>");
             return;
         }
+        final String playerName = args[0];
 
         final UUID senderUUID = sender.getUniqueId();
         final TEPlayer tePlayer = TEPlayer.getTEPlayer(senderUUID);
@@ -30,52 +31,31 @@ public class TransferEmpireOwner implements EmpireCommandOption {
         }
 
         if (!tePlayer.isInEmpire()) {
-            sender.sendMessage(ChatColor.RED + "You must leave your empire before creating one");
+            sender.sendMessage(ChatColor.RED + "You must be in an empire to run this command");
+            return;
+        }
+        final Empire empire = tePlayer.getEmpire();
+
+        if (!tePlayer.isOwner()) {
+            sender.sendMessage(ChatColor.RED + "You must be the owner of the empire to transfer (%s is the current " +
+                "owner)");
             return;
         }
 
-        // no parsing necessary so no try/catch
-        String empireName = args[0];
-        if (Empire.getEmpire(empireName) != null) {
+        final TEPlayer newOwner = TEPlayer.getTEPlayer(playerName);
+        if (newOwner == null) {
             sender.sendMessage(ChatColor.RED + String.format(
-                "Empire with the name '%s' already exists",
-                empireName
+                "'%s' is not an existing player",
+                playerName
             ));
             return;
         }
 
-        final Location location = sender.getLocation();
-        final Chunk chunk = location.getChunk();
-        final TEChunk teChunk = TEChunk.getChunk(chunk);
-        if (teChunk != null) {
-            sender.sendMessage(ChatColor.RED + "This chunk is already owned by another empire");
-            return;
-        }
-
-        // all checks passed, make empire
-        try {
-            final World world = location.getWorld();
-            if (world == null)
-                throw new NullPointerException("World found as undefined when fetching player location");
-            final ObjectId id = Empire.createEmpire(empireName, tePlayer);
-            tePlayer.setEmpireId(id);
-
-            // insert initial empire chunk
-            final Empire empire = Empire.getEmpire(id);
-            if (empire == null)
-                throw new NullPointerException("Unable to fetch newly created empire and establish first chunk");
-            TEChunk.createTEChunk(world.getName(), chunk.getX(), chunk.getZ(), empire);
-            DrawEmpire.drawChunk(empire, world.getName(), chunk.getX(), chunk.getZ());
-        } catch(Exception err) {
-            err.printStackTrace();
-            sender.sendMessage(ChatColor.RED + "Failed to create new empire, please notify a developer");
-            return;
-        }
-
-        Bukkit.broadcastMessage(ChatColor.YELLOW + String.format(
-            "%s has created the empire of %s!",
-            sender.getDisplayName(),
-            empireName
+        empire.setOwner(newOwner.getPlayerUUID());
+        empire.broadcastText(ChatColor.YELLOW + String.format(
+            "%s has transferred ownership of the empire to %s!",
+            ChatColor.BOLD + sender.getName() + ChatColor.YELLOW,
+            ChatColor.BOLD + playerName + ChatColor.YELLOW
         ));
     }
 

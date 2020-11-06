@@ -16,5 +16,7 @@ public enum Permission {
     // can change color and edit description
     EDIT,
     // can add and accept players
-    INVITES
+    INVITES,
+    // can change empire home
+    HOME
 }

@@ -1,17 +1,10 @@
 package dev.sucrose.tinyempires.commands.empire.options;
 
 import dev.sucrose.tinyempires.models.*;
-import dev.sucrose.tinyempires.utils.DrawEmpire;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import org.bukkit.ChatColor;
-import org.bukkit.Chunk;
-import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.entity.Player;
-
-import java.util.Arrays;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class ChangeEmpireColor implements EmpireCommandOption {
 
