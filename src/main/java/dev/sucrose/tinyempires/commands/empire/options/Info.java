@@ -8,7 +8,7 @@ import org.bukkit.entity.Player;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class Info implements EmpireCommandOption {
+public class Info implements CommandOption {
 
     private static final Map<Permission, String> permDescriptions = new EnumMap<>(Permission.class);
 

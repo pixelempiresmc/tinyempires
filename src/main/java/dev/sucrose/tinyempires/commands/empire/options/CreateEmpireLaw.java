@@ -12,7 +12,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import java.util.UUID;
 
-public class CreateEmpireLaw implements EmpireCommandOption, Listener {
+public class CreateEmpireLaw implements CommandOption, Listener {
 
     @Override
     public void execute(Player sender, String[] args) {

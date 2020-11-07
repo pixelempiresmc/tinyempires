@@ -1,7 +1,7 @@
 package dev.sucrose.tinyempires.commands.empire.options;
 
 import dev.sucrose.tinyempires.models.Empire;
-import dev.sucrose.tinyempires.models.EmpireCommandOption;
+import dev.sucrose.tinyempires.models.CommandOption;
 import dev.sucrose.tinyempires.models.Permission;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
@@ -9,12 +9,9 @@ import dev.sucrose.tinyempires.utils.StringUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
-import java.awt.*;
-import java.util.Arrays;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
-public class DeleteEmpirePosition implements EmpireCommandOption {
+public class DeleteEmpirePosition implements CommandOption {
 
     @Override
     public void execute(Player sender, String[] args) {

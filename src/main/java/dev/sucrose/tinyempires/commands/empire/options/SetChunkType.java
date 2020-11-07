@@ -11,7 +11,7 @@ import java.util.Arrays;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class SetChunkType implements EmpireCommandOption {
+public class SetChunkType implements CommandOption {
 
     private static final double TEMPLE_AND_TRADING_CHUNK_COST = 10;
     private static final String types = Arrays.stream(ChunkType.values())

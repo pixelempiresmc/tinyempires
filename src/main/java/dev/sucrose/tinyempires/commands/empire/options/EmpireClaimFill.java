@@ -9,7 +9,7 @@ import org.bukkit.entity.Player;
 
 import java.util.*;
 
-public class EmpireClaimFill implements EmpireCommandOption {
+public class EmpireClaimFill implements CommandOption {
 
     private static final int CLAIM_FILL_LIMIT = 1000;
 

@@ -7,14 +7,13 @@ import dev.sucrose.tinyempires.utils.ErrorUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class WarClaimChunk implements EmpireCommandOption {
+public class WarClaimChunk implements CommandOption {
 
     private static final Map<String, Integer> conquerTaskIds = new HashMap<>();
 

@@ -1,8 +1,7 @@
 package dev.sucrose.tinyempires.commands.empire.options;
 
 import dev.sucrose.tinyempires.models.Empire;
-import dev.sucrose.tinyempires.models.EmpireCommandOption;
-import dev.sucrose.tinyempires.models.Permission;
+import dev.sucrose.tinyempires.models.CommandOption;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import org.bukkit.ChatColor;
@@ -10,7 +9,7 @@ import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
-public class ContributeToEmpire implements EmpireCommandOption {
+public class ContributeToEmpire implements CommandOption {
 
     @Override
     public void execute(Player sender, String[] args) {

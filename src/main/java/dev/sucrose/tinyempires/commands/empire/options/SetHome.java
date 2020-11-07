@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
-public class SetHome implements EmpireCommandOption {
+public class SetHome implements CommandOption {
 
     private static final double MOVE_HOME_COST = 50;
 

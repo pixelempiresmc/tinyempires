@@ -1,7 +1,7 @@
 package dev.sucrose.tinyempires.commands.empire.options;
 
 import dev.sucrose.tinyempires.models.Empire;
-import dev.sucrose.tinyempires.models.EmpireCommandOption;
+import dev.sucrose.tinyempires.models.CommandOption;
 import dev.sucrose.tinyempires.models.Permission;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
@@ -12,7 +12,7 @@ import org.bukkit.entity.Player;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class CreateEmpirePosition implements EmpireCommandOption {
+public class CreateEmpirePosition implements CommandOption {
 
     @Override
     public void execute(Player sender, String[] args) {

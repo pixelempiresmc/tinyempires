@@ -6,7 +6,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import java.util.UUID;
 
-public class Tax implements EmpireCommandOption {
+public class Tax implements CommandOption {
 
     @Override
     public void execute(Player sender, String[] args) {

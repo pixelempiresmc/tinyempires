@@ -12,7 +12,7 @@ import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
-public class UnclaimEmpireChunk implements EmpireCommandOption {
+public class UnclaimEmpireChunk implements CommandOption {
 
     @Override
     public void execute(Player sender, String[] args) {

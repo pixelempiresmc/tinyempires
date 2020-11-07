@@ -8,7 +8,7 @@ import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
-public class AssignEmpirePosition implements EmpireCommandOption {
+public class AssignEmpirePosition implements CommandOption {
 
     @Override
     public void execute(Player sender, String[] args) {

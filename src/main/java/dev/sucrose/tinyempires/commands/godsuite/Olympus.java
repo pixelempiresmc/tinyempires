@@ -16,7 +16,7 @@ import java.util.Map;
 
 public class Olympus implements CommandExecutor {
 
-    private static final Location olympus = new Location(Bukkit.getWorld("world"), 1399, 64, -2515);
+    private static final Location olympus = new Location(Bukkit.getWorld("world"), 1404, 161, -2512);
 
     @Override
     public boolean onCommand(CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {

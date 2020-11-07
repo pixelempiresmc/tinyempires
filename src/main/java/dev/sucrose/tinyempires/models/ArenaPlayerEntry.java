@@ -22,6 +22,7 @@ public class ArenaPlayerEntry {
     public void restore(Player player) {
         player.getInventory().setContents(inventoryContents);
         player.updateInventory();
+        player.setExp(0);
         player.setTotalExperience(experience);
     }
 

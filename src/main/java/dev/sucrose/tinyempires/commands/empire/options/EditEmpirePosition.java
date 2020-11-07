@@ -1,7 +1,7 @@
 package dev.sucrose.tinyempires.commands.empire.options;
 
 import dev.sucrose.tinyempires.models.Empire;
-import dev.sucrose.tinyempires.models.EmpireCommandOption;
+import dev.sucrose.tinyempires.models.CommandOption;
 import dev.sucrose.tinyempires.models.Permission;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class EditEmpirePosition implements EmpireCommandOption {
+public class EditEmpirePosition implements CommandOption {
 
     private static final String permString;
 

@@ -14,7 +14,7 @@ import java.util.Set;
 import java.util.UUID;
 
 // rely on listeners.PlayerMove for adding chunks on move
-public class AutoClaimEmpireChunk implements EmpireCommandOption {
+public class AutoClaimEmpireChunk implements CommandOption {
 
     private static final Set<UUID> autoclaimers = new HashSet<>();
 

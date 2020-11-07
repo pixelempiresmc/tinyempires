@@ -16,8 +16,9 @@ import org.bukkit.entity.Trident;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
@@ -45,8 +46,13 @@ public class Arena implements CommandExecutor, Listener {
     private final static Map<UUID, ArenaPlayerEntry> playerArenaEntries = new HashMap<>();
     private final static Map<ArenaType, ArenaEntry> arenaEntries = new HashMap<>();
     private final static Random RANDOM = new Random();
+    private final static Map<ArenaType, CommandOption> arenaOptions = new EnumMap<>(ArenaType.class);
 
     static {
+        final Yggdrasil yggdrasil = new Yggdrasil();
+        arenaOptions.put(ArenaType.YGGDRASIL, yggdrasil);
+        Bukkit.getPluginManager().registerEvents(yggdrasil, TinyEmpires.getInstance());
+
         // water arena
         final World world = Bukkit.getWorld("world");
         final List<Location> waterArenaSpawnLocations = new ArrayList<>();
@@ -62,7 +68,23 @@ public class Arena implements CommandExecutor, Listener {
                 ChatColor.AQUA,
                 waterArenaSpawnLocations,
                 7,
-                new CoordinatePlane(8736, 75, 765, 8740, 75, 769),
+                new BoundsPlane(8736, 75, 765, 8740, 75, 769),
+                new Location(world, 8738.5, 77, 764.5)
+            )
+        );
+
+        final List<Location> mountainArenaSpawnLocation = new ArrayList<>();
+        mountainArenaSpawnLocation.add(new Location(world, 1379.5, 105, -2515.5, -90, 0));
+        mountainArenaSpawnLocation.add(new Location(world, 1401, 105, -2538, 0, 0));
+        mountainArenaSpawnLocation.add(new Location(world, 1424.5, 105, -2515, 90, 0));
+        mountainArenaSpawnLocation.add(new Location(world, 1401, 105, -2493, -180, 0));
+        arenaEntries.put(
+            ArenaType.YGGDRASIL,
+            new ArenaEntry(
+                ChatColor.DARK_GREEN,
+                mountainArenaSpawnLocation,
+                4,
+                new BoundsPlane(8736, 75, 765, 8740, 75, 769),
                 new Location(world, 8738.5, 77, 764.5)
             )
         );
@@ -105,53 +127,17 @@ public class Arena implements CommandExecutor, Listener {
         item.setItemMeta(meta);
     }
 
-    private void setItemsUnbreakable(ItemStack... items) {
-        for (final ItemStack item : items)
-            setItemUnbreakable(item);
-    }
-
     private void setPlayerArenaInventory(ArenaType arena, Player player) {
         final PlayerInventory inventory = player.getInventory();
         inventory.clear();
-        switch (arena) {
-            case ATLANTIS:
-                final ItemStack trident = new ItemStack(Material.TRIDENT);
-                trident.addEnchantment(Enchantment.LOYALTY, 3);
-                setItemUnbreakable(trident);
-                inventory.setItem(0, trident);
-                player.getInventory().setHeldItemSlot(0);
-                player.updateInventory();
-                break;
-            case YGGDRASIL:
-                final ItemStack helmet = new ItemStack(Material.DIAMOND_HELMET);
-                final ItemStack chestplate = new ItemStack(Material.DIAMOND_CHESTPLATE);
-                final ItemStack leggings = new ItemStack(Material.DIAMOND_LEGGINGS);
-                final ItemStack boots = new ItemStack(Material.DIAMOND_BOOTS);
-                final ItemStack shield = new ItemStack(Material.SHIELD);
-                final ItemStack sword = new ItemStack(Material.DIAMOND_SWORD);
-                final ItemStack axe = new ItemStack(Material.DIAMOND_SWORD);
-                final ItemStack crossbow = new ItemStack(Material.CROSSBOW);
-                final ItemStack bow = new ItemStack(Material.BOW);
-                final ItemStack arrows = new ItemStack(Material.ARROW, 8);
-                setItemsUnbreakable(helmet, chestplate, leggings, boots, shield, sword, axe, crossbow, bow, arrows);
 
-                final ItemStack goldenApple = new ItemStack(Material.GOLDEN_APPLE, 1);
-                inventory.setHelmet(helmet);
-                inventory.setChestplate(chestplate);
-                inventory.setLeggings(leggings);
-                inventory.setBoots(boots);
-                inventory.setItemInOffHand(shield);
-                inventory.setItem(0, sword);
-                inventory.setItem(1, axe);
-                inventory.setItem(2, bow);
-                inventory.setItem(3, crossbow);
-                inventory.setItem(4, goldenApple);
-                inventory.setItem(5, arrows);
-                player.updateInventory();
-                break;
-            default:
-                throw new IllegalArgumentException(arena.name() + " is not a matching arena type");
-        }
+        // set inventory for atlantis arena
+        final ItemStack trident = new ItemStack(Material.TRIDENT);
+        trident.addEnchantment(Enchantment.LOYALTY, 3);
+        setItemUnbreakable(trident);
+        inventory.setItem(0, trident);
+        player.getInventory().setHeldItemSlot(0);
+        player.updateInventory();
     }
 
     @Override
@@ -171,6 +157,14 @@ public class Arena implements CommandExecutor, Listener {
         }
 
         final String option = args[0];
+        try {
+            final ArenaType arenaType = ArenaType.valueOf(option);
+            final String[] argsToPass = new String[args.length - 1];
+            System.arraycopy(args, 1, argsToPass, 0, args.length - 1);
+            arenaOptions.get(arenaType).execute(player, argsToPass);
+            return true;
+        } catch (IllegalArgumentException ignore) {}
+
         final ArenaPlayerEntry arenaPlayerEntry = playerArenaEntries.get(uuid);
         if (arenaPlayerEntry == null) {
             sender.sendMessage(ChatColor.RED + "You must be in an arena to run this command");
@@ -336,14 +330,6 @@ public class Arena implements CommandExecutor, Listener {
 //        return null;
 //    }
 
-    @EventHandler
-    public void onPlayerDeath(PlayerDeathEvent event) {
-        // cancel drops on player death if in arena, cannot be done with entity damage event
-        final Player player = event.getEntity();
-        if (playerArenaEntries.containsKey(player.getUniqueId()))
-            event.getDrops().clear();
-    }
-
     private String getKillMessage() {
         // <player> %s <killer>
         switch (RANDOM.nextInt(5)) {
@@ -353,6 +339,16 @@ public class Arena implements CommandExecutor, Listener {
             case 3: return "was defeated by";
             case 4: return "was skewered by";
             default: throw new NullPointerException("Bound was not caught by switch in getting a kill message");
+        }
+    }
+
+    @EventHandler
+    public void pickUpTrident(EntityPickupItemEvent event) {
+        final UUID uuid = event.getEntity().getUniqueId();
+        if (event.getItem().getType() == EntityType.TRIDENT
+                && playerArenaEntries.containsKey(uuid)
+                && !arenaEntries.get(playerArenaEntries.get(uuid).getArena()).getPlayers().contains(uuid)) {
+            event.setCancelled(true);
         }
     }
 
@@ -534,6 +530,14 @@ public class Arena implements CommandExecutor, Listener {
                     );
             }
         }
+    }
+
+    @EventHandler
+    public void onPlayerDrop(PlayerDropItemEvent event) {
+        final Player player = event.getPlayer();
+        // prevent player from accidentally dropping item
+        if (playerArenaEntries.containsKey(player.getUniqueId()))
+            event.setCancelled(true);
     }
 
     @EventHandler

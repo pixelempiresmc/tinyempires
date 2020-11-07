@@ -2,13 +2,10 @@ package dev.sucrose.tinyempires.commands.empire.options;
 
 import dev.sucrose.tinyempires.TinyEmpires;
 import dev.sucrose.tinyempires.models.*;
-import dev.sucrose.tinyempires.utils.DrawEmpire;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
-import dev.sucrose.tinyempires.utils.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -17,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class Home implements EmpireCommandOption {
+public class Home implements CommandOption {
 
     private static final Map<UUID, Integer> playerToTeleportationTask = new HashMap<>();
 

@@ -1,18 +1,15 @@
 package dev.sucrose.tinyempires.commands.empire.options;
 
 import dev.sucrose.tinyempires.models.Empire;
-import dev.sucrose.tinyempires.models.EmpireCommandOption;
-import dev.sucrose.tinyempires.models.TEChunk;
+import dev.sucrose.tinyempires.models.CommandOption;
 import dev.sucrose.tinyempires.models.TEPlayer;
-import dev.sucrose.tinyempires.utils.DrawEmpire;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
-import org.bson.types.ObjectId;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
-public class TransferEmpireOwner implements EmpireCommandOption {
+public class TransferEmpireOwner implements CommandOption {
 
     @Override
     public void execute(Player sender, String[] args) {

@@ -1,9 +1,7 @@
 package dev.sucrose.tinyempires.models;
 
-import dev.sucrose.tinyempires.commands.arena.Arena;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.entity.Player;
 
 import java.util.*;
 
@@ -36,7 +34,7 @@ public class ArenaEntry {
     private final List<UUID> players = new ArrayList<>();
     private final List<UUID> playersLeft = new ArrayList<>();
     private final int playerLimit;
-    private final CoordinatePlane entrancePlane;
+    private final BoundsPlane entrancePlane;
     private final Location startLocation;
     private int countdownTask;
     private boolean isCountingDown = false;
@@ -44,7 +42,7 @@ public class ArenaEntry {
     private static final Random RANDOM = new Random();
 
     public ArenaEntry(ChatColor color, List<Location> spawnLocations, int playerLimit,
-                      CoordinatePlane entrancePlane, Location startLocation) {
+                      BoundsPlane entrancePlane, Location startLocation) {
         this.color = color;
         this.spawnLocations = spawnLocations;
         resetRemainingSpawnLocations();
@@ -61,7 +59,7 @@ public class ArenaEntry {
         return playerLimit;
     }
 
-    public CoordinatePlane getEntrancePlane() {
+    public BoundsPlane getEntrancePlane() {
         return entrancePlane;
     }
 

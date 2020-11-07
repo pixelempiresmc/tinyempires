@@ -1,7 +1,7 @@
 package dev.sucrose.tinyempires.commands.empire;
 
 import dev.sucrose.tinyempires.commands.empire.options.*;
-import dev.sucrose.tinyempires.models.EmpireCommandOption;
+import dev.sucrose.tinyempires.models.CommandOption;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -14,7 +14,7 @@ import java.util.Map;
 
 public class EmpireCommand implements CommandExecutor {
 
-    final private static Map<String, EmpireCommandOption> options = new HashMap<>();
+    final private static Map<String, CommandOption> options = new HashMap<>();
 
     static {
         options.put("claim", new ClaimEmpireChunk());

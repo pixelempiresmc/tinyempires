@@ -27,7 +27,7 @@ import java.util.UUID;
 public class DiscordBot extends ListenerAdapter {
 
     private static final String GUILD_ID = "739978697041248296";
-    private static final String BRIDGE_CHANNEL_ID = "760380695956160512";
+    private static final String BRIDGE_CHANNEL_ID = "774537181049257984";
     private static final String PRAYER_CHANNEL_ID = "763642000049700875";
 
     private static JDA bot;

@@ -5,14 +5,12 @@ import dev.sucrose.tinyempires.utils.ErrorUtils;
 import dev.sucrose.tinyempires.utils.StringUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.BookMeta;
 
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class DeleteEmpireLaw implements EmpireCommandOption {
+public class DeleteEmpireLaw implements CommandOption {
 
     @Override
     public void execute(Player sender, String[] args) {
