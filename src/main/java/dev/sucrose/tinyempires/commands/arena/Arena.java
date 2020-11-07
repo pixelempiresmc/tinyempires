@@ -29,7 +29,6 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.*;
 import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -43,7 +42,6 @@ public class Arena implements CommandExecutor, Listener {
             .collect(Collectors.joining("/"))
     );
 
-    private final static Float BASE_ARENA_COST = 0.2f;
     private final static Map<UUID, ArenaPlayerEntry> playerArenaEntries = new HashMap<>();
     private final static Map<ArenaType, ArenaEntry> arenaEntries = new HashMap<>();
     private final static Random RANDOM = new Random();
@@ -59,12 +57,12 @@ public class Arena implements CommandExecutor, Listener {
         waterArenaSpawnLocations.add(new Location(world, 8750.5, 48, 758.5, 52, 0));
         waterArenaSpawnLocations.add(new Location(world, 8739.5, 54, 767.5, 0, 0));
         arenaEntries.put(
-            ArenaType.WATER,
+            ArenaType.ATLANTIS,
             new ArenaEntry(
                 ChatColor.AQUA,
                 waterArenaSpawnLocations,
                 7,
-                new CoordinatePlane(8736, 74, 765, 8750, 75, 769),
+                new CoordinatePlane(8736, 75, 765, 8740, 75, 769),
                 new Location(world, 8738.5, 77, 764.5)
             )
         );
@@ -116,7 +114,7 @@ public class Arena implements CommandExecutor, Listener {
         final PlayerInventory inventory = player.getInventory();
         inventory.clear();
         switch (arena) {
-            case WATER:
+            case ATLANTIS:
                 final ItemStack trident = new ItemStack(Material.TRIDENT);
                 trident.addEnchantment(Enchantment.LOYALTY, 3);
                 setItemUnbreakable(trident);
@@ -124,7 +122,7 @@ public class Arena implements CommandExecutor, Listener {
                 player.getInventory().setHeldItemSlot(0);
                 player.updateInventory();
                 break;
-            case MOUNTAIN:
+            case YGGDRASIL:
                 final ItemStack helmet = new ItemStack(Material.DIAMOND_HELMET);
                 final ItemStack chestplate = new ItemStack(Material.DIAMOND_CHESTPLATE);
                 final ItemStack leggings = new ItemStack(Material.DIAMOND_LEGGINGS);
@@ -216,7 +214,6 @@ public class Arena implements CommandExecutor, Listener {
                 playerArenaEntries.get(uuid).restore(player);
                 playerArenaEntries.remove(uuid);
                 player.teleport(arenaEntry.getStartLocation());
-                tePlayer.giveCoins(BASE_ARENA_COST);
                 player.setGameMode(GameMode.SURVIVAL);
                 return false;
             case "start":
@@ -254,7 +251,6 @@ public class Arena implements CommandExecutor, Listener {
                         TinyEmpires.getInstance(),
                         new Runnable() {
                             private int timer = 5;
-
                             @Override
                             public void run() {
                                 if (timer == 0) {
@@ -271,21 +267,19 @@ public class Arena implements CommandExecutor, Listener {
                                             Integer.MAX_VALUE,
                                             255,
                                             true,
-                                            false,
-                                            true
+                                            false
                                         )
                                     );
                                     // resistance = 20% * 3 = 60% less damage
-                                    player.addPotionEffect(
-                                        new PotionEffect(
-                                            PotionEffectType.DAMAGE_RESISTANCE,
-                                            Integer.MAX_VALUE,
-                                            3,
-                                            true,
-                                            false,
-                                            true
-                                        )
-                                    );
+                                    //player.addPotionEffect(
+//                                        new PotionEffect(
+//                                            PotionEffectType.DAMAGE_RESISTANCE,
+//                                            Integer.MAX_VALUE,
+//                                            1,
+//                                            true,
+//                                            false
+//                                        )
+//                                    );
                                     return;
                                 }
 
@@ -343,11 +337,23 @@ public class Arena implements CommandExecutor, Listener {
 //    }
 
     @EventHandler
-    public static void onPlayerDeath(PlayerDeathEvent event) {
+    public void onPlayerDeath(PlayerDeathEvent event) {
         // cancel drops on player death if in arena, cannot be done with entity damage event
         final Player player = event.getEntity();
         if (playerArenaEntries.containsKey(player.getUniqueId()))
             event.getDrops().clear();
+    }
+
+    private String getKillMessage() {
+        // <player> %s <killer>
+        switch (RANDOM.nextInt(5)) {
+            case 0: return "was slain by";
+            case 1: return "was killed by";
+            case 2: return "died at the hands of";
+            case 3: return "was defeated by";
+            case 4: return "was skewered by";
+            default: throw new NullPointerException("Bound was not caught by switch in getting a kill message");
+        }
     }
 
     @EventHandler
@@ -364,19 +370,41 @@ public class Arena implements CommandExecutor, Listener {
         }
 
         // cancel if damager was not a trident or player (e.g. pufferfish)
-        if (event.getDamager().getType() != EntityType.TRIDENT
-                || event.getDamager().getType() != EntityType.PLAYER)
+        final Entity damager = event.getDamager();
+        if (damager.getType() != EntityType.TRIDENT
+                && damager.getType() != EntityType.PLAYER) {
+            System.out.println("Damager entity was not a trident or player");
             event.setCancelled(true);
+            return;
+        }
 
         final Player player = (Player) victim; // get player that was damaged
         System.out.println("Player Victim: " + player.getName());
-
         final UUID uuid = player.getUniqueId();
         final ArenaPlayerEntry playerEntry = playerArenaEntries.get(uuid);
         if (playerEntry == null
                 || !arenaEntries.get(playerEntry.getArena()).isActive()) {
             // cancel event if player is waiting on coral block for event to start
             event.setCancelled(true);
+            return;
+        }
+
+        // player is the shooter of the trident or directly the damager if melee
+        final Player killer = damager.getType() == EntityType.TRIDENT
+            ? (Player) ((Trident) damager).getShooter()
+            : (Player) damager;
+        if (killer == null)
+            throw new NullPointerException("Killer fetched as null: " + damager.toString());
+        // return if player still has health left
+        final double newHealth = player.getHealth() - event.getFinalDamage();
+        killer.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 15, 1);
+        if (newHealth > 0) {
+            System.out.println("Player did not die, returning");
+            killer.sendMessage(ChatColor.GREEN + String.format(
+                "%s has %.1f hearts left",
+                ChatColor.BOLD + player.getName() + ChatColor.GREEN,
+                newHealth
+            ));
             return;
         }
 
@@ -387,8 +415,13 @@ public class Arena implements CommandExecutor, Listener {
         player.getWorld().strikeLightningEffect(player.getLocation());
 
         final ArenaEntry arenaEntry = arenaEntries.get(playerEntry.getArena());
+
         // teleport to top
+        playerEntry.restore(player);
         player.teleport(arenaEntry.getStartLocation());
+
+        // remove from players
+        arenaEntry.removePlayerFromOngoingMatch(uuid);
 
         // restore health to full
         player.setHealth(20);
@@ -398,40 +431,37 @@ public class Arena implements CommandExecutor, Listener {
         System.out.println("Players left: " + arenaEntry.getPlayersLeft().toString());
         final int playersLeft = arenaEntry.getPlayersLeft().size();
         System.out.println("Players left count: " + playersLeft);
+
         broadcastToPlayerUUIDList(arenaEntry.getPlayers(), ChatColor.YELLOW + String.format(
-            "%s has died! %s",
+            "%s %s %s! %s",
             ChatColor.BOLD + player.getName() + ChatColor.YELLOW,
+            getKillMessage(),
+            ChatColor.BOLD + killer.getName() + ChatColor.YELLOW,
             playersLeft > 1
                 ? playersLeft + " players left!"
                 : ""
         ));
 
         if (playersLeft == 1) {
-            final float reward = arenaEntry.getPlayers().size() * ArenaEntry.ARENA_COST;
-            final UUID winnerUUID = arenaEntry.getPlayersLeft().get(0);
-            final Player winner = Bukkit.getPlayer(winnerUUID);
-            if (winner == null)
-                throw new NullPointerException("Could not get winner with UUID: " + winnerUUID);
-            System.out.println("Fetched winner: " + winner.getName());
-
             broadcastToPlayerUUIDList(arenaEntry.getPlayers(), ChatColor.GREEN + String.format(
-                "%s has won the match and has won %.1f coins!",
-                winner.getName(),
-                reward
+                "%s has won the match!",
+                ChatColor.BOLD + killer.getName() + ChatColor.GREEN
             ));
 
-            final TEPlayer tePlayer = TEPlayer.getTEPlayer(uuid);
-            if (tePlayer == null)
-                throw new NullPointerException(ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
-            tePlayer.giveCoins(reward);
+            final UUID killerUUID = killer.getUniqueId();
 
-            for (final UUID pUUID : arenaEntry.getPlayers()) {
-                final Player p = Bukkit.getPlayer(pUUID);
-                if (p == null)
-                    throw new NullPointerException("Could not fetch player with UUID " + pUUID);
-                playerArenaEntries.get(uuid).restore(player);
-                playerArenaEntries.remove(uuid);
-                player.setGameMode(GameMode.SURVIVAL);
+            playerEntry.restore(killer);
+            playerArenaEntries.remove(killerUUID);
+            arenaEntry.removePlayer(killerUUID);
+            killer.teleport(arenaEntry.getStartLocation());
+            killer.setGameMode(GameMode.SURVIVAL);
+            arenaEntry.end();
+
+            // use explicit iterator notation to avoid concurrent modification
+            for (Iterator<UUID> it = arenaEntry.getPlayers().iterator(); it.hasNext();) {
+                final UUID pUUID = it.next();
+                it.remove();
+                playerArenaEntries.remove(pUUID);
             }
         }
     }
@@ -470,7 +500,6 @@ public class Arena implements CommandExecutor, Listener {
         final TEPlayer tePlayer = TEPlayer.getTEPlayer(uuid);
         if (tePlayer == null)
             throw new NullPointerException(ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
-        tePlayer.giveCoins(BASE_ARENA_COST);
     }
 
     private void restoreFractionOfBoostCharge(Player player) {
@@ -481,13 +510,15 @@ public class Arena implements CommandExecutor, Listener {
     public void onPlayerSneak(PlayerToggleSneakEvent event) {
         // boosts for water arena
         final Player player = event.getPlayer();
-        final ArenaPlayerEntry arenaEntry = playerArenaEntries.get(player.getUniqueId());
-        if (arenaEntry == null)
+        final ArenaPlayerEntry arenaPlayerEntry = playerArenaEntries.get(player.getUniqueId());
+        if (arenaPlayerEntry == null)
             return;
 
         // only for water arena and players remaining in match
-        if (arenaEntry.getArena() == ArenaType.WATER
-                && arenaEntries.get(arenaEntry.getArena()).getPlayersLeft().contains(player.getUniqueId())) {
+        final ArenaEntry arenaEntry = arenaEntries.get(arenaPlayerEntry.getArena());
+        if (arenaPlayerEntry.getArena()  == ArenaType.ATLANTIS
+                && arenaEntry.getPlayersLeft().contains(player.getUniqueId())
+                && arenaEntry.isActive()) {
             event.setCancelled(true);
             if (Float.compare(player.getExp(), 0.98F) > 0) {
                 final Vector velocity = player.getLocation().getDirection().multiply(1.5);
@@ -527,6 +558,9 @@ public class Arena implements CommandExecutor, Listener {
         for (final Map.Entry<ArenaType, ArenaEntry> entry : arenaEntries.entrySet()) {
             final ArenaEntry arenaEntry = entry.getValue();
             if (arenaEntry.getEntrancePlane().isInPlane(to.getBlockX(), to.getBlockY(), to.getBlockZ())) {
+                System.out.println("Teleporting player to " + entry.getKey().name() + " from " + to.getBlockX() + " " +
+                    to.getBlockY() + " " + to.getBlockZ());
+                System.out.println("COord plane: " + arenaEntry.getEntrancePlane().toString());
                 final ArenaType arena = entry.getKey();
                 final int playerLimit = arenaEntry.getPlayerLimit();
                 final List<UUID> playersInArena = arenaEntry.getPlayers();
@@ -555,20 +589,11 @@ public class Arena implements CommandExecutor, Listener {
                 if (tePlayer == null)
                     throw new NullPointerException(ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
 
-                if (tePlayer.getBalance() <= BASE_ARENA_COST) {
-                    player.sendMessage(ChatColor.RED + String.format(
-                        "You require %.2f more coins to pay the reward fee! %.2f coins required!",
-                        BASE_ARENA_COST - tePlayer.getBalance(),
-                        BASE_ARENA_COST
-                    ));
-                    return;
-                }
-
-                // reward
-                tePlayer.takeCoins(BASE_ARENA_COST);
-
                 // teleport
                 player.teleport(arenaEntry.getRandomSpawnLocationForPlayer(uuid));
+
+                // health
+                player.setHealth(20);
 
                 // adventure mode
                 player.setGameMode(GameMode.ADVENTURE);

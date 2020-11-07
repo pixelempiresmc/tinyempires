@@ -29,8 +29,6 @@ public class ArenaEntry {
     private final static Random RANDOM = new Random();
      */
 
-    public final static float ARENA_COST = 0.2f;
-
     private final ChatColor color;
     private final List<Location> spawnLocations;
     private final List<Integer> remainingSpawnLocationIndexes = new ArrayList<>();
@@ -61,10 +59,6 @@ public class ArenaEntry {
 
     public int getPlayerLimit() {
         return playerLimit;
-    }
-
-    public List<Location> getSpawnLocations() {
-        return spawnLocations;
     }
 
     public CoordinatePlane getEntrancePlane() {
@@ -102,16 +96,13 @@ public class ArenaEntry {
         return isCountingDown;
     }
 
-    public void setCountingDown(boolean countingDown) {
-        isCountingDown = countingDown;
-    }
-
     public int getCountdownTask() {
         return countdownTask;
     }
 
     public void setCountdownTask(int countdownTask) {
         this.countdownTask = countdownTask;
+        isCountingDown = true;
     }
 
     public boolean isActive() {
@@ -136,7 +127,12 @@ public class ArenaEntry {
 
     public void start() {
         isActive = true;
+        isCountingDown = false;
         playersLeft.addAll(players);
+    }
+
+    public void end() {
+        isActive = false;
     }
 
 }
