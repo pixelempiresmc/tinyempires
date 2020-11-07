@@ -5,9 +5,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class ArenaEntry {
 
@@ -36,20 +34,22 @@ public class ArenaEntry {
     private final ChatColor color;
     private final List<Location> spawnLocations;
     private final List<Integer> remainingSpawnLocationIndexes = new ArrayList<>();
+    private final Map<UUID, Integer> playerToSpawnLocationIndex = new HashMap<>();
     private final List<UUID> players = new ArrayList<>();
+    private final List<UUID> playersLeft = new ArrayList<>();
     private final int playerLimit;
     private final CoordinatePlane entrancePlane;
     private final Location startLocation;
     private int countdownTask;
     private boolean isCountingDown = false;
     private boolean isActive = false;
-    private int playersLeft;
+    private static final Random RANDOM = new Random();
 
     public ArenaEntry(ChatColor color, List<Location> spawnLocations, int playerLimit,
                       CoordinatePlane entrancePlane, Location startLocation) {
         this.color = color;
         this.spawnLocations = spawnLocations;
-        resetRemainingSpawnLocationIndexes();
+        resetRemainingSpawnLocations();
         this.playerLimit = playerLimit;
         this.entrancePlane = entrancePlane;
         this.startLocation = startLocation;
@@ -83,8 +83,19 @@ public class ArenaEntry {
         players.add(uuid);
     }
 
+    public void removePlayerFromOngoingMatch(UUID uuid) {
+        playersLeft.remove(uuid);
+    }
+
+    public void resetRemainingSpawnLocations() {
+        for (int i = 0; i < spawnLocations.size(); i++)
+            remainingSpawnLocationIndexes.add(i);
+    }
+
     public void removePlayer(UUID uuid) {
         players.remove(uuid);
+        remainingSpawnLocationIndexes.add(playerToSpawnLocationIndex.get(uuid));
+        playerToSpawnLocationIndex.remove(uuid);
     }
 
     public boolean isCountingDown() {
@@ -107,36 +118,25 @@ public class ArenaEntry {
         return isActive;
     }
 
-    public void decrementPlayersLeft() {
-        playersLeft--;
+    public void removePlayerFromPlayersLeft(UUID uuid) {
+        playersLeft.remove(uuid);
     }
 
-    public int getPlayersLeft() {
+    public List<UUID> getPlayersLeft() {
         return playersLeft;
     }
 
-    public List<Integer> getRemainingSpawnLocationIndexes() {
-        return remainingSpawnLocationIndexes;
-    }
-
-    public void addRemainingSpawnLocationIndex(int index) {
-        this.remainingSpawnLocationIndexes.add(index);
-    }
-
-    public void removeRemainingSpawnLocationIndex(int index) {
-        // use object wrapper to remove object and not at index
-        this.remainingSpawnLocationIndexes.remove(Integer.valueOf(index));
-    }
-
-    public void resetRemainingSpawnLocationIndexes() {
-        remainingSpawnLocationIndexes.clear();
-        for (int i = 0; i < spawnLocations.size(); i++)
-            remainingSpawnLocationIndexes.add(i);
+    public Location getRandomSpawnLocationForPlayer(UUID player) {
+        final int index = RANDOM.nextInt(remainingSpawnLocationIndexes.size());
+        final int spawnLocationIndex = remainingSpawnLocationIndexes.get(index);
+        remainingSpawnLocationIndexes.remove(index);
+        playerToSpawnLocationIndex.put(player, spawnLocationIndex);
+        return spawnLocations.get(spawnLocationIndex);
     }
 
     public void start() {
         isActive = true;
-        playersLeft = players.size();
+        playersLeft.addAll(players);
     }
 
 }

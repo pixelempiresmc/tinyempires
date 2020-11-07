@@ -29,7 +29,9 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class Arena implements CommandExecutor, Listener {
@@ -201,6 +203,11 @@ public class Arena implements CommandExecutor, Listener {
                 ));
                 return false;
             case "leave":
+                if (arenaEntry.isActive()
+                        || arenaEntry.isCountingDown()) {
+                    sender.sendMessage(ChatColor.RED + "You cannot leave while the match is ongoing");
+                    return false;
+                }
                 broadcastToPlayerUUIDList(playersInArena, ChatColor.YELLOW + String.format(
                     "%s has left the arena",
                     ChatColor.BOLD + sender.getName() + ChatColor.YELLOW
@@ -210,6 +217,7 @@ public class Arena implements CommandExecutor, Listener {
                 playerArenaEntries.remove(uuid);
                 player.teleport(arenaEntry.getStartLocation());
                 tePlayer.giveCoins(BASE_ARENA_COST);
+                player.setGameMode(GameMode.SURVIVAL);
                 return false;
             case "start":
                 if (!playersInArena.contains(uuid)) {
@@ -257,11 +265,27 @@ public class Arena implements CommandExecutor, Listener {
                                         "" + ChatColor.GREEN + ChatColor.BOLD + "Start!",
                                         ChatColor.GREEN + "The match has started!"
                                     );
-                                    player.addPotionEffect(new PotionEffect(PotionEffectType.DOLPHINS_GRACE,
-                                        Integer.MAX_VALUE, 255, false, false, true));
+                                    player.addPotionEffect(
+                                        new PotionEffect(
+                                            PotionEffectType.DOLPHINS_GRACE,
+                                            Integer.MAX_VALUE,
+                                            255,
+                                            true,
+                                            false,
+                                            true
+                                        )
+                                    );
                                     // resistance = 20% * 3 = 60% less damage
-                                    player.addPotionEffect(new PotionEffect(PotionEffectType.DAMAGE_RESISTANCE,
-                                        Integer.MAX_VALUE, 1, false, false, true));
+                                    player.addPotionEffect(
+                                        new PotionEffect(
+                                            PotionEffectType.DAMAGE_RESISTANCE,
+                                            Integer.MAX_VALUE,
+                                            3,
+                                            true,
+                                            false,
+                                            true
+                                        )
+                                    );
                                     return;
                                 }
 
@@ -329,6 +353,7 @@ public class Arena implements CommandExecutor, Listener {
     @EventHandler
     public void onPlayerDamage(EntityDamageByEntityEvent event) {
         final Entity victim = event.getEntity();
+        System.out.println("Victim: " + victim.getType() + ", " + victim.getName());
         if (!(victim instanceof Player)) {
             if (BoundUtils.inBoundsOfWaterArena(
                 victim.getLocation().getBlockX(),
@@ -338,7 +363,13 @@ public class Arena implements CommandExecutor, Listener {
             return;
         }
 
+        // cancel if damager was not a trident or player (e.g. pufferfish)
+        if (event.getDamager().getType() != EntityType.TRIDENT
+                || event.getDamager().getType() != EntityType.PLAYER)
+            event.setCancelled(true);
+
         final Player player = (Player) victim; // get player that was damaged
+        System.out.println("Player Victim: " + player.getName());
 
         final UUID uuid = player.getUniqueId();
         final ArenaPlayerEntry playerEntry = playerArenaEntries.get(uuid);
@@ -355,12 +386,18 @@ public class Arena implements CommandExecutor, Listener {
         // lightning effect
         player.getWorld().strikeLightningEffect(player.getLocation());
 
-        // spectator
-        player.setGameMode(GameMode.SPECTATOR);
-
         final ArenaEntry arenaEntry = arenaEntries.get(playerEntry.getArena());
-        arenaEntry.removePlayer(uuid);
-        final int playersLeft = arenaEntry.getPlayersLeft();
+        // teleport to top
+        player.teleport(arenaEntry.getStartLocation());
+
+        // restore health to full
+        player.setHealth(20);
+
+        System.out.println("Removing uuid: " + uuid);
+        arenaEntry.removePlayerFromOngoingMatch(uuid);
+        System.out.println("Players left: " + arenaEntry.getPlayersLeft().toString());
+        final int playersLeft = arenaEntry.getPlayersLeft().size();
+        System.out.println("Players left count: " + playersLeft);
         broadcastToPlayerUUIDList(arenaEntry.getPlayers(), ChatColor.YELLOW + String.format(
             "%s has died! %s",
             ChatColor.BOLD + player.getName() + ChatColor.YELLOW,
@@ -371,10 +408,12 @@ public class Arena implements CommandExecutor, Listener {
 
         if (playersLeft == 1) {
             final float reward = arenaEntry.getPlayers().size() * ArenaEntry.ARENA_COST;
-            final UUID winnerUUID = arenaEntry.getPlayers().get(0);
+            final UUID winnerUUID = arenaEntry.getPlayersLeft().get(0);
             final Player winner = Bukkit.getPlayer(winnerUUID);
             if (winner == null)
                 throw new NullPointerException("Could not get winner with UUID: " + winnerUUID);
+            System.out.println("Fetched winner: " + winner.getName());
+
             broadcastToPlayerUUIDList(arenaEntry.getPlayers(), ChatColor.GREEN + String.format(
                 "%s has won the match and has won %.1f coins!",
                 winner.getName(),
@@ -401,7 +440,9 @@ public class Arena implements CommandExecutor, Listener {
     public void onPlayerHunger(FoodLevelChangeEvent event) {
         final UUID uuid = event.getEntity().getUniqueId();
         final ArenaPlayerEntry playerEntry = playerArenaEntries.get(uuid);
-        if (playerEntry == null)
+        // if player is in an arena and lost hunger then cancel
+        if (playerEntry != null
+                && ((Player) event.getEntity()).getFoodLevel() - event.getFoodLevel() > 0)
             event.setCancelled(true);
     }
 
@@ -444,7 +485,9 @@ public class Arena implements CommandExecutor, Listener {
         if (arenaEntry == null)
             return;
 
-        if (arenaEntry.getArena() == ArenaType.WATER) {
+        // only for water arena and players remaining in match
+        if (arenaEntry.getArena() == ArenaType.WATER
+                && arenaEntries.get(arenaEntry.getArena()).getPlayersLeft().contains(player.getUniqueId())) {
             event.setCancelled(true);
             if (Float.compare(player.getExp(), 0.98F) > 0) {
                 final Vector velocity = player.getLocation().getDirection().multiply(1.5);
@@ -488,13 +531,20 @@ public class Arena implements CommandExecutor, Listener {
                 final int playerLimit = arenaEntry.getPlayerLimit();
                 final List<UUID> playersInArena = arenaEntry.getPlayers();
                 final Player player = event.getPlayer();
-                if (playersInArena.size() > playerLimit) {
+                if (playersInArena.size() == playerLimit) {
                     player.sendMessage(ChatColor.RED + String.format(
                         "The %s arena is full! (%d/%d)",
                         "" + arenaEntry.getColor() + ChatColor.BOLD + arena.name().toLowerCase() + ChatColor.RED,
                         playerLimit,
                         playerLimit
                     ));
+                    player.teleport(arenaEntry.getStartLocation());
+                    return;
+                }
+
+                if (arenaEntry.isActive()
+                        || arenaEntry.isCountingDown()) {
+                    player.sendMessage(ChatColor.RED + "You cannot join while the match is currently ongoing!");
                     player.teleport(arenaEntry.getStartLocation());
                     return;
                 }
@@ -518,20 +568,7 @@ public class Arena implements CommandExecutor, Listener {
                 tePlayer.takeCoins(BASE_ARENA_COST);
 
                 // teleport
-                final List<Integer> locationIndexes = arenaEntry.getRemainingSpawnLocationIndexes();
-                int index;
-                if (locationIndexes.size() == 0) {
-                    for (int i = 0; i < arenaEntry.getSpawnLocations().size(); i++)
-                        locationIndexes.add(i);
-                    index = RANDOM.nextInt(locationIndexes.size());
-                    player.teleport(arenaEntry.getSpawnLocations().get(index));
-                    // use object wrapper so first matching object is deleted and not index
-                    arenaEntry.removeRemainingSpawnLocationIndex(index);
-                } else {
-                    index = RANDOM.nextInt(locationIndexes.size());
-                    locationIndexes.remove(Integer.valueOf(index));
-                    player.teleport(arenaEntry.getSpawnLocations().get(index));
-                }
+                player.teleport(arenaEntry.getRandomSpawnLocationForPlayer(uuid));
 
                 // adventure mode
                 player.setGameMode(GameMode.ADVENTURE);
@@ -542,8 +579,7 @@ public class Arena implements CommandExecutor, Listener {
                     new ArenaPlayerEntry(
                         arena,
                         player.getInventory().getContents(),
-                        player.getTotalExperience(),
-                        index
+                        player.getTotalExperience()
                     )
                 );
 

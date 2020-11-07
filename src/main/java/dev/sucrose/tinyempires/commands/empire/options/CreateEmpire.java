@@ -60,7 +60,14 @@ public class CreateEmpire implements EmpireCommandOption {
             final World world = location.getWorld();
             if (world == null)
                 throw new NullPointerException("World found as undefined when fetching player location");
-            final ObjectId id = Empire.createEmpire(empireName, tePlayer);
+            final ObjectId id = Empire.createEmpire(
+                empireName,
+                location.getWorld().getName(),
+                location.getX(),
+                location.getY(),
+                location.getZ(),
+                tePlayer
+            );
             tePlayer.setEmpireId(id);
 
             // insert initial empire chunk

@@ -12,21 +12,15 @@ public class ArenaPlayerEntry {
     final private ItemStack[] inventoryContents;
     final int experience;
     final ArenaType arena;
-    final int arenaSpawnLocationIndex;
 
-    public ArenaPlayerEntry(ArenaType arena, ItemStack[] inventoryContents, int experience, int arenaSpawnLocationIndex) {
+    public ArenaPlayerEntry(ArenaType arena, ItemStack[] inventoryContents, int experience) {
         this.arena = arena;
         this.inventoryContents = inventoryContents;
         this.experience = experience;
-        this.arenaSpawnLocationIndex = arenaSpawnLocationIndex;
     }
 
     public ArenaType getArena() {
         return arena;
-    }
-
-    public int getArenaSpawnLocationIndex() {
-        return arenaSpawnLocationIndex;
     }
 
     public void restore(Player player) {
