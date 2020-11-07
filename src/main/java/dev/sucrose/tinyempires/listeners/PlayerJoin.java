@@ -28,6 +28,8 @@ public class PlayerJoin implements Listener {
         }
         tePlayer.updatePlayerScoreboard();
 
+        player.setInvisible(false);
+
         // invisible players
         for (final UUID uuid : Invisible.getInvisiblePlayers()) {
             final Player p = Bukkit.getPlayer(uuid);

@@ -46,13 +46,8 @@ public class Arena implements CommandExecutor, Listener {
     private final static Map<UUID, ArenaPlayerEntry> playerArenaEntries = new HashMap<>();
     private final static Map<ArenaType, ArenaEntry> arenaEntries = new HashMap<>();
     private final static Random RANDOM = new Random();
-    private final static Map<ArenaType, CommandOption> arenaOptions = new EnumMap<>(ArenaType.class);
 
     static {
-        final Yggdrasil yggdrasil = new Yggdrasil();
-        arenaOptions.put(ArenaType.YGGDRASIL, yggdrasil);
-        Bukkit.getPluginManager().registerEvents(yggdrasil, TinyEmpires.getInstance());
-
         // water arena
         final World world = Bukkit.getWorld("world");
         final List<Location> waterArenaSpawnLocations = new ArrayList<>();
@@ -157,14 +152,6 @@ public class Arena implements CommandExecutor, Listener {
         }
 
         final String option = args[0];
-        try {
-            final ArenaType arenaType = ArenaType.valueOf(option);
-            final String[] argsToPass = new String[args.length - 1];
-            System.arraycopy(args, 1, argsToPass, 0, args.length - 1);
-            arenaOptions.get(arenaType).execute(player, argsToPass);
-            return true;
-        } catch (IllegalArgumentException ignore) {}
-
         final ArenaPlayerEntry arenaPlayerEntry = playerArenaEntries.get(uuid);
         if (arenaPlayerEntry == null) {
             sender.sendMessage(ChatColor.RED + "You must be in an arena to run this command");
@@ -356,12 +343,14 @@ public class Arena implements CommandExecutor, Listener {
     public void onPlayerDamage(EntityDamageByEntityEvent event) {
         final Entity victim = event.getEntity();
         System.out.println("Victim: " + victim.getType() + ", " + victim.getName());
+        if (!BoundUtils.inBoundsOfWaterArena(
+            victim.getLocation().getBlockX(),
+            victim.getLocation().getBlockZ()
+        ))
+            return;
+
         if (!(victim instanceof Player)) {
-            if (BoundUtils.inBoundsOfWaterArena(
-                victim.getLocation().getBlockX(),
-                victim.getLocation().getBlockZ()
-            ))
-                event.setCancelled(true);
+            event.setCancelled(true);
             return;
         }
 

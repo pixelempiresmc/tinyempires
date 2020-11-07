@@ -5,6 +5,7 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import dev.sucrose.tinyempires.commands.RefreshCaches;
 import dev.sucrose.tinyempires.commands.arena.Arena;
+import dev.sucrose.tinyempires.commands.arena.Yggdrasil;
 import dev.sucrose.tinyempires.commands.economy.Convert;
 import dev.sucrose.tinyempires.commands.economy.Gift;
 import dev.sucrose.tinyempires.commands.economy.Pay;
@@ -48,6 +49,7 @@ public final class TinyEmpires extends JavaPlugin {
         System.out.println("" + ChatColor.GREEN + ChatColor.BOLD + "+=== Initialized Tiny Empires ===+");
         DrawEmpire.draw();
         DrawEmpire.drawBorders(WORLD_BORDER_LEFT_X, WORLD_BORDER_RIGHT_X, WORLD_BORDER_BOTTOM_Z, WORLD_BORDER_TOP_Z);
+        final Yggdrasil yggdrasil = new Yggdrasil();
         registerEvents(
             new ChestShopListener(),
             new EndPortal(),
@@ -60,7 +62,9 @@ public final class TinyEmpires extends JavaPlugin {
             new TempleBurnListener(),
             new CreateEmpireLaw(),
             new WorldBorder(),
-            new Arena()
+            new Arena(),
+            new StructureProtection(),
+            yggdrasil
         );
 
         // load worlds
@@ -78,6 +82,7 @@ public final class TinyEmpires extends JavaPlugin {
         registerCommand("smite", new Smite());
         registerCommand("arena", new Arena());
         registerCommand("olympus", new Olympus());
+        registerCommand("yggdrasil", yggdrasil);
 
         try {
             DiscordBot.init();
@@ -100,6 +105,8 @@ public final class TinyEmpires extends JavaPlugin {
         System.out.println("" + ChatColor.RED + ChatColor.BOLD + "+=== Disabled Tiny Empires ===+");
         DiscordBot.close();
         System.out.println(ChatColor.GREEN + "Shut down Pixel Empires Discord Bot");
+        Yggdrasil.removeYggdrasilScoreboardTeams();
+        System.out.println(ChatColor.GREEN + "Unregistered Yggdrasil scoreboard teams");
     }
 
     public static Plugin getInstance() {

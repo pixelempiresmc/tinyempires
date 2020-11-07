@@ -29,3 +29,5 @@ commands:
     description: OP - Smite player
   olympus:
     description: OP - Teleport to Olympus
+  yggdrasil:
+    description: Command for Yggdrasil arena
