@@ -29,4 +29,8 @@ public class BoundUtils {
         return inBounds(x, z, OLYMPUS_LEFT_X, OLYMPUS_RIGHT_X, OLYMPUS_BOTTOM_Z, OLYMPUS_TOP_Z);
     }
 
+    public static boolean inBoundsOfSpecialChunk(int x, int z) {
+        return inBoundsOfOlympus(x, z) || inBoundsOfWaterArena(x, z);
+    }
+
 }

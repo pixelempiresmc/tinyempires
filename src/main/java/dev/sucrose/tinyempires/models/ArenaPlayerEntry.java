@@ -7,16 +7,10 @@ public class ArenaPlayerEntry {
 
     final private ItemStack[] inventoryContents;
     final int experience;
-    final ArenaType arena;
 
-    public ArenaPlayerEntry(ArenaType arena, ItemStack[] inventoryContents, int experience) {
-        this.arena = arena;
+    public ArenaPlayerEntry(ItemStack[] inventoryContents, int experience) {
         this.inventoryContents = inventoryContents;
         this.experience = experience;
-    }
-
-    public ArenaType getArena() {
-        return arena;
     }
 
     public void restore(Player player) {

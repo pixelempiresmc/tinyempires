@@ -22,6 +22,7 @@ import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionType;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
@@ -79,8 +80,12 @@ public class Yggdrasil implements Listener, CommandExecutor {
 
     private static void registerScoreboardTeamAndPutInMap(YggdrasilTeam team) {
         final ChatColor color = yggdrasilTeamToChatColor(team);
+        final Team currentTeam = yggdrasilScoreboard.getTeam("YGGD_" + team.name());
+        if (currentTeam != null)
+            currentTeam.unregister();
         final Team scoreboardTeam = yggdrasilScoreboard.registerNewTeam("YGGD_" + team.name());
         scoreboardTeam.setColor(color);
+        scoreboardTeam.setPrefix("" + ChatColor.WHITE);
         scoreboardTeam.setAllowFriendlyFire(false);
         scoreboardTeams.put(team, scoreboardTeam);
     }
@@ -126,9 +131,9 @@ public class Yggdrasil implements Listener, CommandExecutor {
             return false;
         }
 
-        final YggdrasilPlayerEntry arenaPlayerEntry = arenaPlayerEntryMap.get(uuid);
+        final YggdrasilPlayerEntry playerEntry = arenaPlayerEntryMap.get(uuid);
         // commands require player to be in arena
-        if (arenaPlayerEntry == null) {
+        if (playerEntry == null) {
             sender.sendMessage(ChatColor.RED + "You must be in the Yggdrasil arena to run this command");
             return false;
         }
@@ -143,7 +148,7 @@ public class Yggdrasil implements Listener, CommandExecutor {
 
             player.teleport(spawnLocations.get(team));
             // add player uuid to team list
-            final YggdrasilTeam originalTeam = arenaPlayerEntry.getTeam();
+            final YggdrasilTeam originalTeam = playerEntry.getTeam();
             if (teams.get(originalTeam).size() == 1) {
                 teams.remove(originalTeam);
             } else {
@@ -151,8 +156,10 @@ public class Yggdrasil implements Listener, CommandExecutor {
             }
             if (!teams.containsKey(team))
                 teams.put(team, new ArrayList<>());
+            playerEntry.setTeam(team);
             teams.get(team).add(uuid);
-            scoreboardTeams.get(arenaPlayerEntry.getTeam()).removeEntry(player.getName());
+            // remove from original team scoreboard team and add to new selected one
+            scoreboardTeams.get(originalTeam).removeEntry(player.getName());
             scoreboardTeams.get(team).addEntry(player.getName());
             broadcast(ChatColor.YELLOW + String.format(
                 "%s changed to the %s team",
@@ -248,7 +255,7 @@ public class Yggdrasil implements Listener, CommandExecutor {
                 ));
                 return true;
             case "leave":
-                onPlayerLeave(player, arenaPlayerEntry);
+                onPlayerLeave(player, playerEntry);
                 return true;
             default:
                 sender.sendMessage(ChatColor.RED + "/yggdrasil <start/cancel/leave/list/[team]");
@@ -289,6 +296,7 @@ public class Yggdrasil implements Listener, CommandExecutor {
             p.setFlying(false);
             p.setInvulnerable(false);
             p.teleport(START_LOCATION);
+            arenaPlayerEntryMap.remove(p.getUniqueId());
         });
 
         teams.clear();
@@ -445,7 +453,6 @@ public class Yggdrasil implements Listener, CommandExecutor {
                 uuid,
                 new YggdrasilPlayerEntry(
                     team,
-                    ArenaType.YGGDRASIL,
                     player.getInventory().getContents(),
                     player.getTotalExperience()
                 )
@@ -513,8 +520,7 @@ public class Yggdrasil implements Listener, CommandExecutor {
         final PotionMeta potionMeta = (PotionMeta) potion.getItemMeta();
         if (potionMeta == null)
             throw new NullPointerException("Could not get PotionMeta for potion when giving Yggdrasil inventory");
-        potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.HEALTH_BOOST, 1, 1), true);
-        potion.setItemMeta(potionMeta);
+        potionMeta.setBasePotionData(new PotionData(PotionType.INSTANT_HEAL));
 
         final PlayerInventory inventory = player.getInventory();
         inventory.clear();

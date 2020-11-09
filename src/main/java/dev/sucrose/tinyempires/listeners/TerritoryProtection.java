@@ -6,15 +6,20 @@ import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.Chest;
+import org.bukkit.block.data.type.Door;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.material.PressureSensor;
 
 /**
- * Bukkit event listener that prevents players from damaging other empires' territories
+ * Bukkit event listener that prevents players from damaging or interacting with chests, doors, buttons or levers other empires' territories
  */
 public class TerritoryProtection implements Listener {
 
@@ -76,28 +81,46 @@ public class TerritoryProtection implements Listener {
         ));
     }
 
-//    @EventHandler
-//    public void onPlayerInteract(PlayerInteractEvent event) {
-//        final Player player = event.getPlayer();
-//        final TEPlayer tePlayer = TEPlayer.getTEPlayer(player.getUniqueId());
-//        final Chunk chunk = player.getLocation().getChunk();
-//        final TEChunk teChunk = TEChunk.getChunk(chunk);
-//
-//        if (tePlayer == null) {
-//            player.sendMessage(ChatColor.RED + ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
-//            return;
-//        }
-//
-//        // return if no empire owns chunk
-//        if (playerInChunkOwner(tePlayer, teChunk))
-//            return;
-//
-//        // different empire, cancel event
-//        event.setCancelled(true);
-//        player.sendMessage(ChatColor.RED + String.format(
-//            "You are in the empire of %s and you cannot interact with blocks",
-//            teChunk.getEmpire().getName()
-//        ));
-//    }
+    @EventHandler
+    public void onPlayerInteract(PlayerInteractEvent event) {
+        final Player player = event.getPlayer();
+        final TEPlayer tePlayer = TEPlayer.getTEPlayer(player.getUniqueId());
+        final Chunk chunk = player.getLocation().getChunk();
+        final TEChunk teChunk = TEChunk.getChunk(chunk);
+
+        if (tePlayer == null) {
+            player.sendMessage(ChatColor.RED + ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
+            return;
+        }
+
+        // return if no empire owns chunk
+        if (playerInChunkOwner(tePlayer, teChunk))
+            return;
+
+        // different empire, cancel event
+        final Block block = event.getClickedBlock();
+        if (block == null)
+            return;
+
+        final String startOfResponse = ChatColor.RED + String.format(
+                "You are in the empire of %s and you cannot ",
+                teChunk.getEmpire().getName()
+        );
+        if (block.getType().name().contains("DOOR")) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "interact with doors");
+        } else if (block.getState() instanceof Chest) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "open chests");
+        } else if (block.getType() == Material.LEVER) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "flip levers");
+        } else if (block.getState().getType().name().contains("BUTTON")) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "press buttons");
+        } else if (block.getType().name().contains("PRESSURE_PLATE")) {
+            event.setCancelled(true);
+        }
+    }
 
 }

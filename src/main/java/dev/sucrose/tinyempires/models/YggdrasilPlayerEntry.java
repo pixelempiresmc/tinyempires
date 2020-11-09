@@ -5,8 +5,8 @@ import org.bukkit.inventory.ItemStack;
 public class YggdrasilPlayerEntry extends ArenaPlayerEntry {
 
     private YggdrasilTeam team;
-    public YggdrasilPlayerEntry(YggdrasilTeam team, ArenaType arena, ItemStack[] inventoryContents, int experience) {
-        super(arena, inventoryContents, experience);
+    public YggdrasilPlayerEntry(YggdrasilTeam team, ItemStack[] inventoryContents, int experience) {
+        super(inventoryContents, experience);
         this.team = team;
     }
 

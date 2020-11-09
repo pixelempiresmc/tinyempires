@@ -32,20 +32,14 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.List;
-import java.util.stream.Collectors;
 
-public class Arena implements CommandExecutor, Listener {
+public class Atlantis implements CommandExecutor, Listener {
 
-    private final static String ERROR_OPTIONS = ChatColor.RED + String.format(
-        "/arena <join/start/list/cancel> <%s>",
-        Arrays.stream(ArenaType.values())
-            .map(a -> a.name().toLowerCase())
-            .collect(Collectors.joining("/"))
-    );
+    private final static String ERROR_OPTIONS = ChatColor.RED + "/atlantis <join/start/list/cancel>";
 
     private final static Map<UUID, ArenaPlayerEntry> playerArenaEntries = new HashMap<>();
-    private final static Map<ArenaType, ArenaEntry> arenaEntries = new HashMap<>();
-    private final static Random RANDOM = new Random();
+    private final static ArenaEntry arena;
+    private final static Random random = new Random();
 
     static {
         // water arena
@@ -57,36 +51,17 @@ public class Arena implements CommandExecutor, Listener {
         waterArenaSpawnLocations.add(new Location(world, 8734.5, 48, 754.5, -21, 0));
         waterArenaSpawnLocations.add(new Location(world, 8750.5, 48, 758.5, 52, 0));
         waterArenaSpawnLocations.add(new Location(world, 8739.5, 54, 767.5, 0, 0));
-        arenaEntries.put(
-            ArenaType.ATLANTIS,
-            new ArenaEntry(
-                ChatColor.AQUA,
-                waterArenaSpawnLocations,
-                7,
-                new BoundsPlane(8736, 75, 765, 8740, 75, 769),
-                new Location(world, 8738.5, 77, 764.5)
-            )
-        );
-
-        final List<Location> mountainArenaSpawnLocation = new ArrayList<>();
-        mountainArenaSpawnLocation.add(new Location(world, 1379.5, 105, -2515.5, -90, 0));
-        mountainArenaSpawnLocation.add(new Location(world, 1401, 105, -2538, 0, 0));
-        mountainArenaSpawnLocation.add(new Location(world, 1424.5, 105, -2515, 90, 0));
-        mountainArenaSpawnLocation.add(new Location(world, 1401, 105, -2493, -180, 0));
-        arenaEntries.put(
-            ArenaType.YGGDRASIL,
-            new ArenaEntry(
-                ChatColor.DARK_GREEN,
-                mountainArenaSpawnLocation,
-                4,
-                new BoundsPlane(8736, 75, 765, 8740, 75, 769),
-                new Location(world, 8738.5, 77, 764.5)
-            )
+        arena = new ArenaEntry(
+            ChatColor.AQUA,
+            waterArenaSpawnLocations,
+            7,
+            new BoundsPlane(8736, 75, 765, 8740, 75, 769),
+            new Location(world, 8738.5, 77, 764.5)
         );
     }
 
-    private void sendArenaPlayerListMessage(ArenaType arena, Player player) {
-        for (final UUID pUUID : arenaEntries.get(arena).getPlayers()) {
+    private void sendArenaPlayerListMessage(Player player) {
+        for (final UUID pUUID : arena.getPlayers()) {
             final Player p = Bukkit.getPlayer(pUUID);
             if (p == null)
                 throw new NullPointerException("Could not fetch player with UUID " + pUUID);
@@ -122,11 +97,12 @@ public class Arena implements CommandExecutor, Listener {
         item.setItemMeta(meta);
     }
 
-    private void setPlayerArenaInventory(ArenaType arena, Player player) {
+    private void setPlayerArenaInventory(Player player) {
+        // clear inventory (original player inventory is restored later)
         final PlayerInventory inventory = player.getInventory();
         inventory.clear();
 
-        // set inventory for atlantis arena
+        // give unbreakable trident with loyalty so it comes back
         final ItemStack trident = new ItemStack(Material.TRIDENT);
         trident.addEnchantment(Enchantment.LOYALTY, 3);
         setItemUnbreakable(trident);
@@ -152,61 +128,62 @@ public class Arena implements CommandExecutor, Listener {
         }
 
         final String option = args[0];
-        final ArenaPlayerEntry arenaPlayerEntry = playerArenaEntries.get(uuid);
-        if (arenaPlayerEntry == null) {
-            sender.sendMessage(ChatColor.RED + "You must be in an arena to run this command");
+        final ArenaPlayerEntry playerEntry = playerArenaEntries.get(uuid);
+        if (playerEntry == null) {
+            sender.sendMessage(ChatColor.RED + String.format(
+                "You must be in the %s arena to run this command",
+                "" + ChatColor.AQUA + ChatColor.BOLD + "atlantis" + ChatColor.RED
+            ));
             return false;
         }
 
-        final ArenaType senderArena = arenaPlayerEntry.getArena();
-        final ArenaEntry arenaEntry = arenaEntries.get(senderArena);
-        final List<UUID> playersInArena = arenaEntries.get(senderArena).getPlayers();
+        final List<UUID> playersInArena = arena.getPlayers();
         switch (option) {
             case "list":
                 sender.sendMessage(ChatColor.GREEN + String.format(
-                    "%d player%s in arena",
-                    playersInArena.size(),
-                    playersInArena.size() > 1 ? "s" : ""
+                        "%d player%s in arena",
+                        playersInArena.size(),
+                        playersInArena.size() > 1 ? "s" : ""
                 ));
-                sendArenaPlayerListMessage(senderArena, player);
+                sendArenaPlayerListMessage(player);
                 return false;
             case "cancel":
-                if (!arenaEntry.isActive()) {
+                if (!arena.isActive()) {
                     sender.sendMessage(ChatColor.RED + "Your match must be starting to cancel it");
                     return false;
                 }
-                Bukkit.getScheduler().cancelTask(arenaEntry.getCountdownTask());
+                Bukkit.getScheduler().cancelTask(arena.getCountdownTask());
                 broadcastToPlayerUUIDList(playersInArena, ChatColor.RED + String.format(
-                    "%s cancelled the match",
-                    ChatColor.BOLD + player.getName() + ChatColor.RED
+                        "%s cancelled the match",
+                        ChatColor.BOLD + player.getName() + ChatColor.RED
                 ));
                 return false;
             case "leave":
-                if (arenaEntry.isActive()
-                        || arenaEntry.isCountingDown()) {
+                if (arena.isActive()
+                        || arena.isCountingDown()) {
                     sender.sendMessage(ChatColor.RED + "You cannot leave while the match is ongoing");
                     return false;
                 }
                 broadcastToPlayerUUIDList(playersInArena, ChatColor.YELLOW + String.format(
-                    "%s has left the arena",
-                    ChatColor.BOLD + sender.getName() + ChatColor.YELLOW
+                        "%s has left the arena",
+                        ChatColor.BOLD + sender.getName() + ChatColor.YELLOW
                 ));
-                arenaEntry.removePlayer(player.getUniqueId());
+                arena.removePlayer(player.getUniqueId());
                 playerArenaEntries.get(uuid).restore(player);
                 playerArenaEntries.remove(uuid);
-                player.teleport(arenaEntry.getStartLocation());
+                player.teleport(arena.getStartLocation());
                 player.setGameMode(GameMode.SURVIVAL);
                 return false;
             case "start":
                 if (!playersInArena.contains(uuid)) {
                     sender.sendMessage(ChatColor.RED + String.format(
-                        "You must be in the %s arena to start its event!",
-                        "" + arenaEntry.getColor() + ChatColor.BOLD + senderArena.name().toLowerCase() + ChatColor.RED
+                            "You must be in the %s arena to start its event!",
+                            "" + arena.getColor() + ChatColor.BOLD + "atlantis" + ChatColor.RED
                     ));
                     return false;
                 }
 
-                if (arenaEntry.isCountingDown()) {
+                if (arena.isCountingDown()) {
                     sender.sendMessage(ChatColor.RED + "Arena match is already counting down");
                     return false;
                 }
@@ -216,110 +193,72 @@ public class Arena implements CommandExecutor, Listener {
                     return false;
                 }
 
-                if (arenaEntry.isActive()) {
+                if (arena.isActive()) {
                     sender.sendMessage(ChatColor.RED + "The match is currently ongoing");
                     return false;
                 }
 
                 // checks passed, start arena battle
                 broadcastToPlayerUUIDList(playersInArena, ChatColor.BOLD + String.format(
-                    "%s has started the match!",
-                    player.getName()
+                        "%s has started the match!",
+                        player.getName()
                 ));
 
-                arenaEntry.setCountdownTask(
-                    Bukkit.getScheduler().scheduleSyncRepeatingTask(
-                        TinyEmpires.getInstance(),
-                        new Runnable() {
-                            private int timer = 5;
-                            @Override
-                            public void run() {
-                                if (timer == 0) {
-                                    Bukkit.getScheduler().cancelTask(arenaEntry.getCountdownTask());
-                                    arenaEntry.start();
-                                    sendPlayerTitleAndChatMessage(
-                                        playersInArena,
-                                        "" + ChatColor.GREEN + ChatColor.BOLD + "Start!",
-                                        ChatColor.GREEN + "The match has started!"
-                                    );
-                                    player.addPotionEffect(
-                                        new PotionEffect(
-                                            PotionEffectType.DOLPHINS_GRACE,
-                                            Integer.MAX_VALUE,
-                                            255,
-                                            true,
-                                            false
-                                        )
-                                    );
-                                    // resistance = 20% * 3 = 60% less damage
-                                    //player.addPotionEffect(
-//                                        new PotionEffect(
-//                                            PotionEffectType.DAMAGE_RESISTANCE,
-//                                            Integer.MAX_VALUE,
-//                                            1,
-//                                            true,
-//                                            false
-//                                        )
-//                                    );
-                                    return;
-                                }
+                arena.setCountdownTask(
+                        Bukkit.getScheduler().scheduleSyncRepeatingTask(
+                                TinyEmpires.getInstance(),
+                                new Runnable() {
+                                    private int timer = 5;
 
-                                // send countdown titles and chat messages
-                                sendPlayerTitleAndChatMessage(
-                                    playersInArena,
-                                    "" + ChatColor.YELLOW + ChatColor.BOLD + timer,
-                                    ChatColor.GREEN + String.format(
-                                        "%d second%s until match starts...",
-                                        timer,
-                                        timer > 1 ? "s" : ""
-                                    )
-                                );
-                                timer--;
-                            }
-                        },
-                        0,
-                        20
-                    )
+                                    @Override
+                                    public void run() {
+                                        if (timer == 0) {
+                                            Bukkit.getScheduler().cancelTask(arena.getCountdownTask());
+                                            arena.start();
+                                            sendPlayerTitleAndChatMessage(
+                                                    playersInArena,
+                                                    "" + ChatColor.GREEN + ChatColor.BOLD + "Start!",
+                                                    ChatColor.GREEN + "The match has started!"
+                                            );
+                                            player.addPotionEffect(
+                                                    new PotionEffect(
+                                                            PotionEffectType.DOLPHINS_GRACE,
+                                                            Integer.MAX_VALUE,
+                                                            255,
+                                                            true,
+                                                            false
+                                                    )
+                                            );
+                                            return;
+                                        }
+
+                                        // send countdown titles and chat messages
+                                        sendPlayerTitleAndChatMessage(
+                                                playersInArena,
+                                                "" + ChatColor.YELLOW + ChatColor.BOLD + timer,
+                                                ChatColor.GREEN + String.format(
+                                                        "%d second%s until match starts...",
+                                                        timer,
+                                                        timer > 1 ? "s" : ""
+                                                )
+                                        );
+                                        timer--;
+                                    }
+                                },
+                                0,
+                                20
+                        )
                 );
                 return false;
             default:
                 sender.sendMessage(ERROR_OPTIONS);
                 return false;
         }
-//
-//        final String arenaName = args[1];
-//        ArenaType arena;
-//        try {
-//            arena = ArenaType.valueOf(arenaName.toUpperCase());
-//        } catch (Exception ignore) {
-//            sender.sendMessage(ERROR_OPTIONS);
-//            return false;
-//        }
-//
-//        if (activeArenas.contains(arena)) {
-//            if (arenaPlayerParticipants.get(arena).contains(uuid))
-//                sender.sendMessage(ChatColor.RED + "You're already playing in the arena");
-//            else
-//                sender.sendMessage(ChatColor.RED + String.format(
-//                    "%s is currently in use",
-//                    arenaName
-//                ));
-//            return false;
-//        }
     }
-
-//    @Nullable
-//    private ArenaType getPlayerArena(UUID uuid) {
-//        for (final Map.Entry<ArenaType, List<UUID>> entry : arenaPlayerParticipants.entrySet()) {
-//            if (entry.getValue().contains(uuid))
-//                return entry.getKey();
-//        }
-//        return null;
-//    }
 
     private String getKillMessage() {
         // <player> %s <killer>
-        switch (RANDOM.nextInt(5)) {
+        switch (random.nextInt(5)) {
             case 0: return "was slain by";
             case 1: return "was killed by";
             case 2: return "died at the hands of";
@@ -334,7 +273,7 @@ public class Arena implements CommandExecutor, Listener {
         final UUID uuid = event.getEntity().getUniqueId();
         if (event.getItem().getType() == EntityType.TRIDENT
                 && playerArenaEntries.containsKey(uuid)
-                && !arenaEntries.get(playerArenaEntries.get(uuid).getArena()).getPlayers().contains(uuid)) {
+                && !arena.getPlayers().contains(uuid)) {
             event.setCancelled(true);
         }
     }
@@ -368,7 +307,7 @@ public class Arena implements CommandExecutor, Listener {
         final UUID uuid = player.getUniqueId();
         final ArenaPlayerEntry playerEntry = playerArenaEntries.get(uuid);
         if (playerEntry == null
-                || !arenaEntries.get(playerEntry.getArena()).isActive()) {
+                || !arena.isActive()) {
             // cancel event if player is waiting on coral block for event to start
             event.setCancelled(true);
             return;
@@ -399,25 +338,20 @@ public class Arena implements CommandExecutor, Listener {
         // lightning effect
         player.getWorld().strikeLightningEffect(player.getLocation());
 
-        final ArenaEntry arenaEntry = arenaEntries.get(playerEntry.getArena());
-
         // teleport to top
         playerEntry.restore(player);
-        player.teleport(arenaEntry.getStartLocation());
+        player.teleport(arena.getStartLocation());
 
         // remove from players
-        arenaEntry.removePlayerFromOngoingMatch(uuid);
+        arena.removePlayerFromOngoingMatch(uuid);
 
         // restore health to full
         player.setHealth(20);
 
-        System.out.println("Removing uuid: " + uuid);
-        arenaEntry.removePlayerFromOngoingMatch(uuid);
-        System.out.println("Players left: " + arenaEntry.getPlayersLeft().toString());
-        final int playersLeft = arenaEntry.getPlayersLeft().size();
-        System.out.println("Players left count: " + playersLeft);
+        arena.removePlayerFromOngoingMatch(uuid);
+        final int playersLeft = arena.getPlayersLeft().size();
 
-        broadcastToPlayerUUIDList(arenaEntry.getPlayers(), ChatColor.YELLOW + String.format(
+        broadcastToPlayerUUIDList(arena.getPlayers(), ChatColor.YELLOW + String.format(
             "%s %s %s! %s",
             ChatColor.BOLD + player.getName() + ChatColor.YELLOW,
             getKillMessage(),
@@ -428,7 +362,7 @@ public class Arena implements CommandExecutor, Listener {
         ));
 
         if (playersLeft == 1) {
-            broadcastToPlayerUUIDList(arenaEntry.getPlayers(), ChatColor.GREEN + String.format(
+            broadcastToPlayerUUIDList(arena.getPlayers(), ChatColor.GREEN + String.format(
                 "%s has won the match!",
                 ChatColor.BOLD + killer.getName() + ChatColor.GREEN
             ));
@@ -437,13 +371,13 @@ public class Arena implements CommandExecutor, Listener {
 
             playerEntry.restore(killer);
             playerArenaEntries.remove(killerUUID);
-            arenaEntry.removePlayer(killerUUID);
-            killer.teleport(arenaEntry.getStartLocation());
+            arena.removePlayer(killerUUID);
+            killer.teleport(arena.getStartLocation());
             killer.setGameMode(GameMode.SURVIVAL);
-            arenaEntry.end();
+            arena.end();
 
             // use explicit iterator notation to avoid concurrent modification
-            for (Iterator<UUID> it = arenaEntry.getPlayers().iterator(); it.hasNext();) {
+            for (Iterator<UUID> it = arena.getPlayers().iterator(); it.hasNext();) {
                 final UUID pUUID = it.next();
                 it.remove();
                 playerArenaEntries.remove(pUUID);
@@ -469,9 +403,8 @@ public class Arena implements CommandExecutor, Listener {
         if (!playerArenaEntries.containsKey(uuid))
             return;
         final ArenaPlayerEntry playerEntry = playerArenaEntries.get(uuid);
-        final ArenaEntry arenaEntry = arenaEntries.get(playerEntry.getArena());
 
-        broadcastToPlayerUUIDList(arenaEntry.getPlayers(), ChatColor.YELLOW + String.format(
+        broadcastToPlayerUUIDList(arena.getPlayers(), ChatColor.YELLOW + String.format(
             "%s has left the arena!",
             ChatColor.BOLD + player.getName() + ChatColor.YELLOW
         ));
@@ -479,7 +412,7 @@ public class Arena implements CommandExecutor, Listener {
         // restore original location, inventory and exp
         playerArenaEntries.get(uuid).restore(player);
         playerArenaEntries.remove(uuid);
-        arenaEntry.removePlayer(uuid);
+        arena.removePlayer(uuid);
         player.setGameMode(GameMode.SURVIVAL);
 
         final TEPlayer tePlayer = TEPlayer.getTEPlayer(uuid);
@@ -500,10 +433,11 @@ public class Arena implements CommandExecutor, Listener {
             return;
 
         // only for water arena and players remaining in match
-        final ArenaEntry arenaEntry = arenaEntries.get(arenaPlayerEntry.getArena());
-        if (arenaPlayerEntry.getArena()  == ArenaType.ATLANTIS
-                && arenaEntry.getPlayersLeft().contains(player.getUniqueId())
-                && arenaEntry.isActive()) {
+        final UUID uuid = player.getUniqueId();
+        final ArenaPlayerEntry playerEntry = playerArenaEntries.get(uuid);
+        if (playerEntry != null
+                && arena.getPlayersLeft().contains(uuid)
+                && arena.isActive()) {
             event.setCancelled(true);
             if (Float.compare(player.getExp(), 0.98F) > 0) {
                 final Vector velocity = player.getLocation().getDirection().multiply(1.5);
@@ -539,8 +473,7 @@ public class Arena implements CommandExecutor, Listener {
 
         final ArenaPlayerEntry arenaPlayerEntry = playerArenaEntries.get(event.getPlayer().getUniqueId());
         if (arenaPlayerEntry != null) {
-            final ArenaEntry arenaEntry = arenaEntries.get(arenaPlayerEntry.getArena());
-            if (!arenaEntry.isActive()
+            if (!arena.isActive()
                     && (to.getX() != from.getX()
                     || to.getY() != from.getY()
                     || to.getZ() != from.getZ()))
@@ -548,81 +481,72 @@ public class Arena implements CommandExecutor, Listener {
             return;
         }
 
-        for (final Map.Entry<ArenaType, ArenaEntry> entry : arenaEntries.entrySet()) {
-            final ArenaEntry arenaEntry = entry.getValue();
-            if (arenaEntry.getEntrancePlane().isInPlane(to.getBlockX(), to.getBlockY(), to.getBlockZ())) {
-                System.out.println("Teleporting player to " + entry.getKey().name() + " from " + to.getBlockX() + " " +
-                    to.getBlockY() + " " + to.getBlockZ());
-                System.out.println("COord plane: " + arenaEntry.getEntrancePlane().toString());
-                final ArenaType arena = entry.getKey();
-                final int playerLimit = arenaEntry.getPlayerLimit();
-                final List<UUID> playersInArena = arenaEntry.getPlayers();
-                final Player player = event.getPlayer();
-                if (playersInArena.size() == playerLimit) {
-                    player.sendMessage(ChatColor.RED + String.format(
-                        "The %s arena is full! (%d/%d)",
-                        "" + arenaEntry.getColor() + ChatColor.BOLD + arena.name().toLowerCase() + ChatColor.RED,
-                        playerLimit,
-                        playerLimit
-                    ));
-                    player.teleport(arenaEntry.getStartLocation());
-                    return;
-                }
-
-                if (arenaEntry.isActive()
-                        || arenaEntry.isCountingDown()) {
-                    player.sendMessage(ChatColor.RED + "You cannot join while the match is currently ongoing!");
-                    player.teleport(arenaEntry.getStartLocation());
-                    return;
-                }
-
-                // cost
-                final UUID uuid = player.getUniqueId();
-                final TEPlayer tePlayer = TEPlayer.getTEPlayer(uuid);
-                if (tePlayer == null)
-                    throw new NullPointerException(ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
-
-                // teleport
-                player.teleport(arenaEntry.getRandomSpawnLocationForPlayer(uuid));
-
-                // health
-                player.setHealth(20);
-
-                // adventure mode
-                player.setGameMode(GameMode.ADVENTURE);
-
-                // put original player data before teleporting, inventory, exp, location
-                playerArenaEntries.put(
-                    uuid,
-                    new ArenaPlayerEntry(
-                        arena,
-                        player.getInventory().getContents(),
-                        player.getTotalExperience()
-                    )
-                );
-
-                // set arena inventory and exp
-                setPlayerArenaInventory(arena, player);
-                player.setLevel(0);
-                player.setExp(0.99F);
-
-                // add player
-                arenaEntry.addPlayer(player.getUniqueId());
-
-                // broadcast join message in arena
-                broadcastToPlayerUUIDList(playersInArena, ChatColor.GREEN + String.format(
-                    "%s has joined the %s arena! (%d/%d)",
-                    ChatColor.BOLD + player.getName() + ChatColor.GREEN,
-                    "" + arenaEntry.getColor() + ChatColor.BOLD + arena.name().toLowerCase() + ChatColor.GREEN,
-                    playersInArena.size(),
-                    arenaEntry.getPlayerLimit()
+        if (arena.getEntrancePlane().isInPlane(to.getBlockX(), to.getBlockY(), to.getBlockZ())) {
+            final int playerLimit = arena.getPlayerLimit();
+            final List<UUID> playersInArena = arena.getPlayers();
+            final Player player = event.getPlayer();
+            if (playersInArena.size() == playerLimit) {
+                player.sendMessage(ChatColor.RED + String.format(
+                    "The %s arena is full! (%d/%d)",
+                    "" + ChatColor.AQUA + ChatColor.BOLD + "atlantis" + ChatColor.RED,
+                    playerLimit,
+                    playerLimit
                 ));
-
-                // send player list of arena participants
-                player.sendMessage("" + ChatColor.GREEN + ChatColor.BOLD + "Players in arena:");
-                sendArenaPlayerListMessage(arena, player);
+                player.teleport(arena.getStartLocation());
                 return;
             }
+
+            if (arena.isActive()
+                    || arena.isCountingDown()) {
+                player.sendMessage(ChatColor.RED + "You cannot join while the match is currently ongoing!");
+                player.teleport(arena.getStartLocation());
+                return;
+            }
+
+            // cost
+            final UUID uuid = player.getUniqueId();
+            final TEPlayer tePlayer = TEPlayer.getTEPlayer(uuid);
+            if (tePlayer == null)
+                throw new NullPointerException(ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
+
+            // teleport
+            player.teleport(arena.getRandomSpawnLocationForPlayer(uuid));
+
+            // health
+            player.setHealth(20);
+
+            // adventure mode
+            player.setGameMode(GameMode.ADVENTURE);
+
+            // put original player data before teleporting, inventory, exp, location
+            playerArenaEntries.put(
+                uuid,
+                new ArenaPlayerEntry(
+                    player.getInventory().getContents(),
+                    player.getTotalExperience()
+                )
+            );
+
+            // set arena inventory and exp
+            setPlayerArenaInventory(player);
+            player.setLevel(0);
+            player.setExp(0.99F);
+
+            // add player
+            arena.addPlayer(player.getUniqueId());
+
+            // broadcast join message in arena
+            broadcastToPlayerUUIDList(playersInArena, ChatColor.GREEN + String.format(
+                "%s has joined the %s arena! (%d/%d)",
+                ChatColor.BOLD + player.getName() + ChatColor.GREEN,
+                "" + ChatColor.AQUA + ChatColor.BOLD + "atlantis" + ChatColor.GREEN,
+                playersInArena.size(),
+                arena.getPlayerLimit()
+            ));
+
+            // send player list of arena participants
+            player.sendMessage("" + ChatColor.GREEN + ChatColor.BOLD + "Players in arena:");
+            sendArenaPlayerListMessage(player);
         }
     }
 

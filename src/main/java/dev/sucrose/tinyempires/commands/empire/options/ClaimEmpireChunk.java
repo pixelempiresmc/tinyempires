@@ -1,6 +1,7 @@
 package dev.sucrose.tinyempires.commands.empire.options;
 
 import dev.sucrose.tinyempires.models.*;
+import dev.sucrose.tinyempires.utils.BoundUtils;
 import dev.sucrose.tinyempires.utils.DrawEmpire;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import org.bukkit.*;
@@ -50,6 +51,11 @@ public class ClaimEmpireChunk implements CommandOption {
                 TEChunk.CHUNK_COST,
                 empire.getReserve()
             ));
+            return;
+        }
+
+        if (BoundUtils.inBoundsOfSpecialChunk(chunk.getX(), chunk.getZ())) {
+            sender.sendMessage(ChatColor.RED + "You cannot claim a chunk that's within a special map structure");
             return;
         }
 

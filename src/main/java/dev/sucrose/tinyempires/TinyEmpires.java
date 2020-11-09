@@ -4,7 +4,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import dev.sucrose.tinyempires.commands.RefreshCaches;
-import dev.sucrose.tinyempires.commands.arena.Arena;
+import dev.sucrose.tinyempires.commands.arena.Atlantis;
 import dev.sucrose.tinyempires.commands.arena.Yggdrasil;
 import dev.sucrose.tinyempires.commands.economy.Convert;
 import dev.sucrose.tinyempires.commands.economy.Gift;
@@ -62,7 +62,7 @@ public final class TinyEmpires extends JavaPlugin {
             new TempleBurnListener(),
             new CreateEmpireLaw(),
             new WorldBorder(),
-            new Arena(),
+            new Atlantis(),
             new StructureProtection(),
             yggdrasil
         );
@@ -80,8 +80,8 @@ public final class TinyEmpires extends JavaPlugin {
         registerCommand("flyspeed", new Flyspeed());
         registerCommand("invisible", new Invisible());
         registerCommand("smite", new Smite());
-        registerCommand("arena", new Arena());
         registerCommand("olympus", new Olympus());
+        registerCommand("atlantis", new Atlantis());
         registerCommand("yggdrasil", yggdrasil);
 
         try {

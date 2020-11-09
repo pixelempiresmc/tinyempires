@@ -7,26 +7,6 @@ import java.util.*;
 
 public class ArenaEntry {
 
-    /*
-    private final static Float BASE_ARENA_COST = 0.2f;
-    private final static Map<ArenaType, ChatColor> ARENA_COLORS = new EnumMap<>(ArenaType.class);
-    private final static Map<ArenaType, List<Location>> ARENA_SPAWN_LOCATIONS = new EnumMap<>(ArenaType.class);
-    private final static Map<ArenaType, Integer> ARENA_PLAYER_LIMITS = new EnumMap<>(ArenaType.class);
-
-    private final static Map<ArenaType, List<UUID>> arenaPlayerParticipants = new EnumMap<>(ArenaType.class);
-    private final static Map<ArenaType, Integer> arenaPlayersLeft = new EnumMap<>(ArenaType.class);
-    private final static Map<ArenaType, List<Integer>> spawnLocationsLeftInArena = new EnumMap<>(ArenaType.class);
-    private final static Set<ArenaType> activeArenas = new HashSet<>();
-    private final static Map<ArenaType, Integer> arenaCountDownTasks = new EnumMap<>(ArenaType.class);
-    private final static Map<UUID, Integer> playerToArenaSpawnLocation = new HashMap<>();
-    private final static Map<ArenaType, CoordinatePlane> ENTER_ARENA_COORDS = new EnumMap<>(ArenaType.class);
-    private final static Map<ArenaType, Location> ARENA_TO_START_LOCATION = new EnumMap<>(ArenaType.class);
-    private final static Map<ArenaType, Float> arenaToRewardCoins = new EnumMap<>(ArenaType.class);
-
-    private final static Map<UUID, ArenaPlayerEntry> playerToOriginalState = new HashMap<>();
-    private final static Random RANDOM = new Random();
-     */
-
     private final ChatColor color;
     private final List<Location> spawnLocations;
     private final List<Integer> remainingSpawnLocationIndexes = new ArrayList<>();
