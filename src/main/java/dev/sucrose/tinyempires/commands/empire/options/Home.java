@@ -1,6 +1,7 @@
 package dev.sucrose.tinyempires.commands.empire.options;
 
 import dev.sucrose.tinyempires.TinyEmpires;
+import dev.sucrose.tinyempires.listeners.PlayerLeave;
 import dev.sucrose.tinyempires.models.*;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import org.bukkit.Bukkit;
@@ -8,13 +9,16 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class Home implements CommandOption {
+public class Home implements CommandOption, Listener {
 
     private static final Map<UUID, Integer> playerToTeleportationTask = new HashMap<>();
 
@@ -50,8 +54,7 @@ public class Home implements CommandOption {
                         if (timer == 0) {
                             sender.teleport(homeLocation);
                             sender.sendMessage(ChatColor.GREEN + "Teleported to home!");
-                            Bukkit.getScheduler().cancelTask(playerToTeleportationTask.get(senderUUID));
-                            playerToTeleportationTask.remove(senderUUID);
+                            cancelPlayerTeleport(senderUUID);
                             return;
                         }
                         sender.sendMessage(ChatColor.GREEN + String.format(
@@ -66,17 +69,37 @@ public class Home implements CommandOption {
                 20
             )
         );
-        sender.teleport(empire.getHomeLocation());
+    }
+
+    @EventHandler
+    public static void onPlayerLeave(PlayerQuitEvent event) {
+        final UUID uuid = event.getPlayer().getUniqueId();
+        cancelPlayerTeleport(uuid);
     }
 
     @EventHandler
     public static void onPlayerMove(PlayerMoveEvent event) {
         final Player player = event.getPlayer();
         final UUID uuid = player.getUniqueId();
-        if (playerToTeleportationTask.containsKey(uuid)) {
-            playerToTeleportationTask.remove(uuid);
+        final Location from = event.getFrom();
+        final Location to = event.getTo();
+        if (to == null)
+            return;
+
+        if (from.getX() != to.getZ()
+                && from.getY() != to.getY()
+                && from.getZ() != to.getZ()
+                && playerToTeleportationTask.containsKey(uuid)) {
+            cancelPlayerTeleport(uuid);
             player.sendMessage(ChatColor.RED + "You moved! Cancelling teleport...");
         }
+    }
+
+    private static void cancelPlayerTeleport(UUID uuid) {
+        if (!playerToTeleportationTask.containsKey(uuid))
+            return;
+        Bukkit.getScheduler().cancelTask(playerToTeleportationTask.get(uuid));
+        playerToTeleportationTask.remove(uuid);
     }
 
 }

@@ -3,6 +3,7 @@ package dev.sucrose.tinyempires.listeners;
 import dev.sucrose.tinyempires.TinyEmpires;
 import dev.sucrose.tinyempires.commands.empire.options.AutoClaimEmpireChunk;
 import dev.sucrose.tinyempires.models.*;
+import dev.sucrose.tinyempires.utils.BoundUtils;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import dev.sucrose.tinyempires.utils.StringUtils;
 import org.bukkit.Bukkit;
@@ -52,12 +53,9 @@ public class PlayerMove implements Listener {
                         TEChunk.CHUNK_COST,
                         tePlayer.getEmpire().getReserve()
                     ));
-                } else {
-                    final double start = System.nanoTime();
+                } else if (!BoundUtils.isChunkInBoundsOfSpecialTerritory(gameChunk)) {
                     AutoClaimEmpireChunk.claimChunkForEmpire(player.getName(), lastChunk.getWorld(), gameChunk.getX(),
                         gameChunk.getZ(), tePlayer.getEmpire());
-                    final double end = System.nanoTime();
-                    System.out.printf("Execution of autoclaim took %s milliseconds", (end - start) / 1000000);
                     return;
                 }
             }
@@ -83,9 +81,9 @@ public class PlayerMove implements Listener {
                     && !conquerTaskIds.containsKey(currentChunk.toString())) {
                 // can't conquer unless on perimeter of defender territory
                 if (currentChunk.isAdjacentChunkTheSameEmpire(Direction.UP)
-                    && currentChunk.isAdjacentChunkTheSameEmpire(Direction.DOWN)
-                    && currentChunk.isAdjacentChunkTheSameEmpire(Direction.RIGHT)
-                    && currentChunk.isAdjacentChunkTheSameEmpire(Direction.LEFT))
+                        && currentChunk.isAdjacentChunkTheSameEmpire(Direction.DOWN)
+                        && currentChunk.isAdjacentChunkTheSameEmpire(Direction.RIGHT)
+                        && currentChunk.isAdjacentChunkTheSameEmpire(Direction.LEFT))
                     return;
                 conquerTaskIds.put(
                     currentChunk.toString(),

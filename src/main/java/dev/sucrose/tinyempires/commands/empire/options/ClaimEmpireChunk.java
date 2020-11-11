@@ -45,6 +45,11 @@ public class ClaimEmpireChunk implements CommandOption {
             return;
         }
 
+        if (BoundUtils.isChunkInBoundsOfSpecialTerritory(chunk)) {
+            sender.sendMessage(ChatColor.RED + "You cannot claim this section of the map");
+            return;
+        }
+
         if (empire.getReserve() < TEChunk.CHUNK_COST) {
             sender.sendMessage(ChatColor.RED + String.format(
                 "Empire lacks enough coins for a new chunk. (%.1f required, %.1f in reserve)",
@@ -54,7 +59,7 @@ public class ClaimEmpireChunk implements CommandOption {
             return;
         }
 
-        if (BoundUtils.inBoundsOfSpecialChunk(chunk.getX(), chunk.getZ())) {
+        if (BoundUtils.isChunkInBoundsOfSpecialTerritory(chunk)) {
             sender.sendMessage(ChatColor.RED + "You cannot claim a chunk that's within a special map structure");
             return;
         }

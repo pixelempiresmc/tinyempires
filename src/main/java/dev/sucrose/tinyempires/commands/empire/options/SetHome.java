@@ -51,7 +51,7 @@ public class SetHome implements CommandOption {
 
         final TEChunk chunk = TEChunk.getChunk(senderLocation.getChunk());
         if (chunk == null
-                || !chunk.getId().equals(empire.getId())) {
+                || !chunk.getEmpire().getId().equals(empire.getId())) {
             sender.sendMessage(ChatColor.RED + "Location must be owned by empire to set home");
             return;
         }
@@ -66,7 +66,7 @@ public class SetHome implements CommandOption {
             return;
         }
 
-        if (empire.getReserve() <= MOVE_HOME_COST) {
+        if (empire.getReserve() < MOVE_HOME_COST) {
             sender.sendMessage(ChatColor.RED + String.format(
                 "%.1f more funds needed to move the empire home. (%.1f needed, %.1f in reserve)",
                 MOVE_HOME_COST - empire.getReserve(),

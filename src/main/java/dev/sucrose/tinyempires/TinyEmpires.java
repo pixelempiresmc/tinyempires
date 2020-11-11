@@ -3,6 +3,7 @@ package dev.sucrose.tinyempires;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
+import dev.sucrose.tinyempires.commands.LinkDiscordAccount;
 import dev.sucrose.tinyempires.commands.RefreshCaches;
 import dev.sucrose.tinyempires.commands.arena.Atlantis;
 import dev.sucrose.tinyempires.commands.arena.Yggdrasil;
@@ -12,6 +13,7 @@ import dev.sucrose.tinyempires.commands.economy.Pay;
 import dev.sucrose.tinyempires.commands.economy.Take;
 import dev.sucrose.tinyempires.commands.empire.EmpireCommand;
 import dev.sucrose.tinyempires.commands.empire.options.CreateEmpireLaw;
+import dev.sucrose.tinyempires.commands.empire.options.Home;
 import dev.sucrose.tinyempires.commands.godsuite.*;
 import dev.sucrose.tinyempires.discord.DiscordBot;
 import dev.sucrose.tinyempires.listeners.*;
@@ -27,11 +29,13 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.dynmap.DynmapAPI;
 
 import java.util.Objects;
 
 public final class TinyEmpires extends JavaPlugin {
 
+    private static final DynmapAPI dynmap = (DynmapAPI) Bukkit.getServer().getPluginManager().getPlugin("Dynmap");
     private static final MongoClient mongoClient = MongoClients.create();
     private static final MongoDatabase database = mongoClient.getDatabase("tinyempires");
     private static Plugin instance;
@@ -49,8 +53,10 @@ public final class TinyEmpires extends JavaPlugin {
         System.out.println("" + ChatColor.GREEN + ChatColor.BOLD + "+=== Initialized Tiny Empires ===+");
         DrawEmpire.draw();
         DrawEmpire.drawBorders(WORLD_BORDER_LEFT_X, WORLD_BORDER_RIGHT_X, WORLD_BORDER_BOTTOM_Z, WORLD_BORDER_TOP_Z);
+        // assign to variable so same instance is assigned as event listener and command executor
         final Yggdrasil yggdrasil = new Yggdrasil();
         registerEvents(
+            yggdrasil,
             new ChestShopListener(),
             new EndPortal(),
             new PlayerChat(),
@@ -64,7 +70,8 @@ public final class TinyEmpires extends JavaPlugin {
             new WorldBorder(),
             new Atlantis(),
             new StructureProtection(),
-            yggdrasil
+            new EntityChangePotionEffect(),
+            new Home()
         );
 
         // load worlds
@@ -75,7 +82,7 @@ public final class TinyEmpires extends JavaPlugin {
         registerCommand("pay", new Pay());
         registerCommand("take", new Take());
         registerCommand("empire", new EmpireCommand());
-        registerCommand("clearcache", new RefreshCaches());
+        registerCommand("refreshcaches", new RefreshCaches());
         registerCommand("dimension", new Dimension());
         registerCommand("flyspeed", new Flyspeed());
         registerCommand("invisible", new Invisible());
@@ -83,6 +90,8 @@ public final class TinyEmpires extends JavaPlugin {
         registerCommand("olympus", new Olympus());
         registerCommand("atlantis", new Atlantis());
         registerCommand("yggdrasil", yggdrasil);
+        registerCommand("discord", new LinkDiscordAccount());
+        registerCommand("censor", new Censor());
 
         try {
             DiscordBot.init();
@@ -107,6 +116,10 @@ public final class TinyEmpires extends JavaPlugin {
         System.out.println(ChatColor.GREEN + "Shut down Pixel Empires Discord Bot");
         Yggdrasil.removeYggdrasilScoreboardTeams();
         System.out.println(ChatColor.GREEN + "Unregistered Yggdrasil scoreboard teams");
+    }
+
+    public static DynmapAPI getDynmap() {
+        return dynmap;
     }
 
     public static Plugin getInstance() {

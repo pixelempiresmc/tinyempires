@@ -1,5 +1,6 @@
 package dev.sucrose.tinyempires.commands.empire;
 
+import dev.sucrose.tinyempires.commands.LinkDiscordAccount;
 import dev.sucrose.tinyempires.commands.empire.options.*;
 import dev.sucrose.tinyempires.models.CommandOption;
 import org.bukkit.ChatColor;
@@ -46,6 +47,8 @@ public class EmpireCommand implements CommandExecutor {
         options.put("fine", new Fine());
         options.put("home", new Home());
         options.put("sethome", new SetHome());
+        options.put("name", new ChangeEmpireName());
+        options.put("remove", new RemoveEmpireMember());
     }
 
     @Override

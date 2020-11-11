@@ -1,6 +1,8 @@
 package dev.sucrose.tinyempires.discord;
 
 import dev.sucrose.tinyempires.TinyEmpires;
+import dev.sucrose.tinyempires.models.DiscordLinkRequest;
+import dev.sucrose.tinyempires.models.Empire;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -9,20 +11,24 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.requests.restaction.RoleAction;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
+import org.jetbrains.annotations.Nullable;
 
 import javax.security.auth.login.LoginException;
 import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.*;
 import java.util.List;
-import java.util.Scanner;
-import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.regex.Pattern;
 
 public class DiscordBot extends ListenerAdapter {
 
@@ -33,6 +39,11 @@ public class DiscordBot extends ListenerAdapter {
     private static JDA bot;
     private static TextChannel bridgeChannel;
     private static TextChannel prayerChannel;
+    private static Guild discordServer;
+    private static Role empireOwnerRole;
+    private static final Random random = new Random();
+
+    private static final Map<String, DiscordLinkRequest> minecraftDiscordAccountLinkRequests = new HashMap<>();
 
     public static void init() throws LoginException, InterruptedException {
         String token = "";
@@ -53,9 +64,14 @@ public class DiscordBot extends ListenerAdapter {
             .build();
         bot.awaitReady();
 
-        Guild discordServer = bot.getGuildById(GUILD_ID);
-        assert discordServer != null;
-        System.out.println(discordServer);
+        discordServer = bot.getGuildById(GUILD_ID);
+        if (discordServer == null)
+            throw new NullPointerException("Could not get JDA Guild for guild ID " + GUILD_ID);
+
+        empireOwnerRole = discordServer.getRoleById("775925631577096242");
+        if (empireOwnerRole == null)
+            throw new NullPointerException("Could not get empire owner role in Discord server");
+
         bridgeChannel = discordServer.getTextChannelById(BRIDGE_CHANNEL_ID);
         prayerChannel = discordServer.getTextChannelById(PRAYER_CHANNEL_ID);
 
@@ -122,15 +138,163 @@ public class DiscordBot extends ListenerAdapter {
     public static void close() {
         bot.shutdownNow();
     }
-    
+
+    private static String generateLinkCode() {
+        final StringBuilder codeBuilder = new StringBuilder();
+        for (int i = 0; i < 6; i++)
+            codeBuilder
+                .append(random.nextInt(10))
+                .append(i == 2 ? "-" : "");
+        return codeBuilder.toString();
+    }
+
+    @Nullable
+    public static String getPlayerLinkCode(UUID uuid) {
+        for (final Map.Entry<String, DiscordLinkRequest> entry : minecraftDiscordAccountLinkRequests.entrySet()) {
+            if (entry.getValue().getPlayerId().equals(uuid))
+                return entry.getKey();
+        }
+        return null;
+    }
+
+    /**
+     * Generates a six-digit code (e.g. 123-456) that the user can direct message the bot to link their
+     * Minecraft and Discord
+     * accounts and stores it
+     * @return Link code
+     */
+    public static String addPendingLinkCode(UUID linker) {
+        final String code = generateLinkCode();
+        minecraftDiscordAccountLinkRequests.put(
+            code,
+            new DiscordLinkRequest(
+                linker,
+                Bukkit.getScheduler().scheduleSyncDelayedTask(
+                    TinyEmpires.getInstance(),
+                    () -> {
+                        minecraftDiscordAccountLinkRequests.remove(code);
+                        final Player player = Bukkit.getPlayer(linker);
+                        if (player != null)
+                            player.sendMessage(ChatColor.RED +
+                                String.format(
+                                    "You took too long to link your Discord account and the code %s is now void",
+                                    ChatColor.BOLD + code + ChatColor.RED
+                                )
+                            );
+                    },
+                    60 * 20
+                )
+            )
+        );
+        return code;
+    }
+
+    public static RoleAction createRoleAction(String name, String colorName) {
+        return discordServer
+            .createRole()
+            .setName(name)
+            .setHoisted(true)
+            .setMentionable(true)
+            .setColor(Color.getColor(colorName));
+    }
+
+    public static void deleteEmpireRole(Empire empire) {
+        final Role role = discordServer.getRoleById(empire.getDiscordRoleId());
+        if (role == null)
+            throw new NullPointerException("Could not get empire's Discord role from ID: " + empire.getDiscordRoleId());
+        role.delete().queue();
+    }
+
+    public static void removeEmpireDiscordRoleFromUser(TEPlayer player, Empire empire) {
+        // assumes player has a nonnull discord ID
+        final Role role = discordServer.getRoleById(empire.getDiscordRoleId());
+        if (role == null)
+            throw new NullPointerException("Could not get empire's Discord role from ID: " + empire.getDiscordRoleId());
+        discordServer.removeRoleFromMember(player.getDiscordId(), role).queue();
+    }
+
+    public static void giveUserEmpireDiscordRole(TEPlayer player, Empire empire) {
+        // assumes player has a nonnull discord ID
+        final Role role = discordServer.getRoleById(empire.getDiscordRoleId());
+        if (role == null)
+            throw new NullPointerException("Could not get empire's Discord role from ID: " + empire.getDiscordRoleId());
+        discordServer.addRoleToMember(player.getDiscordId(), role).queue();
+    }
+
+    public static void giveUserEmpireOwnerRole(TEPlayer tePlayer) {
+        discordServer
+            .addRoleToMember(tePlayer.getDiscordId(), empireOwnerRole)
+            .queue();
+    }
+
+    public static void removeEmpireOwnerRoleFromUser(TEPlayer tePlayer) {
+        discordServer
+            .removeRoleFromMember(tePlayer.getDiscordId(), empireOwnerRole)
+            .queue();
+    }
+
+    private static final Pattern codePattern = Pattern.compile("[0-9]{3}-[0-9]{3}");
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
-        Message msg = event.getMessage();
+        final Message msg = event.getMessage();
         if (msg.getAuthor().isBot())
             return;
-        MessageChannel channel = event.getChannel();
+        final MessageChannel channel = event.getChannel();
+        final String content = msg.getContentRaw();
+        if (channel.getType() == ChannelType.PRIVATE) {
+            if (!codePattern.matcher(content).find()) {
+                channel
+                    .sendMessage("For linking a Minecraft account with a Pixel Empires Discord one, only a " +
+                    "verbatim verification code of the form `123-456` can be used.")
+                    .queue();
+                return;
+            }
+
+            final DiscordLinkRequest linkRequest = minecraftDiscordAccountLinkRequests.get(content);
+            if (linkRequest.getPlayerId() == null) {
+                channel
+                    .sendMessage(String.format(
+                        "'%s' is not an existing link code",
+                        content
+                    ))
+                    .queue();
+                return;
+            }
+
+            final TEPlayer tePlayer = TEPlayer.getTEPlayer(linkRequest.getPlayerId());
+            if (tePlayer == null) {
+                channel
+                    .sendMessage("Unable to find your account in the database. Please contact a developer and we will" +
+                        " attend to this promptly.")
+                    .queue();
+                return;
+            }
+
+            // run task on main Spigot thread to avoid changing player scoreboard asynchronously
+            Bukkit.getScheduler().runTask(
+                TinyEmpires.getInstance(),
+                () -> tePlayer.setDiscordId(msg.getAuthor().getId())
+            );
+            final Player player = Bukkit.getPlayer(linkRequest.getPlayerId());
+            if (player != null) {
+                player.sendMessage(ChatColor.LIGHT_PURPLE + String.format(
+                    "Success! Your Minecraft account was linked to %s",
+                    ChatColor.BOLD + msg.getAuthor().getAsTag()
+                ));
+                channel.sendMessage(String.format(
+                    "Successfully linked account to *%s*",
+                    player.getName()
+                )).queue();
+                if (tePlayer.isInEmpire()) {
+                    giveUserEmpireDiscordRole(tePlayer, tePlayer.getEmpire());
+                    if (tePlayer.isOwner())
+                        giveUserEmpireOwnerRole(tePlayer);
+                }
+            }
+            return;
+        }
+
         if (channel.getId().equals(BRIDGE_CHANNEL_ID)) {
-            String content = msg.getContentRaw();
             Bukkit.broadcastMessage("" + ChatColor.GRAY + ChatColor.BOLD + String.format(
                 "[DISCORD]%s %s » %s",
                 ChatColor.RESET,

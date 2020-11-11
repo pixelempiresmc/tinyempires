@@ -3,6 +3,7 @@ package dev.sucrose.tinyempires.commands.arena;
 import dev.sucrose.tinyempires.TinyEmpires;
 import dev.sucrose.tinyempires.models.*;
 import org.bukkit.*;
+import org.bukkit.Color;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -11,14 +12,18 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent;
+import org.bukkit.event.entity.FoodLevelChangeEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
-import org.bukkit.inventory.meta.CrossbowMeta;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.inventory.meta.*;
 import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -26,11 +31,9 @@ import org.bukkit.potion.PotionType;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
-import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class Yggdrasil implements Listener, CommandExecutor {
 
@@ -49,33 +52,38 @@ public class Yggdrasil implements Listener, CommandExecutor {
     private static final Random random = new Random();
     private static final World world;
     private static final Scoreboard yggdrasilScoreboard;
+    private static final ScoreboardManager scoreboardManager;
+    private static final List<Location> woolBlocksPlaced = new ArrayList<>();
 
     static {
-        final ScoreboardManager scoreboardManager = Bukkit.getScoreboardManager();
+        scoreboardManager = Bukkit.getScoreboardManager();
         if (scoreboardManager == null)
             throw new NullPointerException("ScoreboardManager as null when fetching it from Bukkit");
 
         yggdrasilScoreboard = scoreboardManager.getMainScoreboard();
         world = Bukkit.getWorld("world");
         START_LOCATION = new Location(world, 1394.5, 79, -2585.5);
-        spawnLocations.put(YggdrasilTeam.RED, new Location(world, 1379.5, 105, -2515.5, -90, 0));
-        spawnLocations.put(YggdrasilTeam.GREEN, new Location(world, 1401, 105, -2538.5, 0, 0));
-        spawnLocations.put(YggdrasilTeam.YELLOW, new Location(world, 1424.5, 105, -2515.5, 90, 0));
-        spawnLocations.put(YggdrasilTeam.BLUE, new Location(world, 1401, 105, -2493.5, -180, 0));
+        spawnLocations.put(YggdrasilTeam.RED, new Location(world, 1378.5, 105, -2514.5, -90, 0));
+        spawnLocations.put(YggdrasilTeam.GREEN, new Location(world, 1401.5, 105, -2537.5, 0, 0));
+        spawnLocations.put(YggdrasilTeam.YELLOW, new Location(world, 1424.5, 105, -2514.5, 90, 0));
+        spawnLocations.put(YggdrasilTeam.BLUE, new Location(world, 1401.5, 105, -2491.5, 180, 0));
 
         fillPlanes.add(new FillPlane(1399, 105, -2494, 1403, 107, -2494));
-        fillPlanes.add(new FillPlane(1380, 105, -2517, 1380, 107, -2515));
+        fillPlanes.add(new FillPlane(1380, 105, -2517, 1380, 107, -2513));
         fillPlanes.add(new FillPlane(1399, 105, -2536, 1403, 107, -2536));
         fillPlanes.add(new FillPlane(1422, 105, -2517, 1422, 107, -2513));
 
-        teamOptionsLeft.addAll(Arrays.asList(YggdrasilTeam.values()));
-
+        resetTeamOptionList();
         final ScoreboardManager scoreboard = Bukkit.getScoreboardManager();
         if (scoreboard == null)
             throw new NullPointerException("ScoreboardManager as null when fetching it from Bukkit");
 
         for (final YggdrasilTeam team : YggdrasilTeam.values())
             registerScoreboardTeamAndPutInMap(team);
+    }
+
+    private static void resetTeamOptionList() {
+        teamOptionsLeft.addAll(Arrays.asList(YggdrasilTeam.values()));
     }
 
     private static void registerScoreboardTeamAndPutInMap(YggdrasilTeam team) {
@@ -105,6 +113,7 @@ public class Yggdrasil implements Listener, CommandExecutor {
                 if (player == null)
                     throw new NullPointerException("Could not get player of uuid " + uuid + " when running arena-wide" +
                         " player functor in Yggdrasil");
+                System.out.println("Mapping function over player: " + player.getName());
                 functor.run(player);
             });
         }
@@ -117,7 +126,7 @@ public class Yggdrasil implements Listener, CommandExecutor {
     private void broadcastWithTextAndTitle(String message, String title) {
         doForEachPlayer(player -> {
             player.sendMessage(message);
-            player.sendTitle(title, "", 10, 70, 20);
+            player.sendTitle(title, "", 10, 30, 20);
         });
     }
 
@@ -138,6 +147,11 @@ public class Yggdrasil implements Listener, CommandExecutor {
             return false;
         }
 
+        if (args.length < 1) {
+            sender.sendMessage(ChatColor.RED + "/yggdrasil <[red/blue/yellow/green]/start/cancel/list/leave>");
+            return false;
+        }
+
         final String option = args[0];
         try {
             final YggdrasilTeam team = YggdrasilTeam.valueOf(option.toUpperCase());
@@ -146,9 +160,17 @@ public class Yggdrasil implements Listener, CommandExecutor {
                 return false;
             }
 
-            player.teleport(spawnLocations.get(team));
             // add player uuid to team list
             final YggdrasilTeam originalTeam = playerEntry.getTeam();
+            if (team == originalTeam) {
+                sender.sendMessage(ChatColor.RED + String.format(
+                    "You're already in %s",
+                    "" + ChatColor.BOLD + yggdrasilTeamToChatColor(team) + team.name()
+                ));
+                return false;
+            }
+
+            player.teleport(spawnLocations.get(team));
             if (teams.get(originalTeam).size() == 1) {
                 teams.remove(originalTeam);
             } else {
@@ -166,6 +188,7 @@ public class Yggdrasil implements Listener, CommandExecutor {
                 ChatColor.BOLD + sender.getName() + ChatColor.YELLOW,
                 "" + ChatColor.valueOf(team.name()) + ChatColor.BOLD + team.name().toLowerCase() + ChatColor.YELLOW
             ));
+            setPlayerInventory(team, player);
             return true;
         } catch (IllegalArgumentException ignore) {}
 
@@ -177,7 +200,7 @@ public class Yggdrasil implements Listener, CommandExecutor {
                 }
 
                 if (active) {
-                    sender.sendMessage(ChatColor.RED + "The match is current ongoing");
+                    sender.sendMessage(ChatColor.RED + "The match is currently ongoing");
                     return false;
                 }
 
@@ -209,7 +232,8 @@ public class Yggdrasil implements Listener, CommandExecutor {
                                 countingDown = false;
                                 for (final FillPlane plane : fillPlanes)
                                     plane.fill(Material.AIR);
-                                teamsLeft.putAll(teams);
+                                for (final Map.Entry<YggdrasilTeam, List<UUID>> entry : teams.entrySet())
+                                    teamsLeft.put(entry.getKey(), new ArrayList<>(entry.getValue()));
                                 return;
                             }
 
@@ -249,6 +273,7 @@ public class Yggdrasil implements Listener, CommandExecutor {
                 }
 
                 Bukkit.getScheduler().cancelTask(countDownTask);
+                countingDown = false;
                 broadcast(ChatColor.RED + String.format(
                     "%s cancelled the match",
                     ChatColor.BOLD + sender.getName() + ChatColor.RED
@@ -260,6 +285,21 @@ public class Yggdrasil implements Listener, CommandExecutor {
             default:
                 sender.sendMessage(ChatColor.RED + "/yggdrasil <start/cancel/leave/list/[team]");
                 return false;
+        }
+    }
+
+    private static Material yggdrasilTeamToWool(YggdrasilTeam team) {
+        switch (team) {
+            case RED:
+                return Material.RED_WOOL;
+            case YELLOW:
+                return Material.YELLOW_WOOL;
+            case GREEN:
+                return Material.LIME_WOOL;
+            case BLUE:
+                return Material.BLUE_WOOL;
+            default:
+                throw new NullPointerException("Could not get wool type for YggdrasilTeam " + team);
         }
     }
 
@@ -292,22 +332,46 @@ public class Yggdrasil implements Listener, CommandExecutor {
         doForEachPlayer(p -> {
             final YggdrasilPlayerEntry pEntry = arenaPlayerEntryMap.get(p.getUniqueId());
             pEntry.restore(p);
-            p.setGameMode(GameMode.SURVIVAL);
-            p.setFlying(false);
-            p.setInvulnerable(false);
+            p.setAllowFlight(false);
+            System.out.println("Set player flying: " + p.getAllowFlight());
+            System.out.println("Set player invulnerability: " + p.isInvulnerable());
+            p.setCollidable(true);
+            System.out.println("Set player collidability: " + p.isCollidable());
+
             p.teleport(START_LOCATION);
+            p.setScoreboard(scoreboardManager.getNewScoreboard());
+            p.setGameMode(GameMode.SURVIVAL);
             arenaPlayerEntryMap.remove(p.getUniqueId());
+            scoreboardTeams.get(pEntry.getTeam()).removeEntry(p.getName());
+
+            System.out.println("Win function for: " + p.getUniqueId());
         });
 
         teams.clear();
         teamsLeft.clear();
 
+        for (final Iterator<Location> itr = woolBlocksPlaced.iterator(); itr.hasNext();) {
+            itr.next().getBlock().setType(Material.AIR);
+            itr.remove();
+        }
+
         for (final FillPlane plane : fillPlanes)
             plane.fill(Material.IRON_BARS);
+
+        active = false;
+        resetTeamOptionList();
     }
 
     @EventHandler
-    public void onEntityDamage(EntityDamageByEntityEvent event) {
+    public void onFoodLevelChange(FoodLevelChangeEvent event) {
+        final Player player = (Player) event.getEntity();
+        final YggdrasilPlayerEntry playerEntry = arenaPlayerEntryMap.get(player.getUniqueId());
+        if (playerEntry != null)
+            event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onEntityDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player))
             return;
         final Player victim = (Player) event.getEntity();
@@ -317,21 +381,26 @@ public class Yggdrasil implements Listener, CommandExecutor {
 
         final UUID uuid = victim.getUniqueId();
         final YggdrasilPlayerEntry playerEntry = arenaPlayerEntryMap.get(uuid);
-        if (playerEntry == null)
+        // return if player has no entry in arena or if they still have an entry but are not in the teams remaining
+        // (for spectators)
+        if (playerEntry == null
+                || !teamsLeft.get(playerEntry.getTeam()).contains(uuid))
             return;
-        // if player killed by arrow get arrow shooter
-        final Player killer = event.getDamager().getType() == EntityType.ARROW
-            ? (Player) ((Arrow) event.getDamager()).getShooter()
-            : (Player) event.getDamager();
-        if (killer == null)
-            throw new NullPointerException("Killer as null when victim killed by arrow");
+        Player killer = null;
+        // if player was killed by player/arrow/entity then make killer, else keep it null (e.g. died by fall damage)
+        if (event instanceof EntityDamageByEntityEvent) {
+            final EntityDamageByEntityEvent entityDamageByEntityEvent = (EntityDamageByEntityEvent) event;
+            // if melee than killer is player else arrow shooter
+            killer = entityDamageByEntityEvent.getDamager().getType() == EntityType.ARROW
+                ? (Player) ((Arrow) entityDamageByEntityEvent.getDamager()).getShooter()
+                : (Player) entityDamageByEntityEvent.getDamager();
+        }
 
         // lightning effect
         world.strikeLightningEffect(victim.getLocation());
 
         // remove glowing and from scoreboard team
         scoreboardTeams.get(playerEntry.getTeam()).removeEntry(victim.getName());
-        victim.setGlowing(false);
 
         // remove team from those remaining
         boolean wasTeamDefeated = false;
@@ -345,11 +414,19 @@ public class Yggdrasil implements Listener, CommandExecutor {
 
         final int teamsLeftCount = teamsLeft.keySet().size();
         broadcast(ChatColor.YELLOW + String.format(
-            "%s of %s was defeated by %s! %s",
-            ChatColor.BOLD + victim.getName() + ChatColor.YELLOW,
-            "" + yggdrasilTeamToChatColor(playerEntry.getTeam()) + ChatColor.BOLD + playerEntry.getTeam().name()
-                + ChatColor.YELLOW,
-            ChatColor.BOLD + killer.getName() + ChatColor.YELLOW,
+            "%s! %s",
+            killer != null
+                ? String.format(
+                    "%s of %s was defeated by %s",
+                    ChatColor.BOLD + victim.getName() + ChatColor.YELLOW,
+                    "" + yggdrasilTeamToChatColor(playerEntry.getTeam()) + ChatColor.BOLD + playerEntry.getTeam().name()
+                    + ChatColor.YELLOW,
+                    "" + yggdrasilTeamToChatColor(playerEntry.getTeam()) + ChatColor.BOLD + killer.getName() + ChatColor.YELLOW
+                )
+                : String.format(
+                    "%s fell to their death",
+                    "" + yggdrasilTeamToChatColor(playerEntry.getTeam()) + ChatColor.BOLD + victim.getName() + ChatColor.YELLOW
+                ),
             teamsLeftCount > 1
                 ? String.format(
                     "%s and %d players remain!",
@@ -366,51 +443,115 @@ public class Yggdrasil implements Listener, CommandExecutor {
                 "" + yggdrasilTeamToChatColor(playerTeam) + ChatColor.BOLD + playerTeam.name() + ChatColor.YELLOW
             ));
 
-        final YggdrasilPlayerEntry killerEntry = arenaPlayerEntryMap.get(killer.getUniqueId());
-        if (teamsLeft.keySet().size() == 1)
+        event.setCancelled(true);
+        final YggdrasilPlayerEntry killerEntry =
+            killer != null
+                ? arenaPlayerEntryMap.get(killer.getUniqueId())
+                : arenaPlayerEntryMap.get(teamsLeft.values().iterator().next().get(0));
+        if (teamsLeft.keySet().size() == 1) {
             onWinnerDetermined(killerEntry);
+        } else {
+            // go into flying mode if match is not over
+            System.out.println("Cancelling event");
+            victim.setGameMode(GameMode.ADVENTURE);
+            victim.setHealth(20);
+            victim.setFoodLevel(20);
+            victim.getInventory().clear();
+            victim.setAllowFlight(true);
+        }
+    }
 
-        // go into flying mode if match is not over
-        victim.setInvulnerable(true);
-        victim.getInventory().clear();
-        victim.setFlying(true);
+    private void removePlayerFromPresentTeams(YggdrasilTeam team, UUID uuid) {
+        if (teams.get(team).size() == 1) {
+            teamOptionsLeft.add(team);
+            teams.remove(team);
+        } else {
+            teams.get(team).remove(uuid);
+        }
     }
 
     private void onPlayerLeave(Player player, YggdrasilPlayerEntry arenaPlayerEntry) {
-        broadcast(ChatColor.YELLOW + String.format(
-            "%s has left the arena",
-            ChatColor.BOLD + player.getName() + ChatColor.YELLOW
-        ));
         final UUID uuid = player.getUniqueId();
         final YggdrasilTeam yggdrasilTeam = arenaPlayerEntry.getTeam();
-        if (teams.get(yggdrasilTeam).size() == 1) {
-            teams.remove(yggdrasilTeam);
-        } else {
-            teams.get(yggdrasilTeam).remove(uuid);
-        }
-
-        scoreboardTeams.get(yggdrasilTeam).removeEntry(player.getName());
-        arenaPlayerEntry.restore(player);
         arenaPlayerEntryMap.remove(uuid);
         player.teleport(START_LOCATION);
         player.setGameMode(GameMode.SURVIVAL);
+        arenaPlayerEntry.restore(player);
+        scoreboardTeams.get(yggdrasilTeam).removeEntry(player.getName());
+        // to avoid seeing player colors
+        player.setScoreboard(scoreboardManager.getNewScoreboard());
 
+        // if player is in the arena but spectating
+        if (!teamsLeft.containsKey(yggdrasilTeam)
+                || !teamsLeft.get(yggdrasilTeam).contains(uuid)) {
+            broadcast(ChatColor.YELLOW + String.format(
+                "%s has stopped spectating the arena",
+                ChatColor.BOLD + player.getName() + ChatColor.YELLOW
+            ));
+            removePlayerFromPresentTeams(yggdrasilTeam, uuid);
+            return;
+        }
+
+        final ChatColor teamColor = yggdrasilTeamToChatColor(yggdrasilTeam);
         if (active) {
+            broadcast(ChatColor.YELLOW + String.format(
+                "%s of team %s has left the arena",
+                "" + teamColor + ChatColor.BOLD + player.getName() +
+                    ChatColor.YELLOW,
+                "" + teamColor + ChatColor.BOLD + yggdrasilTeam.name() + ChatColor.YELLOW
+            ));
             world.strikeLightningEffect(player.getLocation());
-            if (teams.get(arenaPlayerEntry.getTeam()).size() > 1) {
-                teams.get(arenaPlayerEntry.getTeam()).remove(uuid);
+            if (teamsLeft.get(arenaPlayerEntry.getTeam()).size() > 1) {
+                teamsLeft.get(arenaPlayerEntry.getTeam()).remove(uuid);
             } else {
-                teams.remove(arenaPlayerEntry.getTeam());
+                teamsLeft.remove(arenaPlayerEntry.getTeam());
                 broadcast(ChatColor.YELLOW + String.format(
                     "Team %s has conceded!",
-                    "" + yggdrasilTeamToChatColor(arenaPlayerEntry.getTeam()) + ChatColor.BOLD + arenaPlayerEntry.getTeam().name() + ChatColor.YELLOW
+                    "" + teamColor + ChatColor.BOLD + yggdrasilTeam.name() + ChatColor.YELLOW
                 ));
-                if (teams.size() == 1)
+                if (teamsLeft.size() == 1)
                     onWinnerDetermined(arenaPlayerEntryMap.values().iterator().next());
             }
-            player.setFlying(false);
-            player.setInvulnerable(false);
+            player.setAllowFlight(false);
+            player.setCollidable(true);
+        } else {
+            broadcast(ChatColor.YELLOW + String.format(
+                "%s has left the arena",
+                ChatColor.BOLD + player.getName() + ChatColor.YELLOW
+            ));
+            removePlayerFromPresentTeams(yggdrasilTeam, uuid);
         }
+    }
+
+    @EventHandler
+    public static void onPlayerRegeneration(EntityRegainHealthEvent event) {
+        if (event.getEntityType() != EntityType.PLAYER)
+            return;
+        // prevent in-arena health regeneration
+        if (event.getRegainReason() == EntityRegainHealthEvent.RegainReason.SATIATED
+                && arenaPlayerEntryMap.containsKey(event.getEntity().getUniqueId()))
+            event.setCancelled(true);
+    }
+
+    @EventHandler
+    public static void onPlayerBreakBlock(BlockBreakEvent event) {
+        final UUID uuid = event.getPlayer().getUniqueId();
+        // let players destroy wool but nothing else
+        if (arenaPlayerEntryMap.containsKey(uuid)) {
+            if (!event.getBlock().getType().name().contains("WOOL"))
+                event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public static void onPlayerPlaceBlock(BlockPlaceEvent event) {
+        // players can't place wool unless the game has started
+        if (arenaPlayerEntryMap.containsKey(event.getPlayer().getUniqueId())
+                && !active) {
+            event.setCancelled(true);
+            return;
+        }
+        woolBlocksPlaced.add(event.getBlockPlaced().getLocation());
     }
 
     @EventHandler
@@ -420,6 +561,16 @@ public class Yggdrasil implements Listener, CommandExecutor {
         if (arenaPlayerEntry == null)
             return;
         onPlayerLeave(player, arenaPlayerEntry);
+    }
+
+    @EventHandler
+    public void onPlayerEnderPearlThrow(PlayerInteractEvent event) {
+        final Player player = event.getPlayer();
+        if (event.getItem() != null
+                && event.getItem().getType() == Material.ENDER_PEARL
+                && arenaPlayerEntryMap.containsKey(player.getUniqueId())
+                && !active)
+            event.setCancelled(true);
     }
 
     @EventHandler
@@ -436,11 +587,8 @@ public class Yggdrasil implements Listener, CommandExecutor {
 
         final Player player = event.getPlayer();
         if (entrancePlane.isInPlane(location.getBlockX(), location.getBlockY(), location.getBlockZ())) {
-            if (teamOptionsLeft.size() == 0) {
-                player.sendMessage(ChatColor.RED + "The Yggdrasil arena is full!");
-                player.teleport(START_LOCATION);
-                return;
-            }
+            if (teamOptionsLeft.size() == 0)
+                teamOptionsLeft.addAll(teams.keySet());
             final int index = random.nextInt(teamOptionsLeft.size());
             final YggdrasilTeam team = teamOptionsLeft.get(index);
             teamOptionsLeft.remove(index);
@@ -458,15 +606,14 @@ public class Yggdrasil implements Listener, CommandExecutor {
                 )
             );
 
-            setPlayerInventory(player);
+            setPlayerInventory(team, player);
 
             // add player to scoreboard team for colored glowing effect
             scoreboardTeams.get(team).addEntry(player.getName());
-            player.setGlowing(true);
             player.setScoreboard(yggdrasilScoreboard);
 
-            // adventure mode so player can't modify arena
-            player.setGameMode(GameMode.ADVENTURE);
+            // add ChatColor.RESET so player name color doesn't change
+            player.setDisplayName(ChatColor.RESET + player.getName());
 
             // health and hunger
             player.setHealth(20);
@@ -477,6 +624,10 @@ public class Yggdrasil implements Listener, CommandExecutor {
                 ChatColor.BOLD + player.getName() + ChatColor.GREEN
             ));
         }
+    }
+
+    public static boolean isPlayerInGame(UUID uuid) {
+        return arenaPlayerEntryMap.containsKey(uuid);
     }
 
     private void setItemUnbreakable(ItemStack item) {
@@ -493,14 +644,49 @@ public class Yggdrasil implements Listener, CommandExecutor {
             setItemUnbreakable(item);
     }
 
-    private void setPlayerInventory(Player player) {
-        final ItemStack helmet = new ItemStack(Material.IRON_HELMET);
-        final ItemStack chestplate = new ItemStack(Material.IRON_CHESTPLATE);
-        final ItemStack leggings = new ItemStack(Material.IRON_LEGGINGS);
-        final ItemStack boots = new ItemStack(Material.IRON_BOOTS);
+    private Color teamToColor(YggdrasilTeam team) {
+        switch (team) {
+            case GREEN:
+                return Color.GREEN;
+            case RED:
+                return Color.RED;
+            case BLUE:
+                return Color.BLUE;
+            case YELLOW:
+                return Color.YELLOW;
+        }
+        return null;
+    }
+
+    private void setLeatherArmorColor(ItemStack armor, YggdrasilTeam team) {
+        final LeatherArmorMeta meta = (LeatherArmorMeta) armor.getItemMeta();
+        if (meta == null)
+            throw new NullPointerException("Could not get item meta for leather armor when setting color");
+        meta.setColor(teamToColor(team));
+        armor.setItemMeta(meta);
+    }
+
+    private void setLeatherArmorPiecesColors(YggdrasilTeam team, ItemStack ...items) {
+        for (final ItemStack item : items)
+            setLeatherArmorColor(item, team);
+    }
+
+    private void setPlayerInventory(YggdrasilTeam team, Player player) {
+        final ItemStack helmet = new ItemStack(Material.LEATHER_HELMET);
+        final ItemStack chestplate = new ItemStack(Material.LEATHER_CHESTPLATE);
+        final ItemStack leggings = new ItemStack(Material.LEATHER_LEGGINGS);
+        final ItemStack boots = new ItemStack(Material.LEATHER_BOOTS);
+        setLeatherArmorPiecesColors(team, helmet, chestplate, leggings, boots);
+
         final ItemStack shield = new ItemStack(Material.SHIELD);
-        final ItemStack sword = new ItemStack(Material.IRON_SWORD);
-        final ItemStack axe = new ItemStack(Material.IRON_AXE);
+        final ItemMeta shieldMeta = shield.getItemMeta();
+        if (shieldMeta == null)
+            throw new NullPointerException("ShieldMeta was null when fetched from crossbow in setting player " +
+                "inventory");
+        ((Damageable) shieldMeta).setDamage(10);
+
+        final ItemStack sword = new ItemStack(Material.WOODEN_SWORD);
+        final ItemStack axe = new ItemStack(Material.WOODEN_AXE);
         final ItemStack crossbow = new ItemStack(Material.CROSSBOW);
 
         // add pre-loaded crossbow arrow
@@ -513,15 +699,20 @@ public class Yggdrasil implements Listener, CommandExecutor {
         crossbow.setItemMeta(crossbowMeta);
 
         final ItemStack bow = new ItemStack(Material.BOW);
-        final ItemStack arrows = new ItemStack(Material.ARROW, 8);
-        setItemsUnbreakable(helmet, chestplate, leggings, boots, shield, sword, axe, crossbow, bow, arrows);
+        final ItemStack arrows = new ItemStack(Material.ARROW, 16);
+        setItemsUnbreakable(helmet, chestplate, leggings, boots, sword, axe, crossbow, bow);
 
         final ItemStack potion = new ItemStack(Material.POTION);
         final PotionMeta potionMeta = (PotionMeta) potion.getItemMeta();
         if (potionMeta == null)
             throw new NullPointerException("Could not get PotionMeta for potion when giving Yggdrasil inventory");
-        potionMeta.setBasePotionData(new PotionData(PotionType.INSTANT_HEAL));
+        potionMeta.addCustomEffect(new PotionEffect(PotionEffectType.HEAL, 10, 1), true);
+        potionMeta.setDisplayName(ChatColor.RESET + "Potion of Healing");
+        potionMeta.setColor(Color.FUCHSIA);
+        potion.setItemMeta(potionMeta);
 
+        final ItemStack blocks = new ItemStack(yggdrasilTeamToWool(team), 16);
+        final ItemStack enderpearl = new ItemStack(Material.ENDER_PEARL);
         final PlayerInventory inventory = player.getInventory();
         inventory.clear();
         inventory.setHelmet(helmet);
@@ -535,6 +726,8 @@ public class Yggdrasil implements Listener, CommandExecutor {
         inventory.setItem(3, crossbow);
         inventory.setItem(4, potion);
         inventory.setItem(5, arrows);
+        inventory.setItem(6, blocks);
+        inventory.setItem(7, enderpearl);
         player.updateInventory();
     }
 

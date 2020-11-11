@@ -25,12 +25,14 @@ public class TEPlayer {
     private ObjectId empire; // empire document ID
     private String position;
     private boolean jumpedInAdvancement;
+    private String discordId;
 
     static {
         fillCache();
     }
 
     public static void fillCache() {
+        playerCache.clear();
         for (final Document document : collection.find()) {
             final TEPlayer player = new TEPlayer(document);
             playerCache.put(player.getPlayerUUID(), player);
@@ -45,6 +47,7 @@ public class TEPlayer {
         document.put("empire", null);
         document.put("position", null);
         document.put("jumped_in", false);
+        document.put("discord_id", null);
         collection.insertOne(document);
         playerCache.put(uuid, new TEPlayer(document));
         return getTEPlayer(uuid);
@@ -76,6 +79,7 @@ public class TEPlayer {
         this.empire = document.getObjectId("empire");
         this.position = document.getString("position");
         this.jumpedInAdvancement = document.getBoolean("jumped_in");
+        this.discordId = document.getString("discord_id");
     }
 
     private static final ScoreboardManager manager;
@@ -235,6 +239,15 @@ public class TEPlayer {
 
     public boolean isOwner() {
         return getEmpire().getOwner().equals(playerUUID);
+    }
+
+    public String getDiscordId() {
+        return discordId;
+    }
+
+    public void setDiscordId(String discordId) {
+        this.discordId = discordId;
+        save(new Document("discord_id", discordId));
     }
 
 }

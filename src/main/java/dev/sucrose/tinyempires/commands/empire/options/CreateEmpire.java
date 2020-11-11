@@ -1,9 +1,11 @@
 package dev.sucrose.tinyempires.commands.empire.options;
 
+import dev.sucrose.tinyempires.TinyEmpires;
 import dev.sucrose.tinyempires.models.Empire;
 import dev.sucrose.tinyempires.models.CommandOption;
 import dev.sucrose.tinyempires.models.TEChunk;
 import dev.sucrose.tinyempires.models.TEPlayer;
+import dev.sucrose.tinyempires.utils.BoundUtils;
 import dev.sucrose.tinyempires.utils.DrawEmpire;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import dev.sucrose.tinyempires.utils.StringUtils;
@@ -53,39 +55,48 @@ public class CreateEmpire implements CommandOption {
             return;
         }
 
+        if (BoundUtils.isChunkInBoundsOfSpecialTerritory(chunk)) {
+            sender.sendMessage(ChatColor.RED + "You cannot claim this section of the map");
+            return;
+        }
+
         // all checks passed, make empire
-        final Empire empire;
         try {
             final World world = location.getWorld();
             if (world == null)
                 throw new NullPointerException("World found as undefined when fetching player location");
-            final ObjectId id = Empire.createEmpire(
+            Empire.createEmpire(
                 empireName,
                 location.getWorld().getName(),
                 location.getX(),
                 location.getY(),
                 location.getZ(),
-                tePlayer
-            );
-            tePlayer.setEmpireId(id);
+                tePlayer,
+                id -> {
+                    // run on main Spigot thread to avoid running asynchronously
+                    Bukkit.getScheduler().runTask(
+                        TinyEmpires.getInstance(),
+                        () -> tePlayer.setEmpireId(id)
+                    );
 
-            // insert initial empire chunk
-            empire = Empire.getEmpire(id);
-            if (empire == null)
-                throw new NullPointerException("Unable to fetch newly created empire and establish first chunk");
-            TEChunk.createTEChunk(world.getName(), chunk.getX(), chunk.getZ(), empire);
-            DrawEmpire.drawChunk(empire, world.getName(), chunk.getX(), chunk.getZ());
+                    // insert initial empire chunk
+                    final Empire empire = Empire.getEmpire(id);
+                    if (empire == null)
+                        throw new NullPointerException("Unable to fetch newly created empire and establish first chunk");
+                    TEChunk.createTEChunk(world.getName(), chunk.getX(), chunk.getZ(), empire);
+                    DrawEmpire.drawChunk(empire, world.getName(), chunk.getX(), chunk.getZ());
+                    Bukkit.broadcastMessage(ChatColor.GREEN + String.format(
+                        "%s created the empire of %s",
+                        ChatColor.BOLD + tePlayer.getName() + ChatColor.GREEN,
+                        ChatColor.BOLD + empireName
+                    ));
+                }
+            );
+
         } catch(Exception err) {
             err.printStackTrace();
             sender.sendMessage(ChatColor.RED + "Failed to create new empire, please notify a developer");
-            return;
         }
-
-        Bukkit.broadcastMessage(String.format(
-            "%s has created the empire of %s!",
-            ChatColor.BOLD + sender.getDisplayName() + ChatColor.WHITE,
-            "" + empire.getChatColor() + ChatColor.BOLD + empireName + ChatColor.WHITE
-        ));
     }
 
 }

@@ -1,5 +1,6 @@
 package dev.sucrose.tinyempires.utils;
 
+import dev.sucrose.tinyempires.TinyEmpires;
 import dev.sucrose.tinyempires.models.*;
 import org.bson.types.ObjectId;
 import org.bukkit.Bukkit;
@@ -16,16 +17,20 @@ import java.util.Map;
 
 public class DrawEmpire {
 
-    private static final DynmapAPI dynmap = (DynmapAPI) Bukkit.getServer().getPluginManager().getPlugin("Dynmap");
     private static final MarkerSet markerSet;
     private static final Map<String, ChunkMarker> chunkMarkers = new HashMap<>();
     private static final Map<ObjectId, List<String>> empireChunkMarkers = new HashMap<>();
     private static final Map<ObjectId, Icon> empireHomeMarkers = new HashMap<>();
 
     static {
-        assert dynmap != null;
-        markerSet = dynmap.getMarkerAPI().createMarkerSet("tinyempires.empirechunkmarkerset", "Empires",
-            dynmap.getMarkerAPI().getMarkerIcons(), false);
+        markerSet = TinyEmpires.getDynmap()
+            .getMarkerAPI()
+            .createMarkerSet(
+                "tinyempires.empirechunkmarkerset",
+                "Empires",
+                TinyEmpires.getDynmap().getMarkerAPI().getMarkerIcons(),
+                false
+            );
     }
 
     // worldborder
@@ -83,26 +88,26 @@ public class DrawEmpire {
             case DARK_AQUA:
             case DARK_BLUE:
             case AQUA:
-                return "blue";
+                return "blueflag";
             case DARK_GRAY:
             case BLACK:
             case GRAY:
             case WHITE:
-                return "black";
+                return "blackflag";
             case DARK_GREEN:
             case GREEN:
-                return "green";
+                return "greenflag";
             case DARK_PURPLE:
-                return "purple";
+                return "purpleflag";
             case LIGHT_PURPLE:
-                return "pink";
+                return "pinkflag";
             case DARK_RED:
             case RED:
-                return "red";
+                return "redflag";
             case GOLD:
-                return "orange";
+                return "orangeflag";
             case YELLOW:
-                return "yellow";
+                return "yellowflag";
             default:
                 return null;
         }
@@ -121,7 +126,13 @@ public class DrawEmpire {
                 empire.getId(),
                 new Icon(
                     empire,
-                    empire.getName(),
+                    String.format(
+                        "%s (%d, %d, %d)",
+                        empire.getName(),
+                        homeLocation.getBlockX(),
+                        homeLocation.getBlockY(),
+                        homeLocation.getBlockZ()
+                    ),
                     colorToFlagIcon(empire.getColor()),
                     homeLocation.getWorld().getName(),
                     homeLocation.getBlockX(),
@@ -208,13 +219,14 @@ public class DrawEmpire {
             chunkMarkers.get(key).updateDescription();
     }
 
-    public static void removeChunk(TEChunk chunk) {
+    public static void removeChunk(TEChunk chunk, Empire owner) {
         final String world = chunk.getWorld();
         final int x = chunk.getX();
         final int z = chunk.getZ();
         final String key = TEChunk.serialize(world, x, z);
         chunkMarkers.get(key).erase();
         chunkMarkers.remove(key);
+        empireChunkMarkers.get(owner.getId()).remove(TEChunk.serialize(world, x, z));
 
         // borders
         // right
@@ -267,7 +279,7 @@ public class DrawEmpire {
     }
 
     public static MarkerAPI getMarkerAPI() {
-        return dynmap.getMarkerAPI();
+        return TinyEmpires.getDynmap().getMarkerAPI();
     }
 
     public static void setEmpire(String world, int x, int z, Empire empire) {

@@ -1,8 +1,8 @@
 package dev.sucrose.tinyempires.commands.empire.options;
 
 import dev.sucrose.tinyempires.discord.DiscordBot;
-import dev.sucrose.tinyempires.models.Empire;
 import dev.sucrose.tinyempires.models.CommandOption;
+import dev.sucrose.tinyempires.models.Empire;
 import dev.sucrose.tinyempires.models.Permission;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
@@ -11,11 +11,11 @@ import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
-public class AcceptEmpireMember implements CommandOption {
+public class RemoveEmpireMember implements CommandOption {
 
     @Override
     public void execute(Player sender, String[] args) {
-        // /e accept <name>
+        // /e remove <name>
         final UUID senderUUID = sender.getUniqueId();
         final TEPlayer tePlayer = TEPlayer.getTEPlayer(senderUUID);
         if (tePlayer == null) {
@@ -35,13 +35,13 @@ public class AcceptEmpireMember implements CommandOption {
         }
 
         if (args.length < 1) {
-            sender.sendMessage(ChatColor.RED + "/e accept <name>");
+            sender.sendMessage(ChatColor.RED + "/e remove <name>");
             return;
         }
 
         final String player = args[0];
-        final TEPlayer tePlayerToAccept = TEPlayer.getTEPlayer(player);
-        if (tePlayerToAccept == null) {
+        final TEPlayer tePlayerToRemove = TEPlayer.getTEPlayer(player);
+        if (tePlayerToRemove == null) {
             sender.sendMessage(ChatColor.RED + String.format(
                 "'%s' is not an existing player",
                 player
@@ -49,19 +49,27 @@ public class AcceptEmpireMember implements CommandOption {
             return;
         }
 
-        if (!Empire.getPlayerToEmpireJoinRequest().containsKey(tePlayerToAccept.getPlayerUUID())
-                || !Empire.getPlayerToEmpireJoinRequest().get(tePlayerToAccept.getPlayerUUID()).equals(empire.getId())) {
+        if (tePlayerToRemove.getEmpire() == null
+                || tePlayerToRemove.getEmpire().getId() != empire.getId()) {
             sender.sendMessage(ChatColor.RED + String.format(
-                "%s is not currently requesting to join",
+                "%s is not currently in the empire",
                 player
             ));
             return;
         }
 
-        empire.acceptPlayerJoinRequest(tePlayer);
-        DiscordBot.giveUserEmpireDiscordRole(tePlayer, empire);
+        if (tePlayerToRemove.isOwner()) {
+            sender.sendMessage(ChatColor.RED + String.format(
+                "%s is the owner of the empire and you cannot remove them",
+                ChatColor.BOLD + player + ChatColor.RED
+            ));
+            return;
+        }
+
+        DiscordBot.removeEmpireDiscordRoleFromUser(tePlayer, empire);
+        empire.removeMember(tePlayerToRemove);
         empire.broadcast(ChatColor.GREEN, String.format(
-            "%s accepted %s to the empire. Welcome!",
+            "%s removed %s from the empire",
             sender.getName(),
             player
         ));

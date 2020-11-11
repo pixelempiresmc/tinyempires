@@ -1,6 +1,7 @@
 package dev.sucrose.tinyempires.commands.empire.options;
 
 import dev.sucrose.tinyempires.models.*;
+import dev.sucrose.tinyempires.utils.BoundUtils;
 import dev.sucrose.tinyempires.utils.DrawEmpire;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import org.bukkit.ChatColor;
@@ -19,17 +20,8 @@ public class AutoClaimEmpireChunk implements CommandOption {
     private static final Set<UUID> autoclaimers = new HashSet<>();
 
     public static void claimChunkForEmpire(String claimer, String world, int x, int z, Empire empire) {
-        double start = System.nanoTime();
         TEChunk.createTEChunk(world, x, z, empire);
-        double end = System.nanoTime();
-        System.out.printf("TEChunk#createTEChunk took %s milliseconds\n", (end - start) / 1000000);
-
-        start = System.nanoTime();
         DrawEmpire.drawChunk(empire, world, x, z);
-        end = System.nanoTime();
-        System.out.printf("DrawEmpire#drawChunk took %s milliseconds\n", (end - start) / 1000000);
-
-        start = System.nanoTime();
         empire.takeReserveCoins(TEChunk.CHUNK_COST);
         empire.broadcast(ChatColor.GREEN, String.format(
             "%s claimed a new chunk for %.1f coins at %d, %d",
@@ -38,8 +30,6 @@ public class AutoClaimEmpireChunk implements CommandOption {
             x * 16,
             z * 16
         ));
-        end = System.nanoTime();
-        System.out.printf("empire#broadcast and #takeReserveCoins took %s milliseconds\n", (end - start) / 1000000);
     }
 
     public static boolean isAutoclaiming(UUID uuid) {
@@ -99,7 +89,8 @@ public class AutoClaimEmpireChunk implements CommandOption {
 
         // claim current chunk if available
         final String worldName = world.getName();
-        if (TEChunk.getChunk(worldName, chunk.getX(), chunk.getZ()) == null)
+        if (TEChunk.getChunk(worldName, chunk.getX(), chunk.getZ()) == null
+                && BoundUtils.isChunkInBoundsOfSpecialTerritory(chunk))
             claimChunkForEmpire(sender.getName(), worldName, chunk.getX(), chunk.getZ(), empire);
     }
 

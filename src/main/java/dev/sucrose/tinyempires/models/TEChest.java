@@ -22,6 +22,7 @@ public class TEChest {
     }
 
     public static void fillCache() {
+        chestToPlayerCache.clear();
         for (final Document document : collection.find()) {
             final TEChest chest = new TEChest(document);
             chestToPlayerCache.put(

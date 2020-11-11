@@ -49,12 +49,14 @@ public class ChunkMarker {
             "<div style=\"font-family:Verdana;line-height:1.5;\">"
             + "<h2 style=\"margin: 2px 0px;\">%s</h2>"
             + "%s<br />"
+            + "Owned by %s"
             + "Reserve: %.1f<br />"
             + "%s member%s <br />"
             + "%d, %d"
             + "</div>",
             empire.getName(),
             empire.getDescription() == null ? "<i>No description</i>" : empire.getDescription(),
+            empire.getOwner(),
             empire.getReserve(),
             empire.getMembers().size(),
             empire.getMembers().size() > 1 ? "s" : "",

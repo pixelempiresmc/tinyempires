@@ -4,6 +4,8 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.lang.Nullable;
 import dev.sucrose.tinyempires.TinyEmpires;
+import dev.sucrose.tinyempires.commands.empire.options.EmpireCreationCallback;
+import dev.sucrose.tinyempires.discord.DiscordBot;
 import dev.sucrose.tinyempires.utils.DrawEmpire;
 import org.bson.Document;
 import org.bson.types.ObjectId;
@@ -14,6 +16,8 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Empire {
 
@@ -36,6 +40,7 @@ public class Empire {
     // name of law to law
     private final Map<String, Law> laws = new HashMap<>();
     private final Map<UUID, Double> memberDebt = new HashMap<>();
+    private final String discordRoleId;
 
     // Wars are only twenty minutes and can be stored in memory
     private Empire atWarWith = null;
@@ -46,6 +51,7 @@ public class Empire {
     }
 
     public static void fillCache() {
+        empireCache.clear();
         for (final Document document : collection.find()) {
             final Empire empire = new Empire(document);
             empireCache.put(
@@ -55,32 +61,40 @@ public class Empire {
         }
     }
 
-    public static ObjectId createEmpire(String name, String homeWorld, double homeX, double homeY, double homeZ,
-                                        TEPlayer tePlayer) {
+    // use synchronous callback to account for Discord role creation
+    public static void createEmpire(String name, String homeWorld, double homeX, double homeY, double homeZ,
+                                        TEPlayer tePlayer, EmpireCreationCallback callback) {
         final String uuidString = tePlayer.getPlayerUUID().toString();
-        final Document document = new Document("name", name)
-            .append("reserve", 0.0d)
-            .append("description", null)
-            .append("color", Color.values()[new Random().nextInt(Color.values().length - 1)].name())
-            .append("members", new ArrayList<String>() {{
-                add(uuidString);
-            }})
-            .append("positions", new Document())
-            .append("laws", new Document())
-            .append("debt", new Document())
-            .append("owner", uuidString)
-            .append("home", new Document("world", homeWorld)
-                .append("x", homeX)
-                .append("y", homeY)
-                .append("z", homeZ)
-            );
-        final InsertOneResult result = collection.insertOne(document);
-        if (result.getInsertedId() == null)
-            throw new NullPointerException("Unable to insert document");
-        final ObjectId id = result.getInsertedId().asObjectId().getValue();
-        final Empire empire = new Empire(document);
-        empireCache.put(id, empire);
-        return id;
+        final String colorName = Color.values()[new Random().nextInt(Color.values().length - 1)].name();
+        DiscordBot.createRoleAction(name, colorName)
+            .queue(role -> {
+                final Document document = new Document("name", name)
+                    .append("reserve", 0.0d)
+                    .append("description", null)
+                    .append("color", colorName)
+                    .append("members", new ArrayList<String>() {{
+                        add(uuidString);
+                    }})
+                    .append("positions", new Document())
+                    .append("laws", new Document())
+                    .append("debt", new Document())
+                    .append("owner", uuidString)
+                    .append("home", new Document("world", homeWorld)
+                        .append("x", homeX)
+                        .append("y", homeY)
+                        .append("z", homeZ)
+                    )
+                    .append("discord_id", role.getId());
+                final InsertOneResult result = collection.insertOne(document);
+                if (result.getInsertedId() == null)
+                    throw new NullPointerException("Unable to insert document");
+                final ObjectId id = result.getInsertedId().asObjectId().getValue();
+                final Empire empire = new Empire(document);
+                empireCache.put(id, empire);
+                callback.run(id);
+                DiscordBot.giveUserEmpireDiscordRole(tePlayer, empire);
+                DiscordBot.giveUserEmpireOwnerRole(tePlayer);
+            });
     }
 
     public static void clearCache() {
@@ -99,6 +113,7 @@ public class Empire {
         description = document.getString("description");
         owner = UUID.fromString(document.getString("owner"));
         color = Color.valueOf(document.getString("color"));
+        discordRoleId = document.getString("discord_id");
 
         final Document homeLocationDocument = document.get("home", Document.class);
         homeLocation = new Location(
@@ -198,6 +213,7 @@ public class Empire {
                 new Document("members", player.getPlayerUUID())
             )
         );
+        DrawEmpire.updateEmpireChunkDescriptions(this);
     }
 
     public void setColor(Color color) {
@@ -218,6 +234,7 @@ public class Empire {
 
     public void setName(String name) {
         this.name = name;
+        DrawEmpire.updateEmpireChunkDescriptions(this);
         save(new Document("name", name));
     }
 
@@ -272,6 +289,7 @@ public class Empire {
             )
         );
         updateMemberScoreboards();
+        DrawEmpire.updateEmpireChunkDescriptions(this);
     }
 
     public Position getPosition(String name) {
@@ -347,6 +365,7 @@ public class Empire {
     public void setOwner(UUID owner) {
         this.owner = owner;
         save(new Document("owner", owner.toString()));
+        DrawEmpire.updateEmpireChunkDescriptions(this);
     }
 
     public UUID getOwner() {
@@ -462,6 +481,10 @@ public class Empire {
                     .append("home.z", homeLocation.getZ())
             )
         );
+    }
+
+    public String getDiscordRoleId() {
+        return discordRoleId;
     }
 
 

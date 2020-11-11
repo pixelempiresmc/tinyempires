@@ -1,5 +1,6 @@
 package dev.sucrose.tinyempires.commands.empire.options;
 
+import dev.sucrose.tinyempires.discord.DiscordBot;
 import dev.sucrose.tinyempires.models.Empire;
 import dev.sucrose.tinyempires.models.CommandOption;
 import dev.sucrose.tinyempires.models.TEChunk;
@@ -31,6 +32,10 @@ public class LeaveEmpire implements CommandOption {
         }
 
         // leave empire
+        DiscordBot.removeEmpireDiscordRoleFromUser(tePlayer, empire);
+        if (tePlayer.isOwner())
+            DiscordBot.removeEmpireOwnerRoleFromUser(tePlayer);
+
         tePlayer.leaveEmpire();
         empire.removeMember(tePlayer);
         Bukkit.broadcastMessage(ChatColor.YELLOW + String.format(
@@ -45,13 +50,27 @@ public class LeaveEmpire implements CommandOption {
                 "Everyone has left the empire of %s and it has now disbanded!",
                 empire.getName()
             ));
+
             // erase chunk markers + delete in mongo
             for (final TEChunk chunk : TEChunk.getEmpireChunks(empire.getId())) {
                 TEChunk.deleteChunk(chunk);
-                DrawEmpire.removeChunk(chunk);
+                DrawEmpire.removeChunk(chunk, empire);
             }
+
             // delete empire in mongo
             empire.delete();
+
+            // update player scoreboards to account for deleted chunks
+            Bukkit.getOnlinePlayers().forEach(p -> {
+                final TEPlayer teP = TEPlayer.getTEPlayer(p.getUniqueId());
+                if (teP == null)
+                    throw new NullPointerException("Could not get TEPlayer instance when updating player " +
+                        "scoreboards for user with ID: " + p.getUniqueId());
+                teP.updatePlayerScoreboard();
+            });
+
+            // delete empire Discord role
+            DiscordBot.deleteEmpireRole(empire);
         }
     }
 

@@ -1,5 +1,6 @@
 package dev.sucrose.tinyempires.commands.empire.options;
 
+import dev.sucrose.tinyempires.discord.DiscordBot;
 import dev.sucrose.tinyempires.models.Empire;
 import dev.sucrose.tinyempires.models.CommandOption;
 import dev.sucrose.tinyempires.models.TEPlayer;
@@ -48,6 +49,8 @@ public class TransferEmpireOwner implements CommandOption {
             return;
         }
 
+        DiscordBot.removeEmpireOwnerRoleFromUser(tePlayer);
+        DiscordBot.giveUserEmpireOwnerRole(newOwner);
         empire.setOwner(newOwner.getPlayerUUID());
         empire.broadcastText(ChatColor.YELLOW + String.format(
             "%s has transferred ownership of the empire to %s!",

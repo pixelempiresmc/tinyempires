@@ -52,7 +52,7 @@ public class UnclaimEmpireChunk implements CommandOption {
         }
 
         TEChunk.deleteChunk(teChunk);
-        DrawEmpire.removeChunk(teChunk);
+        DrawEmpire.removeChunk(teChunk, empire);
         empire.broadcast(ChatColor.GREEN, String.format(
             "%s unclaimed a chunk at %d, %d in the %s",
             sender.getName(),

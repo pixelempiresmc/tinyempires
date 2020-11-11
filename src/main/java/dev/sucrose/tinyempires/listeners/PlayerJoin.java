@@ -28,14 +28,16 @@ public class PlayerJoin implements Listener {
         }
         tePlayer.updatePlayerScoreboard();
 
-        player.setInvisible(false);
-
         // invisible players
         for (final UUID uuid : Invisible.getInvisiblePlayers()) {
             final Player p = Bukkit.getPlayer(uuid);
             if (p != null)
                 player.hidePlayer(TinyEmpires.getInstance(), p);
         }
+
+        // DEBUG FOR YGGDRASIL
+        player.setInvulnerable(false);
+        player.setCollidable(true);
     }
 
 }

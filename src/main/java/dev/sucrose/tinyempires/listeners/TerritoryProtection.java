@@ -3,18 +3,22 @@ package dev.sucrose.tinyempires.listeners;
 import dev.sucrose.tinyempires.models.Empire;
 import dev.sucrose.tinyempires.models.TEChunk;
 import dev.sucrose.tinyempires.models.TEPlayer;
+import dev.sucrose.tinyempires.utils.BoundUtils;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.block.data.type.Door;
+import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.material.PressureSensor;
 
@@ -60,6 +64,7 @@ public class TerritoryProtection implements Listener {
     @EventHandler
     public void onPlayerPlaceBlock(BlockPlaceEvent event) {
         final Player player = event.getPlayer();
+
         final TEPlayer tePlayer = TEPlayer.getTEPlayer(player.getUniqueId());
         final Chunk chunk = event.getBlock().getChunk();
         final TEChunk teChunk = TEChunk.getChunk(chunk);
@@ -121,6 +126,16 @@ public class TerritoryProtection implements Listener {
         } else if (block.getType().name().contains("PRESSURE_PLATE")) {
             event.setCancelled(true);
         }
+    }
+
+    @EventHandler
+    public static void onMobSpawn(EntitySpawnEvent event) {
+        final Location location = event.getLocation();
+        // prevent mob spawning in special chunks
+        if (event.getEntity() instanceof Mob
+                && BoundUtils.inBoundsOfSpecialChunk(location.getBlockX(),
+            location.getBlockZ()))
+            event.setCancelled(true);
     }
 
 }

@@ -30,6 +30,7 @@ public class TEChunk {
     }
 
     public static void fillCache() {
+        chunkCache.clear();
         for (final Document document : collection.find()) {
             final TEChunk chunk = new TEChunk(document);
             chunkCache.put(chunkToKey(chunk.getWorld(), chunk.getX(), chunk.getZ()), chunk);
@@ -139,7 +140,7 @@ public class TEChunk {
                 .append("x", x)
                 .append("z", z)
         );
-        DrawEmpire.removeChunk(this);
+        DrawEmpire.removeChunk(this, empire);
         chunkCache.remove(chunkToKey(world, x, z));
     }
 

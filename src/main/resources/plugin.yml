@@ -15,7 +15,7 @@ commands:
   empire:
     description: Empire command
     aliases: [e]
-  clearcache:
+  refreshcaches:
     description: OP - Clear cache for debugging
   dimension:
     description: OP - Teleport to the spawn location of another world
@@ -27,7 +27,11 @@ commands:
     description: OP - Smite player
   olympus:
     description: OP - Teleport to Olympus
+  censor:
+    description: OP - Manage censored words
   yggdrasil:
     description: Command for Yggdrasil arena
   atlantis:
     description: Command for Atlantis arena
+  discord:
+    description: Link Pixel Empires Discord and Minecraft accounts
