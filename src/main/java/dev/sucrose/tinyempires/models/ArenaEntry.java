@@ -11,8 +11,8 @@ public class ArenaEntry {
     private final List<Location> spawnLocations;
     private final List<Integer> remainingSpawnLocationIndexes = new ArrayList<>();
     private final Map<UUID, Integer> playerToSpawnLocationIndex = new HashMap<>();
-    private final List<UUID> players = new ArrayList<>();
-    private final List<UUID> playersLeft = new ArrayList<>();
+    private final Set<UUID> players = new HashSet<>();
+    private final Set<UUID> playersLeft = new HashSet<>();
     private final int playerLimit;
     private final BoundsPlane entrancePlane;
     private final Location startLocation;
@@ -47,16 +47,12 @@ public class ArenaEntry {
         return color;
     }
 
-    public List<UUID> getPlayers() {
+    public Set<UUID> getPlayers() {
         return players;
     }
 
     public void addPlayer(UUID uuid) {
         players.add(uuid);
-    }
-
-    public void removePlayerFromOngoingMatch(UUID uuid) {
-        playersLeft.remove(uuid);
     }
 
     public void resetRemainingSpawnLocations() {
@@ -91,7 +87,7 @@ public class ArenaEntry {
         playersLeft.remove(uuid);
     }
 
-    public List<UUID> getPlayersLeft() {
+    public Set<UUID> getPlayersLeft() {
         return playersLeft;
     }
 
@@ -111,6 +107,7 @@ public class ArenaEntry {
 
     public void end() {
         isActive = false;
+        resetRemainingSpawnLocations();
     }
 
 }

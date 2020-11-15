@@ -158,6 +158,13 @@ public class TEChunk {
         return chunk != null && chunk.getEmpire().getId().equals(empire.getId());
     }
 
+    public boolean isSurroundedByOppositeEmpireChunks() {
+        return isAdjacentChunkTheSameEmpire(Direction.UP)
+            && isAdjacentChunkTheSameEmpire(Direction.DOWN)
+            && isAdjacentChunkTheSameEmpire(Direction.RIGHT)
+            && isAdjacentChunkTheSameEmpire(Direction.LEFT);
+    }
+
     public TEChunk getAdjacentChunk(Direction direction) {
         return getChunk(
             world,

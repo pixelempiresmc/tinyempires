@@ -12,11 +12,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class EditEmpireLaw implements CommandOption {
+public class RenameEmpireLaw implements CommandOption {
 
     @Override
     public void execute(Player sender, String[] args) {
-        // /e editlaw <law>
+        // /e renamelaw <law>/<new_name>
         final UUID senderUUID = sender.getUniqueId();
         final TEPlayer tePlayer = TEPlayer.getTEPlayer(senderUUID);
         if (tePlayer == null) {
@@ -26,7 +26,7 @@ public class EditEmpireLaw implements CommandOption {
 
         final Empire empire = tePlayer.getEmpire();
         if (empire == null) {
-            sender.sendMessage(ChatColor.RED + "You must be in an empire to edit a law");
+            sender.sendMessage(ChatColor.RED + "You must be in an empire to rename a law");
             return;
         }
 
@@ -35,17 +35,28 @@ public class EditEmpireLaw implements CommandOption {
             return;
         }
 
-        if (args.length < 1) {
+        if (args.length < 2) {
             sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
-        final String lawName = StringUtils.buildWordsFromArray(args, 0);
-        final Law law = empire.getLaw(lawName);
+        // use '/' to deliminate arguments as both have spaces
+        final String argumentString = StringUtils.buildWordsFromArray(args, 0);
+        if (!argumentString.contains("/")) {
+            sender.sendMessage(ChatColor.RED + "Law name arguments must be delimited with a slash (e.g. /law My Law's" +
+                " Name/My New Law Name");
+            return;
+        }
+
+        final String[] argumentStringArray = argumentString.split("/");
+        final String originalLawName = argumentStringArray[0];
+        final String newLawName = argumentStringArray[1];
+
+        final Law law = empire.getLaw(originalLawName);
         if (law == null) {
             sender.sendMessage(ChatColor.RED + String.format(
                 "'%s' is not a law in your empire (%s)",
-                lawName,
+                originalLawName,
                 empire.getLaws().size() > 0
                     ? empire.getLaws()
                         .stream()
@@ -56,26 +67,30 @@ public class EditEmpireLaw implements CommandOption {
             return;
         }
 
-        // open law
-        final ItemStack item = sender.getInventory().getItemInMainHand();
-        if (!item.hasItemMeta()
-                || !(item.getItemMeta() instanceof BookMeta)) {
-            sender.sendMessage(ChatColor.RED + "You must be holding a writable book to edit the law");
+        final Law lawWithNewName = empire.getLaw(newLawName);
+        if (lawWithNewName != null) {
+            sender.sendMessage(ChatColor.RED + String.format(
+                "'%s' by %s is already a law in your empire!",
+                newLawName,
+                ChatColor.BOLD + lawWithNewName.getAuthor() + ChatColor.RED
+            ));
             return;
         }
 
-        final BookMeta meta = (BookMeta) item.getItemMeta();
-        empire.editLaw(lawName, meta.getPages());
-        empire.broadcast(ChatColor.YELLOW, String.format(
-            "%s edited the law %s",
-            ChatColor.BOLD + sender.getName() + ChatColor.YELLOW,
-            ChatColor.BOLD + lawName + ChatColor.YELLOW
+        // checks passed, rename law
+        empire.broadcastText(ChatColor.GREEN + String.format(
+            "%s renamed the law of %s by %s to %s",
+            ChatColor.BOLD + sender.getName() + ChatColor.GREEN,
+            ChatColor.BOLD + originalLawName + ChatColor.GREEN,
+            ChatColor.BOLD + law.getAuthor() + ChatColor.GREEN,
+            ChatColor.BOLD + newLawName
         ));
+        empire.renameLaw(originalLawName, newLawName);
     }
 
     @Override
     public String getDescription() {
-        return "Set content of empire law to book in player hand";
+        return "Rename law";
     }
 
     @Override
@@ -85,7 +100,7 @@ public class EditEmpireLaw implements CommandOption {
 
     @Override
     public String getUsage() {
-        return "/e editlaw <law>";
+        return "/e renamelaw <law>/<new_name>";
     }
 
 }

@@ -118,6 +118,9 @@ public class DrawEmpire {
             drawChunk(chunk.getEmpire(), chunk.getWorld(), chunk.getX(), chunk.getZ());
         for (final Empire empire : Empire.getEmpires()) {
             final Location homeLocation = empire.getHomeLocation();
+            if (homeLocation == null)
+                return;
+
             if (homeLocation.getWorld() == null)
                 throw new NullPointerException("Could not get home location world for empire " + empire.getId() + " " +
                     "when drawing home marker");
@@ -148,6 +151,13 @@ public class DrawEmpire {
         empireHomeMarkers.get(empire).move(world, x, z);
     }
 
+    public static void deleteEmpireHomeMarker(ObjectId empire) {
+        if (!empireHomeMarkers.containsKey(empire))
+            return;
+        empireHomeMarkers.get(empire).delete();
+        empireHomeMarkers.remove(empire);
+    }
+
     private static boolean chunkEmpiresDiffer(TEChunk chunk, int x, int z) {
         final TEChunk chunk1 = TEChunk.getChunk(chunk.getWorld(), x, z);
         return !chunk.getEmpire().getId().equals(chunk1 == null ? null : chunk1.getEmpire().getId());
@@ -155,7 +165,7 @@ public class DrawEmpire {
 
     private static void eraseChunkBorderIfExists(String world, int x, int z, Direction direction) {
         final ChunkMarker marker = getChunkMarker(world, x, z);
-        System.out.printf("Erasing chunk marker border at %d %d in %s direction %s\n", x, z, world, direction.name());
+        System.out.printf("Erasing chunk marker border at %d %d in %s | direction %s\n", x, z, world, direction.name());
         if (marker != null && marker.hasBorder(direction)) {
             System.out.println("Deleting border");
             marker.removeBorder(direction);
@@ -284,8 +294,8 @@ public class DrawEmpire {
 
     public static void setEmpire(String world, int x, int z, Empire empire) {
         final ChunkMarker marker = getChunkMarker(world, x, z);
-        marker.setEmpire(empire);
         marker.deleteBorders();
+        marker.setEmpire(empire);
 
         final TEChunk chunk = TEChunk.getChunk(world, x, z);
         if (chunk == null)
@@ -296,17 +306,32 @@ public class DrawEmpire {
                 z
             ));
 
-        if (!chunk.isAdjacentChunkTheSameEmpire(Direction.UP))
-            marker.makeBorder(Direction.UP);
-
-        if (!chunk.isAdjacentChunkTheSameEmpire(Direction.DOWN))
-            marker.makeBorder(Direction.DOWN);
-
-        if (!chunk.isAdjacentChunkTheSameEmpire(Direction.RIGHT))
+        if (chunkEmpiresDiffer(chunk, x + 1, z)) {
             marker.makeBorder(Direction.RIGHT);
+        } else {
+            eraseChunkBorderIfExists(world, x + 1, z, Direction.LEFT);
+        }
 
-        if (!chunk.isAdjacentChunkTheSameEmpire(Direction.LEFT))
+        System.out.println("Left chunk differs: " + chunkEmpiresDiffer(chunk, x - 1, z));
+        if (chunkEmpiresDiffer(chunk, x - 1, z)) {
             marker.makeBorder(Direction.LEFT);
+        } else {
+            eraseChunkBorderIfExists(world, x - 1, z, Direction.RIGHT);
+        }
+
+        System.out.println("Down chunk differs: " + chunkEmpiresDiffer(chunk, x, z + 1));
+        if (chunkEmpiresDiffer(chunk, x, z + 1)) {
+            marker.makeBorder(Direction.DOWN);
+        } else {
+            eraseChunkBorderIfExists(world, x, z + 1, Direction.UP);
+        }
+
+        System.out.println("Up chunk differs: " + chunkEmpiresDiffer(chunk, x, z - 1));
+        if (chunkEmpiresDiffer(chunk, x, z - 1)) {
+            marker.makeBorder(Direction.UP);
+        } else {
+            eraseChunkBorderIfExists(world, x, z - 1, Direction.DOWN);
+        }
     }
 
 }

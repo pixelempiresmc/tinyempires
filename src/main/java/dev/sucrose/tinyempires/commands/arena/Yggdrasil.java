@@ -186,7 +186,7 @@ public class Yggdrasil implements Listener, CommandExecutor {
             broadcast(ChatColor.YELLOW + String.format(
                 "%s changed to the %s team",
                 ChatColor.BOLD + sender.getName() + ChatColor.YELLOW,
-                "" + ChatColor.valueOf(team.name()) + ChatColor.BOLD + team.name().toLowerCase() + ChatColor.YELLOW
+                "" + ChatColor.valueOf(team.name()) + ChatColor.BOLD + team.name() + ChatColor.YELLOW
             ));
             setPlayerInventory(team, player);
             return true;
@@ -333,14 +333,16 @@ public class Yggdrasil implements Listener, CommandExecutor {
             final YggdrasilPlayerEntry pEntry = arenaPlayerEntryMap.get(p.getUniqueId());
             pEntry.restore(p);
             p.setAllowFlight(false);
-            System.out.println("Set player flying: " + p.getAllowFlight());
-            System.out.println("Set player invulnerability: " + p.isInvulnerable());
             p.setCollidable(true);
-            System.out.println("Set player collidability: " + p.isCollidable());
+            p.setGlowing(false);
+            p.setHealth(20);
+            p.setFoodLevel(20);
+            p.setSaturation(20);
 
             p.teleport(START_LOCATION);
             p.setScoreboard(scoreboardManager.getNewScoreboard());
             p.setGameMode(GameMode.SURVIVAL);
+            p.removePotionEffect(PotionEffectType.INVISIBILITY);
             arenaPlayerEntryMap.remove(p.getUniqueId());
             scoreboardTeams.get(pEntry.getTeam()).removeEntry(p.getName());
 
@@ -375,6 +377,26 @@ public class Yggdrasil implements Listener, CommandExecutor {
         if (!(event.getEntity() instanceof Player))
             return;
         final Player victim = (Player) event.getEntity();
+
+        // nerf crossbows from 5.5 to 2.5
+        if (event instanceof EntityDamageByEntityEvent) {
+            final EntityDamageByEntityEvent entityDamageByEntityEvent = (EntityDamageByEntityEvent) event;
+            if (entityDamageByEntityEvent.getDamager().getType() == EntityType.ARROW) {
+                event.setDamage(6);
+            } else if (entityDamageByEntityEvent.getDamager() instanceof Player) {
+                final Player player = (Player) entityDamageByEntityEvent.getDamager();
+                final UUID uuid = player.getUniqueId();
+                final YggdrasilPlayerEntry playerEntry = arenaPlayerEntryMap.get(uuid);
+                // return if killer is spectator (has entry but not in teamsLeft)
+                if (playerEntry != null
+                        && (!teamsLeft.containsKey(playerEntry.getTeam())
+                        || !teamsLeft.get(playerEntry.getTeam()).contains(uuid))) {
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+        }
+
         // return if player is not dead
         if (victim.getHealth() - event.getFinalDamage() > 0)
             return;
@@ -382,18 +404,29 @@ public class Yggdrasil implements Listener, CommandExecutor {
         final UUID uuid = victim.getUniqueId();
         final YggdrasilPlayerEntry playerEntry = arenaPlayerEntryMap.get(uuid);
         // return if player has no entry in arena or if they still have an entry but are not in the teams remaining
-        // (for spectators)
-        if (playerEntry == null
-                || !teamsLeft.get(playerEntry.getTeam()).contains(uuid))
+        if (playerEntry == null)
             return;
+
         Player killer = null;
         // if player was killed by player/arrow/entity then make killer, else keep it null (e.g. died by fall damage)
         if (event instanceof EntityDamageByEntityEvent) {
             final EntityDamageByEntityEvent entityDamageByEntityEvent = (EntityDamageByEntityEvent) event;
+            System.out.println(entityDamageByEntityEvent.getDamager().getType());
+            System.out.println(entityDamageByEntityEvent.getEntity().getType());
             // if melee than killer is player else arrow shooter
             killer = entityDamageByEntityEvent.getDamager().getType() == EntityType.ARROW
                 ? (Player) ((Arrow) entityDamageByEntityEvent.getDamager()).getShooter()
                 : (Player) entityDamageByEntityEvent.getDamager();
+        }
+
+        // prevent spectators from hurting remaining players
+        if (killer != null) {
+            final YggdrasilPlayerEntry killerEntry = arenaPlayerEntryMap.get(killer.getUniqueId());
+            if (killerEntry != null
+                    && !teamsLeft.get(killerEntry.getTeam()).contains(killer.getUniqueId())) {
+                event.setCancelled(true);
+                return;
+            }
         }
 
         // lightning effect
@@ -416,20 +449,26 @@ public class Yggdrasil implements Listener, CommandExecutor {
         broadcast(ChatColor.YELLOW + String.format(
             "%s! %s",
             killer != null
-                ? String.format(
-                    "%s of %s was defeated by %s",
-                    ChatColor.BOLD + victim.getName() + ChatColor.YELLOW,
-                    "" + yggdrasilTeamToChatColor(playerEntry.getTeam()) + ChatColor.BOLD + playerEntry.getTeam().name()
-                    + ChatColor.YELLOW,
-                    "" + yggdrasilTeamToChatColor(playerEntry.getTeam()) + ChatColor.BOLD + killer.getName() + ChatColor.YELLOW
-                )
+                ? killer.getType() == EntityType.PLAYER
+                        ? String.format(
+                            "%s of %s was defeated by %s",
+                            ChatColor.BOLD + victim.getName() + ChatColor.YELLOW,
+                            "" + yggdrasilTeamToChatColor(playerEntry.getTeam()) + ChatColor.BOLD + playerEntry.getTeam().name()
+                            + ChatColor.YELLOW,
+                            "" + yggdrasilTeamToChatColor(playerEntry.getTeam()) + ChatColor.BOLD + killer.getName() + ChatColor.YELLOW
+                        )
+                        : String.format(
+                            "%s fell to their death",
+                            "" + yggdrasilTeamToChatColor(playerEntry.getTeam()) + ChatColor.BOLD + victim.getName() + ChatColor.YELLOW
+                        )
+                /* death by ender pearl */
                 : String.format(
-                    "%s fell to their death",
+                    "%s died",
                     "" + yggdrasilTeamToChatColor(playerEntry.getTeam()) + ChatColor.BOLD + victim.getName() + ChatColor.YELLOW
                 ),
             teamsLeftCount > 1
                 ? String.format(
-                    "%s and %d players remain!",
+                    "Teams %s with %d players remain!",
                     yggdrasilTeamsToList(teamsLeft.keySet()),
                     teamsLeft.values().stream().map(List::size).reduce(0, Integer::sum)
                 )
@@ -458,6 +497,12 @@ public class Yggdrasil implements Listener, CommandExecutor {
             victim.setFoodLevel(20);
             victim.getInventory().clear();
             victim.setAllowFlight(true);
+            victim.setGlowing(false);
+            // can't nudge players or block arrows
+            victim.setCollidable(false);
+            // give spectator invisibility
+            victim.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 255, false,
+                false));
         }
     }
 
@@ -483,7 +528,8 @@ public class Yggdrasil implements Listener, CommandExecutor {
 
         // if player is in the arena but spectating
         if (!teamsLeft.containsKey(yggdrasilTeam)
-                || !teamsLeft.get(yggdrasilTeam).contains(uuid)) {
+                || !teamsLeft.get(yggdrasilTeam).contains(uuid)
+                && active) {
             broadcast(ChatColor.YELLOW + String.format(
                 "%s has stopped spectating the arena",
                 ChatColor.BOLD + player.getName() + ChatColor.YELLOW
@@ -492,6 +538,10 @@ public class Yggdrasil implements Listener, CommandExecutor {
             return;
         }
 
+        player.setGlowing(false);
+        player.setHealth(20);
+        player.setFoodLevel(20);
+        player.setSaturation(20);
         final ChatColor teamColor = yggdrasilTeamToChatColor(yggdrasilTeam);
         if (active) {
             broadcast(ChatColor.YELLOW + String.format(
@@ -514,6 +564,7 @@ public class Yggdrasil implements Listener, CommandExecutor {
             }
             player.setAllowFlight(false);
             player.setCollidable(true);
+            player.removePotionEffect(PotionEffectType.INVISIBILITY);
         } else {
             broadcast(ChatColor.YELLOW + String.format(
                 "%s has left the arena",
@@ -618,10 +669,15 @@ public class Yggdrasil implements Listener, CommandExecutor {
             // health and hunger
             player.setHealth(20);
             player.setFoodLevel(20);
+            player.setSaturation(20);
+
+            // glowing
+            player.setGlowing(true);
 
             broadcast(ChatColor.GREEN + String.format(
-                "%s joined the arena!",
-                ChatColor.BOLD + player.getName() + ChatColor.GREEN
+                "%s joined the arena in %s team!",
+                ChatColor.BOLD + player.getName() + ChatColor.GREEN,
+                "" + yggdrasilTeamToChatColor(team) + ChatColor.BOLD + team.name() + ChatColor.GREEN
             ));
         }
     }
@@ -685,8 +741,8 @@ public class Yggdrasil implements Listener, CommandExecutor {
                 "inventory");
         ((Damageable) shieldMeta).setDamage(10);
 
-        final ItemStack sword = new ItemStack(Material.WOODEN_SWORD);
-        final ItemStack axe = new ItemStack(Material.WOODEN_AXE);
+        final ItemStack sword = new ItemStack(Material.STONE_SWORD);
+        final ItemStack axe = new ItemStack(Material.STONE_AXE);
         final ItemStack crossbow = new ItemStack(Material.CROSSBOW);
 
         // add pre-loaded crossbow arrow

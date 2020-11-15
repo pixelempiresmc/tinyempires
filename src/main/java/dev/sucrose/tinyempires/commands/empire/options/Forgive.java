@@ -28,13 +28,13 @@ public class Forgive implements CommandOption {
             return;
         }
 
-        if (!tePlayer.hasPermission(Permission.RESERVE)) {
-            sender.sendMessage(ErrorUtils.generatePermissionError(Permission.RESERVE));
+        if (!tePlayer.hasPermission(getPermissionRequired())) {
+            sender.sendMessage(ErrorUtils.generatePermissionError(getPermissionRequired()));
             return;
         }
 
         if (args.length < 2) {
-            sender.sendMessage(ChatColor.RED + "/e forgive <player> <amount>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
@@ -42,7 +42,7 @@ public class Forgive implements CommandOption {
         try {
             amount = Double.parseDouble(args[1]);
         } catch (Exception ignore) {
-            sender.sendMessage(ChatColor.RED + "/e forgive <player> <amount>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
@@ -75,6 +75,21 @@ public class Forgive implements CommandOption {
             ChatColor.BOLD + sender.getName() + ChatColor.GREEN,
             debt
         ));
+    }
+
+    @Override
+    public String getDescription() {
+        return "Forgive player of debt";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return Permission.RESERVE;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e forgive <player> <amount>";
     }
 
 }

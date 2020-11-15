@@ -21,37 +21,71 @@ import java.util.Arrays;
 
 public class Convert implements CommandExecutor, Listener {
 
-    private static final String INVENTORY_GUI_NAME = "" + ChatColor.GOLD + ChatColor.BOLD + "Convert";
-    private static final Material CONVERT_COINS_ITEM_MATERIAL = Material.ANVIL;
+    private static final String INVENTORY_GUI_NAME = "Convert to Coins";
+
+    private static void fillInventory(Inventory inventory) {
+        final ItemStack coinItem = new ItemStack(Material.ANVIL);
+        final ItemMeta coinItemMeta = coinItem.getItemMeta();
+        if (coinItemMeta == null)
+            throw new NullPointerException("Could not get item meta for anvil conversion item when creating convert " +
+                "inventory GUI");
+
+        coinItemMeta.setDisplayName(INVENTORY_GUI_NAME);
+        coinItemMeta.setLore(
+            Arrays.asList(ChatColor.LIGHT_PURPLE +
+                    "Convert coins & netherite to coins",
+                "Diamond -> 10 coins",
+                "Netherite ingot -> 100 coins"
+            )
+        );
+        coinItem.setItemMeta(coinItemMeta);
+
+        inventory.setContents(
+            new ItemStack[] {
+                /* == Row 1 == */
+                new ItemStack(Material.PURPLE_STAINED_GLASS_PANE),
+                new ItemStack(Material.RED_STAINED_GLASS_PANE),
+                new ItemStack(Material.RED_STAINED_GLASS_PANE),
+                new ItemStack(Material.ORANGE_STAINED_GLASS_PANE),
+                new ItemStack(Material.YELLOW_STAINED_GLASS_PANE),
+                new ItemStack(Material.ORANGE_STAINED_GLASS_PANE),
+                new ItemStack(Material.RED_STAINED_GLASS_PANE),
+                new ItemStack(Material.RED_STAINED_GLASS_PANE),
+                new ItemStack(Material.PURPLE_STAINED_GLASS_PANE),
+                /* == == == */
+
+                /* == Row 2 == */
+                new ItemStack(Material.RED_STAINED_GLASS_PANE),
+                new ItemStack(Material.RED_STAINED_GLASS_PANE),
+                new ItemStack(Material.ORANGE_STAINED_GLASS_PANE),
+                new ItemStack(Material.YELLOW_STAINED_GLASS_PANE),
+                coinItem,
+                new ItemStack(Material.YELLOW_STAINED_GLASS_PANE),
+                new ItemStack(Material.ORANGE_STAINED_GLASS_PANE),
+                new ItemStack(Material.RED_STAINED_GLASS_PANE),
+                new ItemStack(Material.RED_STAINED_GLASS_PANE),
+                /* == == == */
+
+                /* == Row 3 == */
+                new ItemStack(Material.PURPLE_STAINED_GLASS_PANE),
+                new ItemStack(Material.RED_STAINED_GLASS_PANE),
+                new ItemStack(Material.RED_STAINED_GLASS_PANE),
+                new ItemStack(Material.ORANGE_STAINED_GLASS_PANE),
+                new ItemStack(Material.YELLOW_STAINED_GLASS_PANE),
+                new ItemStack(Material.ORANGE_STAINED_GLASS_PANE),
+                new ItemStack(Material.RED_STAINED_GLASS_PANE),
+                new ItemStack(Material.RED_STAINED_GLASS_PANE),
+                new ItemStack(Material.PURPLE_STAINED_GLASS_PANE)
+                /* == == == */
+            }
+        );
+    }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         final Player player = (Player) sender;
         final Inventory transferCoinsMenu = Bukkit.getServer().createInventory(player, 27, INVENTORY_GUI_NAME);
-        for (int i = 0; i < 27; i++) {
-            ItemStack filler = new ItemStack(Material.YELLOW_STAINED_GLASS_PANE);
-            ItemMeta meta = filler.getItemMeta();
-            assert meta != null;
-            meta.setDisplayName("" + ChatColor.WHITE);
-            filler.setItemMeta(meta);
-            transferCoinsMenu.setItem(i, filler);
-        }
-
-        // coin item
-        final ItemStack coinItem = new ItemStack(CONVERT_COINS_ITEM_MATERIAL);
-        final ItemMeta coinItemMeta = coinItem.getItemMeta();
-        assert coinItemMeta != null;
-        coinItemMeta.setDisplayName(ChatColor.GOLD + "Convert");
-        coinItemMeta.setLore(
-            Arrays.asList(ChatColor.LIGHT_PURPLE +
-                "Convert coins & netherite to coins",
-                "Diamond -> 10 coins",
-                "Netherite ingot -> 100 coins"
-            )
-        );
-
-        coinItem.setItemMeta(coinItemMeta);
-        transferCoinsMenu.setItem(13, coinItem);
+        fillInventory(transferCoinsMenu);
         player.openInventory(transferCoinsMenu);
         return true;
     }
@@ -59,10 +93,12 @@ public class Convert implements CommandExecutor, Listener {
     @EventHandler
     public void onPlayerInventoryClick(InventoryClickEvent e) {
         // check clicked inventory was converter and if click was in top inventory
+        System.out.println(e.getView().getTitle());
+        System.out.println(e.getRawSlot());
         if (e.getView().getTitle().equals(INVENTORY_GUI_NAME)
                 && e.getRawSlot() < e.getView().getTopInventory().getSize()) {
             e.setCancelled(true);
-            if ((e.getCurrentItem() != null ? e.getCurrentItem().getType() : null) == CONVERT_COINS_ITEM_MATERIAL) {
+            if ((e.getCurrentItem() != null ? e.getCurrentItem().getType() : null) == Material.ANVIL) {
                 if (e.getCursor() == null)
                     return;
 
@@ -76,19 +112,30 @@ public class Convert implements CommandExecutor, Listener {
                 final ItemStack cursor = e.getCursor();
                 final int amountOfItemsInCursor = cursor.getAmount();
 
-                if (cursor.getType() != Material.DIAMOND) {
-                    player.sendMessage(ChatColor.RED + "Invalid item");
-                    return;
+                switch (cursor.getType()) {
+                    case DIAMOND:
+                        tePlayer.giveCoins(amountOfItemsInCursor * 10);
+                        player.sendMessage(ChatColor.GREEN + String.format(
+                            "Converted %d diamond%s to %d coins",
+                            amountOfItemsInCursor,
+                            amountOfItemsInCursor > 1 ? "s" : "",
+                            amountOfItemsInCursor * 10
+                        ));
+                        e.getCursor().setAmount(0);
+                        break;
+                    case NETHERITE_INGOT:
+                        tePlayer.giveCoins(amountOfItemsInCursor * 100);
+                        player.sendMessage(ChatColor.GREEN + String.format(
+                            "Converted %d netherite ingot%s to %d coins",
+                            amountOfItemsInCursor,
+                            amountOfItemsInCursor > 1 ? "s" : "",
+                            amountOfItemsInCursor * 100
+                        ));
+                        e.getCursor().setAmount(0);
+                        break;
+                    default:
+                        player.sendMessage(ChatColor.RED + "Invalid item");
                 }
-
-                tePlayer.giveCoins(amountOfItemsInCursor * 10);
-                player.sendMessage(ChatColor.GREEN + String.format(
-                    "Converted %d diamond%s to %d coins",
-                    amountOfItemsInCursor,
-                    amountOfItemsInCursor > 1 ? "s" : "",
-                    amountOfItemsInCursor * 10
-                ));
-                e.getCursor().setAmount(0);
             }
         }
     }

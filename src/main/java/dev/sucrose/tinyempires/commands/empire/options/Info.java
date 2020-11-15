@@ -10,19 +10,6 @@ import java.util.stream.Collectors;
 
 public class Info implements CommandOption {
 
-    private static final Map<Permission, String> permDescriptions = new EnumMap<>(Permission.class);
-
-    static {
-        permDescriptions.put(Permission.ADMIN, "All permissions");
-        permDescriptions.put(Permission.CHUNKS, "Can claim and sell chunks");
-        permDescriptions.put(Permission.EDIT, "Can change color and description");
-        permDescriptions.put(Permission.INVITES, "Can accept players");
-        permDescriptions.put(Permission.LAWS, "Can modify and publish laws");
-        permDescriptions.put(Permission.POSITIONS, "Can edit and create positions");
-        permDescriptions.put(Permission.RESERVE, "Can withdraw reserve funds");
-        permDescriptions.put(Permission.WAR, "Can declare and end war");
-    }
-
     private static String getPositionPermissionsString(Position position) {
         return position
             .getPermissions()
@@ -76,25 +63,25 @@ public class Info implements CommandOption {
         sender.sendMessage("" + ChatColor.BOLD + "Positions");
         if (empire.getPositionMap().size() == 0) {
             sender.sendMessage(ChatColor.GRAY + " - No existing positions");
-            return;
+        } else {
+            final List<String> sortedPositionKeys = new ArrayList<>(empire.getPositionMap().keySet());
+            // negate Position#compare so list is sorted left to right and is displayed top to bottom
+            sortedPositionKeys.sort((string1, string2) ->
+                -Position.compare(
+                    empire.getPosition(string1),
+                    empire.getPosition(string2)
+                ));
+
+            for (final String name : sortedPositionKeys)
+                sender.sendMessage(String.format(
+                    " - %s %s",
+                    name,
+                    empire.getPosition(name).getPermissions().size() > 1
+                        ? '(' + getPositionPermissionsString(empire.getPosition(name)) + ')'
+                        : ""
+                ));
         }
 
-        final List<String> sortedPositionKeys = new ArrayList<>(empire.getPositionMap().keySet());
-        // negate Position#compare so list is sorted left to right and is displayed top to bottom
-        sortedPositionKeys.sort((string1, string2) ->
-            -Position.compare(
-                empire.getPosition(string1),
-                empire.getPosition(string2)
-        ));
-
-        for (final String name : sortedPositionKeys)
-            sender.sendMessage(String.format(
-                " - %s %s",
-                name,
-                empire.getPosition(name).getPermissions().size() > 1
-                    ? '(' + getPositionPermissionsString(empire.getPosition(name)) + ')'
-                    : ""
-            ));
 
         sender.sendMessage("");
         sender.sendMessage("" + ChatColor.BOLD + "Laws");
@@ -125,6 +112,21 @@ public class Info implements CommandOption {
                 ));
             }
         }
+    }
+
+    @Override
+    public String getDescription() {
+        return "Get empire info";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return null;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e info";
     }
 
 }

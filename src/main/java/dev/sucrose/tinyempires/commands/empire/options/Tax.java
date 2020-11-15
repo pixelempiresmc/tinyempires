@@ -30,7 +30,7 @@ public class Tax implements CommandOption {
         }
 
         if (args.length < 1) {
-            sender.sendMessage(ChatColor.RED + "/e tax <amount>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
@@ -38,11 +38,11 @@ public class Tax implements CommandOption {
         try {
             amount = Double.parseDouble(args[0]);
         } catch (Exception ignore) {
-            sender.sendMessage(ChatColor.RED + "/e tax <amount>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
-        empire.tax(amount);
+        empire.tax(amount, senderUUID);
         empire.broadcastText(String.format(
             "%s has taxed all members %.1f coins! (%s/e contribute %.1f%s to pay)",
             ChatColor.BOLD + sender.getName() + ChatColor.WHITE,
@@ -51,6 +51,21 @@ public class Tax implements CommandOption {
             amount,
             ChatColor.WHITE
         ));
+    }
+
+    @Override
+    public String getDescription() {
+        return "Bestow debt upon every other empire member";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return Permission.RESERVE;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e tax <amount>";
     }
 
 }

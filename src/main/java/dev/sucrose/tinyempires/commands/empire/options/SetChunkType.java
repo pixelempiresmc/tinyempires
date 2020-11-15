@@ -40,7 +40,7 @@ public class SetChunkType implements CommandOption {
         }
 
         if (args.length < 1) {
-            sender.sendMessage(ChatColor.RED + "/e type <type>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
@@ -58,6 +58,13 @@ public class SetChunkType implements CommandOption {
         }
 
         final TEChunk chunk = TEChunk.getChunk(sender.getLocation().getChunk());
+        if (chunk == null
+                || !chunk.getEmpire().getId().equals(empire.getId())) {
+            sender.sendMessage(ChatColor.RED
+                + "You can only set the type of a chunk in your own empire");
+            return;
+        }
+
         if (chunk.getType().equals(type)) {
             sender.sendMessage(ChatColor.RED + String.format(
                 "Chunk type is already %s",
@@ -85,6 +92,21 @@ public class SetChunkType implements CommandOption {
             StringUtils.worldDirToName(chunk.getWorld()),
             ChatColor.BOLD + type.name().toLowerCase()
         ));
+    }
+
+    @Override
+    public String getDescription() {
+        return "Set current chunk to type";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return Permission.CHUNKS;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e type <type>";
     }
 
 }

@@ -90,8 +90,23 @@ public class AutoClaimEmpireChunk implements CommandOption {
         // claim current chunk if available
         final String worldName = world.getName();
         if (TEChunk.getChunk(worldName, chunk.getX(), chunk.getZ()) == null
-                && BoundUtils.isChunkInBoundsOfSpecialTerritory(chunk))
+                && !BoundUtils.isChunkInBoundsOfSpecialTerritory(chunk))
             claimChunkForEmpire(sender.getName(), worldName, chunk.getX(), chunk.getZ(), empire);
+    }
+
+    @Override
+    public String getDescription() {
+        return "Toggles autoclaim (Automatically claim chunks from wilderness when you move into them)";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return Permission.CHUNKS;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e autoclaim";
     }
 
 }

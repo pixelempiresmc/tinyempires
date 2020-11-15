@@ -3,6 +3,7 @@ package dev.sucrose.tinyempires.commands.empire.options;
 import dev.sucrose.tinyempires.discord.DiscordBot;
 import dev.sucrose.tinyempires.models.Empire;
 import dev.sucrose.tinyempires.models.CommandOption;
+import dev.sucrose.tinyempires.models.Permission;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import org.bukkit.*;
@@ -16,7 +17,7 @@ public class TransferEmpireOwner implements CommandOption {
     public void execute(Player sender, String[] args) {
         // /e owner <player>
         if (args.length < 1) {
-            sender.sendMessage(ChatColor.RED + "/e owner <player>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
         final String playerName = args[0];
@@ -57,6 +58,21 @@ public class TransferEmpireOwner implements CommandOption {
             ChatColor.BOLD + sender.getName() + ChatColor.YELLOW,
             ChatColor.BOLD + playerName + ChatColor.YELLOW
         ));
+    }
+
+    @Override
+    public String getDescription() {
+        return "Transfer ownership onto another member (must be owner)";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return null;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e owner <player>";
     }
 
 }

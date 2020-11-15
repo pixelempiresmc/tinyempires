@@ -2,6 +2,7 @@ package dev.sucrose.tinyempires.commands.empire.options;
 
 import dev.sucrose.tinyempires.models.Empire;
 import dev.sucrose.tinyempires.models.CommandOption;
+import dev.sucrose.tinyempires.models.Permission;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import org.bukkit.ChatColor;
@@ -28,7 +29,7 @@ public class ContributeToEmpire implements CommandOption {
         }
 
         if (args.length < 1) {
-            sender.sendMessage(ChatColor.RED + "/e contribute <amount>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
@@ -36,7 +37,7 @@ public class ContributeToEmpire implements CommandOption {
         try {
             amount = Double.parseDouble(args[0]);
         } catch (Exception ignore) {
-            sender.sendMessage(ChatColor.RED + "/e contribute <amount>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
@@ -68,6 +69,21 @@ public class ContributeToEmpire implements CommandOption {
                 ? String.format(" (%.1f coins still indebted)", empire.getDebt(tePlayer.getPlayerUUID()))
                 : ""
         ));
+    }
+
+    @Override
+    public String getDescription() {
+        return "Transfer money from personal account into empire reserve (also pays off debt)";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return null;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e contribute <amount>";
     }
 
 }

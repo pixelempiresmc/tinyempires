@@ -36,7 +36,7 @@ public class CreateEmpirePosition implements CommandOption {
         }
 
         if (args.length < 1) {
-            sender.sendMessage(ChatColor.RED + "/e position <name>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
@@ -54,12 +54,32 @@ public class CreateEmpirePosition implements CommandOption {
             return;
         }
 
+        if (position.length() > 30) {
+            sender.sendMessage(ChatColor.RED + "You cannot have a position name longer than 30 characters");
+            return;
+        }
+
         empire.createPosition(position);
         empire.broadcast(ChatColor.GREEN, String.format(
             "%s created a new position %s",
             sender.getName(),
             position
         ));
+    }
+
+    @Override
+    public String getDescription() {
+        return "Create new empire position";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return Permission.POSITIONS;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e position <name>";
     }
 
 }

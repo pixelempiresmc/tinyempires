@@ -4,6 +4,7 @@ import dev.sucrose.tinyempires.TinyEmpires;
 import dev.sucrose.tinyempires.models.DiscordLinkRequest;
 import dev.sucrose.tinyempires.models.Empire;
 import dev.sucrose.tinyempires.models.TEPlayer;
+import dev.sucrose.tinyempires.utils.CensorUtils;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
@@ -80,7 +81,8 @@ public class DiscordBot extends ListenerAdapter {
     }
 
     public static void sendMessageInBridgeChat(String content) {
-        bridgeChannel.sendMessage(content)
+        bridgeChannel
+            .sendMessage(CensorUtils.censorCurses(content))
             .queue(response -> System.out.println("Successfully sent message to Discord"));
     }
 
@@ -298,7 +300,7 @@ public class DiscordBot extends ListenerAdapter {
             Bukkit.broadcastMessage("" + ChatColor.GRAY + ChatColor.BOLD + String.format(
                 "[DISCORD]%s %s » %s",
                 ChatColor.RESET,
-                msg.getAuthor().getAsTag(),
+                CensorUtils.censorCurses(msg.getAuthor().getAsTag()),
                 ChatColor.YELLOW + content
             ));
             // acknowledge with a mailbox emoji
@@ -308,10 +310,11 @@ public class DiscordBot extends ListenerAdapter {
                 msg.addReaction("U+1F4EC")
                     .queue(response -> System.out.println("Successfully sent message from Discord"));
             } catch (Exception ignore) {}
-            channel.sendMessage(String.format(
-                "Sent `%s` in chat",
-                content
-            )).queue(response -> System.out.println("Successfully sent message from Discord"));
         }
     }
+
+    public static User getDiscordUsernameFromId(String discordId) {
+        return bot.getUserById(discordId);
+    }
+
 }

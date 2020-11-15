@@ -46,7 +46,7 @@ public class PlayerChat implements Listener {
                 "%s <%s> %s",
                 (empire == null
                     ? ChatColor.GRAY + "Unaffiliated"
-                    : "[" + empire.getChatColor() + empire.getName() + "]") + ChatColor.WHITE,
+                    : "[" + empire.getChatColor() + empire.getName() + ChatColor.WHITE + "]") + ChatColor.WHITE,
                 tePlayer.getName(),
                 content
             ));
@@ -58,10 +58,12 @@ public class PlayerChat implements Listener {
                 ? "Unaffiliated"
                 : empire.getName(),
             player.getName(),
-            event.getMessage()
-                .replace("`", "\\`")
-                .replace("*", "\\*")
-                .replace("_", "\\_")
+            CensorUtils.censorCurses(
+                event.getMessage()
+                    .replace("`", "\\`")
+                    .replace("*", "\\*")
+                    .replace("_", "\\_")
+            )
         );
         DiscordBot.sendMessageInBridgeChat(player.isOp() ? "**" + message + "**" : message);
     }

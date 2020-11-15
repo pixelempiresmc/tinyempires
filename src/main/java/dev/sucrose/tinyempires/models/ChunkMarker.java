@@ -1,6 +1,7 @@
 package dev.sucrose.tinyempires.models;
 
 import dev.sucrose.tinyempires.utils.DrawEmpire;
+import dev.sucrose.tinyempires.utils.ErrorUtils;
 import org.bukkit.ChatColor;
 import org.dynmap.markers.AreaMarker;
 import org.dynmap.markers.Marker;
@@ -45,18 +46,21 @@ public class ChunkMarker {
     }
 
     private static String generateChunkDescription(Empire empire, int x, int z) {
+        final TEPlayer owner = TEPlayer.getTEPlayer(empire.getOwner());
+        if (owner == null)
+            throw new NullPointerException(ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
         return String.format(
             "<div style=\"font-family:Verdana;line-height:1.5;\">"
             + "<h2 style=\"margin: 2px 0px;\">%s</h2>"
             + "%s<br />"
-            + "Owned by %s"
+            + "Owned by %s<br />"
             + "Reserve: %.1f<br />"
             + "%s member%s <br />"
             + "%d, %d"
             + "</div>",
             empire.getName(),
             empire.getDescription() == null ? "<i>No description</i>" : empire.getDescription(),
-            empire.getOwner(),
+            owner.getName(),
             empire.getReserve(),
             empire.getMembers().size(),
             empire.getMembers().size() > 1 ? "s" : "",

@@ -32,11 +32,11 @@ public class AssignEmpirePosition implements CommandOption {
         }
 
         if (args.length < 2) {
-            sender.sendMessage(ChatColor.RED + "/e assign <position> <player>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
-        final String positionName = StringUtils.buildWordsFromArray(args, 0, args.length - 1);
+        final String positionName = StringUtils.buildWordsFromArray(args, 1, args.length);
         final Position position = empire.getPosition(positionName);
         if (position == null) {
             sender.sendMessage(ChatColor.RED + String.format(
@@ -47,7 +47,7 @@ public class AssignEmpirePosition implements CommandOption {
             return;
         }
 
-        final String assigneeName = args[args.length - 1];
+        final String assigneeName = args[0];
         final TEPlayer assignee = TEPlayer.getTEPlayer(assigneeName);
         if (assignee == null) {
             sender.sendMessage(ChatColor.RED + String.format(
@@ -90,6 +90,21 @@ public class AssignEmpirePosition implements CommandOption {
             assigneeName,
             positionName
         ));
+    }
+
+    @Override
+    public String getDescription() {
+        return "Set other member's position";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return Permission.POSITIONS;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e assign <player> <position>";
     }
 
 }

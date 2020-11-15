@@ -7,6 +7,7 @@ import dev.sucrose.tinyempires.utils.ErrorUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
+import org.bukkit.Location;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 
@@ -30,13 +31,6 @@ public class WarClaimChunk implements CommandOption {
         final Empire empire = tePlayer.getEmpire();
         if (empire == null) {
             sender.sendMessage(ChatColor.RED + ErrorUtils.YOU_MUST_BE_IN_AN_EMPIRE);
-            return;
-        }
-
-        // no permission check, any player can war claim
-
-        if (args.length > 0) {
-            sender.sendMessage(ChatColor.RED + "/e warclaim");
             return;
         }
 
@@ -151,6 +145,13 @@ public class WarClaimChunk implements CommandOption {
                                 empire.getName()
                             ));
                             chunk.setEmpire(empire);
+                            if (empire.getHomeLocation() != null) {
+                                final Chunk homeLocationChunk = empire.getHomeLocation().getChunk();
+                                if (homeLocationChunk.getX() == gameChunk.getX()
+                                        && homeLocationChunk.getZ() == gameChunk.getZ()
+                                        && homeLocationChunk.getWorld().getName().equals(gameChunk.getWorld().getName()))
+                                    empire.removeHomeLocation();
+                            }
                             DrawEmpire.setEmpire(chunk.getWorld(), chunk.getX(), chunk.getZ(), empire);
                             cancelTask();
                             return;
@@ -171,6 +172,21 @@ public class WarClaimChunk implements CommandOption {
             20
             )
         );
+    }
+
+    @Override
+    public String getDescription() {
+        return "Claim chunk from enemy in war";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return null;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e warclaim";
     }
 
 }

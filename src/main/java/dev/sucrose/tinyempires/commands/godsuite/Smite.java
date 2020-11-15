@@ -34,24 +34,30 @@ public class Smite implements CommandExecutor {
             return false;
         }
 
+        player.getWorld().strikeLightning(player.getLocation());
         if (args.length > 1) {
             // parse damage
-            int damage;
-            try {
-                damage = Integer.parseInt(args[1]);
-            } catch (Exception ignore) {
-                sender.sendMessage(ChatColor.RED + "/smite <player> [hearts]");
-                return false;
-            }
+            if (args[1].equals("half")) {
+                // set player to half a heart
+                player.setHealth(1);
+            } else {
+                int damage;
+                try {
+                    damage = Integer.parseInt(args[1]);
+                } catch (Exception ignore) {
+                    sender.sendMessage(ChatColor.RED + "/smite <player> [hearts|\"half\"]");
+                    return false;
+                }
 
-            if (damage < 1 || damage > 20) {
-                sender.sendMessage(ChatColor.RED + "Damage must be between 1 and 20 hearts");
-                return false;
+                if (damage < 1 || damage > 20) {
+                    sender.sendMessage(ChatColor.RED + "Damage must be between 1 and 20 hearts");
+                    return false;
+                }
+
+                player.setHealth(player.getHealth() - Math.min(damage, player.getHealth()));
             }
-            player.setHealth(player.getHealth() - damage);
         }
 
-        player.getWorld().strikeLightning(player.getLocation());
         Bukkit.broadcastMessage("" + ChatColor.GOLD + ChatColor.BOLD + String.format(
             "%s was smitten by the god %s!",
             name,

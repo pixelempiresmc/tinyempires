@@ -31,7 +31,7 @@ public class Censor implements CommandExecutor {
         String censor;
         switch (option) {
             case "list":
-                sender.sendMessage(ChatColor.GREEN + "Censored Curses");
+                sender.sendMessage("" + ChatColor.GREEN + ChatColor.BOLD + "Censored Curses");
                 for (final String curse : CensorUtils.getCensors())
                     sender.sendMessage(ChatColor.GREEN + " - " + curse);
                 return true;

@@ -40,8 +40,13 @@ public class ClaimEmpireChunk implements CommandOption {
             throw new NullPointerException("World when getting player location is undefined");
 
         final String worldName = world.getName();
-        if (TEChunk.getChunk(worldName, chunk.getX(), chunk.getZ()) != null) {
-            sender.sendMessage(ChatColor.RED + "This chunk is already owned by another empire");
+        final TEChunk currentTEChunk = TEChunk.getChunk(worldName, chunk.getX(), chunk.getZ());
+        if (currentTEChunk != null) {
+            if (currentTEChunk.getEmpire().getId().equals(empire.getId())) {
+                sender.sendMessage(ChatColor.RED + "Your empire already owns this chunk");
+            } else {
+                sender.sendMessage(ChatColor.RED + "This chunk is already owned by another empire");
+            }
             return;
         }
 
@@ -64,6 +69,7 @@ public class ClaimEmpireChunk implements CommandOption {
             return;
         }
 
+        empire.takeReserveCoins(TEChunk.CHUNK_COST);
         TEChunk.createTEChunk(worldName, chunk.getX(), chunk.getZ(), empire);
         DrawEmpire.drawChunk(empire, worldName, chunk.getX(), chunk.getZ());
         empire.broadcast(ChatColor.GREEN, String.format(
@@ -73,6 +79,21 @@ public class ClaimEmpireChunk implements CommandOption {
             chunk.getX() * 16,
             chunk.getZ() * 16
         ));
+    }
+
+    @Override
+    public String getDescription() {
+        return "Claim wilderness chunk for empire";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return Permission.CHUNKS;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e claim";
     }
 
 }

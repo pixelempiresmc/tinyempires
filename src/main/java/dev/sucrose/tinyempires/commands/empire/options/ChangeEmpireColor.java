@@ -74,4 +74,19 @@ public class ChangeEmpireColor implements CommandOption {
         ));
     }
 
+    @Override
+    public String getDescription() {
+        return "Change empire color";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return Permission.EDIT;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e color <color>";
+    }
+
 }

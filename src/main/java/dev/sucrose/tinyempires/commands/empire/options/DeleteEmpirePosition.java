@@ -35,7 +35,7 @@ public class DeleteEmpirePosition implements CommandOption {
         }
 
         if (args.length < 1) {
-            sender.sendMessage(ChatColor.RED + "/e delpos <name>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
@@ -68,6 +68,21 @@ public class DeleteEmpirePosition implements CommandOption {
                 ? "No-one"
                 : membersWithPosition.toString()
         ));
+    }
+
+    @Override
+    public String getDescription() {
+        return "Delete empire position";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return Permission.POSITIONS;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e delpos <position>";
     }
 
 }

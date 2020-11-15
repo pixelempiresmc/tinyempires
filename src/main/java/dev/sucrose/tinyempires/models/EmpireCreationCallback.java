@@ -1,4 +1,4 @@
-package dev.sucrose.tinyempires.commands.empire.options;
+package dev.sucrose.tinyempires.models;
 
 import org.bson.types.ObjectId;
 

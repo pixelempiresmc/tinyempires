@@ -32,7 +32,7 @@ public class OpenEmpireLaw implements CommandOption {
         }
 
         if (args.length < 1) {
-            sender.sendMessage(ChatColor.RED + "/e law <name>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
@@ -54,12 +54,12 @@ public class OpenEmpireLaw implements CommandOption {
 
         // if player is holding book write law to item, otherwise open view-only book GUI
         final ItemStack item = sender.getInventory().getItemInMainHand();
-        if (item.hasItemMeta()
-                && item.getItemMeta() instanceof BookMeta) {
+        if (item.getItemMeta() instanceof BookMeta) {
             final BookMeta meta = (BookMeta) item.getItemMeta();
             meta.setGeneration(BookMeta.Generation.COPY_OF_COPY);
             meta.setAuthor(law.getAuthor());
             meta.setPages(law.getContent());
+            meta.setTitle(lawName);
             item.setItemMeta(meta);
             sender.sendMessage(ChatColor.GREEN + String.format(
                 "Wrote law %s to book in main hand",
@@ -82,6 +82,21 @@ public class OpenEmpireLaw implements CommandOption {
         meta.setGeneration(BookMeta.Generation.COPY_OF_ORIGINAL);
         book.setItemMeta(meta);
         sender.openBook(book);
+    }
+
+    @Override
+    public String getDescription() {
+        return "View empire law or write to book in hand";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return null;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e law <law>";
     }
 
 }

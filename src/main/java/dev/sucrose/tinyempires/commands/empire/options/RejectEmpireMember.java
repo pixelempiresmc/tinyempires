@@ -1,8 +1,8 @@
 package dev.sucrose.tinyempires.commands.empire.options;
 
 import dev.sucrose.tinyempires.discord.DiscordBot;
-import dev.sucrose.tinyempires.models.Empire;
 import dev.sucrose.tinyempires.models.CommandOption;
+import dev.sucrose.tinyempires.models.Empire;
 import dev.sucrose.tinyempires.models.Permission;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
@@ -12,11 +12,11 @@ import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
-public class AcceptEmpireMember implements CommandOption {
+public class RejectEmpireMember implements CommandOption {
 
     @Override
     public void execute(Player sender, String[] args) {
-        // /e accept <name>
+        // /e reject <name>
         final UUID senderUUID = sender.getUniqueId();
         final TEPlayer tePlayer = TEPlayer.getTEPlayer(senderUUID);
         if (tePlayer == null) {
@@ -41,8 +41,8 @@ public class AcceptEmpireMember implements CommandOption {
         }
 
         final String player = args[0];
-        final TEPlayer tePlayerToAccept = TEPlayer.getTEPlayer(player);
-        if (tePlayerToAccept == null) {
+        final TEPlayer tePlayerToReject = TEPlayer.getTEPlayer(player);
+        if (tePlayerToReject == null) {
             sender.sendMessage(ChatColor.RED + String.format(
                 "'%s' is not an existing player",
                 player
@@ -50,8 +50,8 @@ public class AcceptEmpireMember implements CommandOption {
             return;
         }
 
-        if (!Empire.getPlayerToEmpireJoinRequest().containsKey(tePlayerToAccept.getPlayerUUID())
-                || !Empire.getPlayerToEmpireJoinRequest().get(tePlayerToAccept.getPlayerUUID()).equals(empire.getId())) {
+        if (!Empire.getPlayerToEmpireJoinRequest().containsKey(tePlayerToReject.getPlayerUUID())
+                || !Empire.getPlayerToEmpireJoinRequest().get(tePlayerToReject.getPlayerUUID()).equals(empire.getId())) {
             sender.sendMessage(ChatColor.RED + String.format(
                 "%s is not currently requesting to join",
                 player
@@ -59,28 +59,32 @@ public class AcceptEmpireMember implements CommandOption {
             return;
         }
 
-        if (tePlayerToAccept.isInEmpire()) {
+        if (tePlayerToReject.isInEmpire()) {
             sender.sendMessage(ChatColor.GREEN + String.format(
-                "%s is now currently in an empire and cannot be accepted",
-                ChatColor.BOLD + tePlayerToAccept.getName() + ChatColor.GREEN
+                "%s is now currently in an empire and cannot be reject",
+                ChatColor.BOLD + tePlayerToReject.getName() + ChatColor.GREEN
             ));
             return;
         }
 
-        empire.acceptPlayerJoinRequest(tePlayerToAccept);
-        JoinEmpire.cancelExpireJoinRequest(tePlayerToAccept.getPlayerUUID());
-        Empire.getPlayerToEmpireJoinRequest().remove(tePlayerToAccept.getPlayerUUID());
-        DiscordBot.giveUserEmpireDiscordRole(tePlayer, empire);
+        JoinEmpire.cancelExpireJoinRequest(tePlayerToReject.getPlayerUUID());
         empire.broadcast(ChatColor.GREEN, String.format(
-            "%s accepted %s to the empire. Welcome!",
-            sender.getName(),
-            player
+            "%s rejected %s from joining the empire",
+            ChatColor.BOLD + sender.getName() + ChatColor.GREEN,
+            ChatColor.BOLD + player + ChatColor.GREEN
         ));
+
+        final Player playerToReject = Bukkit.getPlayer(tePlayerToReject.getPlayerUUID());
+        if (playerToReject != null)
+            playerToReject.sendMessage(ChatColor.DARK_RED + String.format(
+                "You were rejected from joining the empire of %s!",
+                "" + empire.getChatColor() + ChatColor.BOLD + empire.getName() + ChatColor.DARK_RED
+            ));
     }
 
     @Override
     public String getDescription() {
-        return "Accept request to join empire";
+        return "Reject request to join empire";
     }
 
     @Override
@@ -90,7 +94,7 @@ public class AcceptEmpireMember implements CommandOption {
 
     @Override
     public String getUsage() {
-        return "/e accept <player>";
+        return "/e reject <player>";
     }
 
 }

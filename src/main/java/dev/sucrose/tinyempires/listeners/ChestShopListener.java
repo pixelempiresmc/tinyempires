@@ -82,7 +82,6 @@ public class ChestShopListener implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        System.out.println("Inventory clicked");
         final Player player = (Player) event.getWhoClicked();
         final Inventory inventory = event.getClickedInventory();
         // event triggers even if cursor was not on slot, return
@@ -91,19 +90,16 @@ public class ChestShopListener implements Listener {
             return;
         }
 
-        if (inventory.getType() != InventoryType.CHEST) {
+        System.out.println(inventory.getType());
+        if (inventory.getType() != InventoryType.CHEST
+                && inventory.getLocation() != null) {
             System.out.println("Inventory clicked was not a chest");
             return;
         }
 
         final Location location = inventory.getLocation();
-        if (location == null) {
-            player.sendMessage(ChatColor.RED
-                + "ERROR: Could not fetch chest location. Please notify a developer and we will tend to this " +
-                "promptly."
-            );
+        if (location == null)
             return;
-        }
 
         final TEChunk chunk = TEChunk.getChunk(location.getChunk());
         if (chunk == null
@@ -242,8 +238,8 @@ public class ChestShopListener implements Listener {
             return;
         }
 
-        if (!chestOwnerId.equals(player.getUniqueId())) {
-            System.out.printf("Chest owner ID (%s) does not equal clicker ID (%s)\n", chestOwnerId, player.getUniqueId());
+        if (chestOwnerId.equals(player.getUniqueId())) {
+            System.out.printf("Chest owner ID (%s) equals clicker ID (%s)\n", chestOwnerId, player.getUniqueId());
             return;
         }
 
@@ -271,6 +267,10 @@ public class ChestShopListener implements Listener {
         inventory.clear(clickedSlotIndex);
         player.getInventory().addItem(itemsInSlot);
         tePlayer.takeCoins(costPerSlot);
+        final TEPlayer owner = TEPlayer.getTEPlayer(chestOwnerId);
+        if (owner == null)
+            throw new NullPointerException("Could not get owner of chest shop (" + chestOwnerId + ")");
+        owner.giveCoins(costPerSlot);
 
         // send success message to player
         final int itemsInSlotAmount = itemsInSlot.getAmount();
@@ -280,6 +280,16 @@ public class ChestShopListener implements Listener {
             itemsInSlot.getType().name().toLowerCase().replace('_', ' ') + (itemsInSlotAmount > 1 ? "s" : ""),
             costPerSlot
         ));
+
+        final Player ownerPlayer = Bukkit.getPlayer(chestOwnerId);
+        if (ownerPlayer != null)
+            ownerPlayer.sendMessage(ChatColor.GREEN + String.format(
+                "%s purchased %d %s for %.1f coins from one of your chest shops",
+                ChatColor.BOLD + player.getName() + ChatColor.GREEN,
+                itemsInSlot.getAmount(),
+                itemsInSlot.getType().name().toLowerCase().replace('_', ' ') + (itemsInSlotAmount > 1 ? "s" : ""),
+                costPerSlot
+            ));
     }
 
 }

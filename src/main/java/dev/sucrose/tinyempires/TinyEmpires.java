@@ -17,6 +17,7 @@ import dev.sucrose.tinyempires.commands.empire.options.Home;
 import dev.sucrose.tinyempires.commands.godsuite.*;
 import dev.sucrose.tinyempires.discord.DiscordBot;
 import dev.sucrose.tinyempires.listeners.*;
+import dev.sucrose.tinyempires.models.Empire;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.DrawEmpire;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
@@ -54,9 +55,15 @@ public final class TinyEmpires extends JavaPlugin {
         DrawEmpire.draw();
         DrawEmpire.drawBorders(WORLD_BORDER_LEFT_X, WORLD_BORDER_RIGHT_X, WORLD_BORDER_BOTTOM_Z, WORLD_BORDER_TOP_Z);
         // assign to variable so same instance is assigned as event listener and command executor
+        final Atlantis atlantis = new Atlantis();
         final Yggdrasil yggdrasil = new Yggdrasil();
+        final EmpireCommand empireCommand = new EmpireCommand();
+        final Convert convert = new Convert();
         registerEvents(
             yggdrasil,
+            atlantis,
+            empireCommand,
+            convert,
             new ChestShopListener(),
             new EndPortal(),
             new PlayerChat(),
@@ -68,7 +75,6 @@ public final class TinyEmpires extends JavaPlugin {
             new TempleBurnListener(),
             new CreateEmpireLaw(),
             new WorldBorder(),
-            new Atlantis(),
             new StructureProtection(),
             new EntityChangePotionEffect(),
             new Home()
@@ -77,19 +83,19 @@ public final class TinyEmpires extends JavaPlugin {
         // load worlds
         getServer().createWorld(new WorldCreator("chess"));
 
-        registerCommand("convert", new Convert());
+        registerCommand("empire", empireCommand);
+        registerCommand("atlantis", atlantis);
+        registerCommand("yggdrasil", yggdrasil);
+        registerCommand("convert", convert);
         registerCommand("gift", new Gift());
         registerCommand("pay", new Pay());
         registerCommand("take", new Take());
-        registerCommand("empire", new EmpireCommand());
         registerCommand("refreshcaches", new RefreshCaches());
         registerCommand("dimension", new Dimension());
         registerCommand("flyspeed", new Flyspeed());
         registerCommand("invisible", new Invisible());
         registerCommand("smite", new Smite());
         registerCommand("olympus", new Olympus());
-        registerCommand("atlantis", new Atlantis());
-        registerCommand("yggdrasil", yggdrasil);
         registerCommand("discord", new LinkDiscordAccount());
         registerCommand("censor", new Censor());
 

@@ -30,17 +30,22 @@ public class ChangeEmpireName implements CommandOption {
             return;
         }
 
-        if (!tePlayer.hasPermission(Permission.EDIT)) {
-            sender.sendMessage(ErrorUtils.generatePermissionError(Permission.EDIT));
+        if (!tePlayer.hasPermission(getPermissionRequired())) {
+            sender.sendMessage(ErrorUtils.generatePermissionError(getPermissionRequired()));
             return;
         }
 
         if (args.length < 1) {
-            sender.sendMessage(ChatColor.RED + "/e name <name>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
         final String name = StringUtils.buildWordsFromArray(args, 0);
+        if (name.length() > 30) {
+            sender.sendMessage(ChatColor.RED + "You cannot have an empire name longer than 30 characters");
+            return;
+        }
+
         empire.broadcast(ChatColor.GREEN, String.format(
             "%s changed the empire's name to %s",
             sender.getName(),
@@ -52,6 +57,21 @@ public class ChangeEmpireName implements CommandOption {
             "" + ChatColor.BOLD + empire.getChatColor() + name
         ));
         empire.setName(name);
+    }
+
+    @Override
+    public String getDescription() {
+        return "Change empire name";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return Permission.EDIT;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e name <name>";
     }
 
 }

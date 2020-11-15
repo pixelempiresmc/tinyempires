@@ -28,13 +28,13 @@ public class Fine implements CommandOption {
             return;
         }
 
-        if (!tePlayer.hasPermission(Permission.RESERVE)) {
-            sender.sendMessage(ErrorUtils.generatePermissionError(Permission.RESERVE));
+        if (!tePlayer.hasPermission(getPermissionRequired())) {
+            sender.sendMessage(ErrorUtils.generatePermissionError(getPermissionRequired()));
             return;
         }
 
         if (args.length < 2) {
-            sender.sendMessage(ChatColor.RED + "/e fine <player> <amount>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
@@ -42,7 +42,7 @@ public class Fine implements CommandOption {
         try {
             amount = Double.parseDouble(args[1]);
         } catch (Exception ignore) {
-            sender.sendMessage(ChatColor.RED + "/e fine <player> <amount>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
@@ -67,14 +67,29 @@ public class Fine implements CommandOption {
 
         // forgive debt
         empire.addDebt(debtor.getPlayerUUID(), amount);
-        final double debt = empire.getDebt(debtor.getPlayerUUID());
-        sender.sendMessage(ChatColor.GREEN + String.format(
+        final Double debt = empire.getDebt(debtor.getPlayerUUID());
+        empire.broadcastText(ChatColor.GREEN + String.format(
             "%s has fined %s %.1f coins! (%.1f coins now indebted)",
             ChatColor.BOLD + sender.getName() + ChatColor.GREEN,
             ChatColor.BOLD + sender.getName() + ChatColor.GREEN,
             amount,
-            debt
+            debt == null ? 0 : debt
         ));
+    }
+
+    @Override
+    public String getDescription() {
+        return "Give member debt";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return Permission.RESERVE;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e fine <player> <amount>";
     }
 
 }

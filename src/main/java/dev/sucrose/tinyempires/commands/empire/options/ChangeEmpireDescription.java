@@ -35,7 +35,7 @@ public class ChangeEmpireDescription implements CommandOption {
         }
 
         if (args.length < 1) {
-            sender.sendMessage(ChatColor.RED + "/e desc <description>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
@@ -46,6 +46,21 @@ public class ChangeEmpireDescription implements CommandOption {
             sender.getName(),
             ChatColor.ITALIC + description
         ));
+    }
+
+    @Override
+    public String getDescription() {
+        return "Set empire description";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return Permission.EDIT;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e desc <description>";
     }
 
 }

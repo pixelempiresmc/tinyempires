@@ -1,10 +1,7 @@
 package dev.sucrose.tinyempires.commands.empire.options;
 
 import dev.sucrose.tinyempires.discord.DiscordBot;
-import dev.sucrose.tinyempires.models.Empire;
-import dev.sucrose.tinyempires.models.CommandOption;
-import dev.sucrose.tinyempires.models.TEChunk;
-import dev.sucrose.tinyempires.models.TEPlayer;
+import dev.sucrose.tinyempires.models.*;
 import dev.sucrose.tinyempires.utils.DrawEmpire;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import org.bukkit.Bukkit;
@@ -31,10 +28,26 @@ public class LeaveEmpire implements CommandOption {
             return;
         }
 
+        // owners in an empire with other people can't leave until they transfer ownership
+        if (tePlayer.isOwner()
+                && empire.getMembers().size() > 1) {
+            sender.sendMessage(ChatColor.RED + "You must transfer empire ownership to another member before leaving");
+            return;
+        }
+
+        if (empire.getMembers().size() == 1
+                && empire.getReserve() > 0.1) {
+            sender.sendMessage(ChatColor.RED + String.format(
+                "The empire has %.1f coins remaining in its reserve; you cannot leave if you are the only remaining " +
+                    "member and coins still remain in the reserve. (Withdraw coins with /e withdraw %.1f)",
+                empire.getReserve(),
+                empire.getReserve()
+            ));
+            return;
+        }
+
         // leave empire
         DiscordBot.removeEmpireDiscordRoleFromUser(tePlayer, empire);
-        if (tePlayer.isOwner())
-            DiscordBot.removeEmpireOwnerRoleFromUser(tePlayer);
 
         tePlayer.leaveEmpire();
         empire.removeMember(tePlayer);
@@ -51,11 +64,23 @@ public class LeaveEmpire implements CommandOption {
                 empire.getName()
             ));
 
+            if (empire.getAtWarWith() != null) {
+                DeclareWar.endWar(
+                    empire.isAttackerInWar() ? empire : empire.getAtWarWith(),
+                    empire.isAttackerInWar() ? empire.getAtWarWith() : empire
+                );
+                empire.getAtWarWith().broadcastText(ChatColor.GREEN +
+                    "The enemy has disbanded and the war is now over!"
+                );
+            }
+
             // erase chunk markers + delete in mongo
             for (final TEChunk chunk : TEChunk.getEmpireChunks(empire.getId())) {
                 TEChunk.deleteChunk(chunk);
                 DrawEmpire.removeChunk(chunk, empire);
             }
+
+            DrawEmpire.deleteEmpireHomeMarker(empire.getId());
 
             // delete empire in mongo
             empire.delete();
@@ -72,6 +97,21 @@ public class LeaveEmpire implements CommandOption {
             // delete empire Discord role
             DiscordBot.deleteEmpireRole(empire);
         }
+    }
+
+    @Override
+    public String getDescription() {
+        return "Leave empire (will delete if last member)";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return null;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e leave";
     }
 
 }

@@ -3,12 +3,13 @@ package dev.sucrose.tinyempires.models;
 import dev.sucrose.tinyempires.listeners.PlayerMove;
 import dev.sucrose.tinyempires.utils.DrawEmpire;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
+import dev.sucrose.tinyempires.utils.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
-import org.bukkit.Location;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
+import org.graalvm.compiler.core.phases.EconomyMidTier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,51 +28,33 @@ public class WarClaimChunkTask implements Runnable {
         this.defender = defender;
     }
 
-    public void broadcast(List<Player> players, String message) {
-        players.forEach(p -> {
+    private void broadcastPlayerList(List<TEPlayer> players, String message) {
+        for (final TEPlayer player : players) {
+            final Player p = Bukkit.getPlayer(player.getPlayerUUID());
             if (p != null)
                 p.sendMessage(message);
-        });
+        }
+    }
+
+    private void broadcastToTwoPlayerLists(List<TEPlayer> players1, List<TEPlayer> players2, String message) {
+        broadcastPlayerList(players1, message);
+        broadcastPlayerList(players2, message);
+    }
+
+    private String playerListToGrammaticalEmboldenedList(List<String> list) {
+        final StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0; i < list.size() - 1; i++)
+            stringBuilder.append(ChatColor.BOLD)
+                .append(list.get(i))
+                .append(ChatColor.YELLOW)
+                .append(i == list.size() - 2 ? " " : ", ");
+        return stringBuilder.append(list.get(list.size() - 1)).toString();
     }
 
     @Override
     public void run() {
-        final List<Player> players = new ArrayList<>();
-        int defenders = 0, attackers = 0;
-        for (final Player p : Bukkit.getOnlinePlayers()) {
-            final Location location = p.getLocation();
-            final Chunk c = location.getChunk();
-            if (c.getWorld().getName().equals(chunk.getWorld())
-                    && c.getX() == chunk.getX()
-                    && c.getZ() == chunk.getZ()) {
-                final TEPlayer tePlayer = TEPlayer.getTEPlayer(p.getUniqueId());
-                if (tePlayer == null)
-                    throw new NullPointerException(ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
-
-                final Empire empire = tePlayer.getEmpire();
-                if (empire != null
-                        && empire.getAtWarWith() != null) {
-                    if (empire.getAtWarWith().getId().equals(attacker.getId()))
-                        attackers++;
-                    else if (empire.getAtWarWith().getId().equals(defender.getId()))
-                        defenders++;
-                }
-                players.add(p);
-            }
-        }
-
-        if (attackers == 0) {
-            broadcast(players, ChatColor.GREEN + "All attackers have left or been defeated! Chunk is no longer " +
-                "contested...");
-
-        }
-
-
-
-
-
-
-        final List<Player> playersInChunk = new ArrayList<>();
+        final List<TEPlayer> defenders = new ArrayList<>();
+        final List<TEPlayer> attackers = new ArrayList<>();
         for (final Player player : Bukkit.getOnlinePlayers()) {
             final Chunk pGameChunk = player.getLocation().getChunk();
 
@@ -79,88 +62,93 @@ public class WarClaimChunkTask implements Runnable {
             if (!pGameChunk.getWorld().getName().equals(chunk.getWorld())
                     || pGameChunk.getX() != chunk.getX()
                     || pGameChunk.getZ() != chunk.getZ())
-                return;
+                continue;
 
-            playersInChunk.add(player);
             final TEPlayer pTePlayer = TEPlayer.getTEPlayer(player.getUniqueId());
             if (pTePlayer == null) {
                 player.sendMessage(ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
-                return;
+                continue;
             }
 
             final Empire playerEmpire = pTePlayer.getEmpire();
             if (playerEmpire == null)
                 continue;
 
-            // is a member of attacking empire
-            if (playerEmpire.getId().equals(defender.getId())) {
-                defenders++;
-            } else if (playerEmpire.getId().equals(attacker.getId())) {
-                attackers++;
+            final Empire atWarWith = playerEmpire.getAtWarWith();
+            if (atWarWith == null)
+                continue;
+
+            if (playerEmpire.getId() == defender.getId()) {
+                defenders.add(pTePlayer);
+            } else if (playerEmpire.getId() == attacker.getId()) {
+                attackers.add(pTePlayer);
             }
         }
 
-        // no conflict left, cancel task
-        if (attackers == 0) {
+        if (defenders.size() > 0) {
+            broadcastToTwoPlayerLists(attackers, defenders, ChatColor.YELLOW + String.format(
+                "Defender%s %s %s of %s contested the chunk, the claim attempt has been cancelled",
+                defenders.size() > 1 ? "s" : "",
+                ChatColor.BOLD + playerListToGrammaticalEmboldenedList(
+                    defenders.stream().map(TEPlayer::getName).collect(Collectors.toList())
+                ) + ChatColor.YELLOW,
+                defenders.size() > 1 ? "have" : "has",
+                "" + defender.getChatColor() + ChatColor.BOLD + defender.getName() + ChatColor.YELLOW
+            ));
             PlayerMove.cancelChunkWarClaimTask(chunk);
-            if (defenders == 0)
-                return;
+            return;
         }
 
-        // attacker wins chunk
-        if (attackers > 0
-                && defenders == 0
-                && timer == 0) {
-            attacker.broadcast(ChatColor.GREEN, String.format(
-                "Enemy chunk from %s at %d, %d conquered by %s!",
-                defender.getName(),
+        // no conflict left, cancel task
+        if (attackers.size() == 0) {
+            defender.broadcastText(ChatColor.GREEN + String.format(
+                "Chunk at %d, %d in the %s has stopped being contested by the enemy",
                 chunk.getWorldX(),
                 chunk.getWorldZ(),
-                playersInChunk
-                    .stream()
-                    .skip(1)
-                    .map(HumanEntity::getName)
-                    .collect(Collectors.joining(", "))
-                    + (playersInChunk.size() > 1 ? "and" : "") + playersInChunk.get(0).getName()
+                StringUtils.worldDirToName(chunk.getWorld())
+            ));
+            attacker.broadcastText(ChatColor.RED + String.format(
+                "Enemy chunk at %d, %d in the %s has stopped being contested by the empire",
+                chunk.getWorldX(),
+                chunk.getWorldZ(),
+                StringUtils.worldDirToName(chunk.getWorld())
+            ));
+            PlayerMove.cancelChunkWarClaimTask(chunk);
+            return;
+        }
+
+        // attacker wins chunk if previous checks are passed and timer is up
+        if (timer == 0) {
+            attacker.broadcast(ChatColor.GREEN, String.format(
+                "Enemy chunk from %s at %d, %d conquered by %s!",
+                "" + ChatColor.BOLD + defender.getChatColor() + defender.getName() + ChatColor.GREEN,
+                chunk.getWorldX(),
+                chunk.getWorldZ(),
+                playerListToGrammaticalEmboldenedList(
+                    attackers.stream().map(TEPlayer::getName).collect(Collectors.toList())
+                )
             ));
 
             defender.broadcast(ChatColor.GREEN, String.format(
                 "Lost chunk at %d, %d to the empire of %s!",
                 chunk.getWorldX(),
                 chunk.getWorldZ(),
-                attacker.getName()
+                "" + ChatColor.BOLD + attacker.getChatColor() + attacker.getName() + ChatColor.GREEN
             ));
+            chunk.setType(ChunkType.NONE);
             chunk.setEmpire(attacker);
+
             PlayerMove.cancelChunkWarClaimTask(chunk);
             DrawEmpire.setEmpire(chunk.getWorld(), chunk.getX(), chunk.getZ(), attacker);
             return;
         }
 
-        for (final Player player : playersInChunk) {
-            // attackers gone but defenders still left
-            if (attackers == 0) {
-                player.sendMessage(ChatColor.GREEN +
-                    "All attackers have been defeated! Chunk is no longer contested");
-                continue;
-            }
-
-            if (defenders > 0) {
-                player.sendMessage(ChatColor.DARK_RED + String.format(
-                    "%d defender%s is contesting the chunk!",
-                    defenders,
-                    defenders > 1 ? "s" : ""
-                ));
-                continue;
-            }
-
-            // attackers are still contesting, no defenders
-            player.sendMessage(ChatColor.GREEN + String.format(
-                "%d member%s contesting the chunk, %d seconds left",
-                attackers,
-                attackers > 1 ? "s" : "",
-                timer--
-            ));
-        }
+        broadcastPlayerList(attackers, ChatColor.GREEN + String.format(
+            "%d second%s left to claim...",
+            timer,
+            timer > 1 ? "s" : ""
+        ));
+        timer--;
     }
 
 }

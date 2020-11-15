@@ -39,6 +39,11 @@ public class Home implements CommandOption, Listener {
             return;
         }
 
+        if (empire.getHomeLocation() == null) {
+            sender.sendMessage(ChatColor.RED + "Your empire does not have a set home location");
+            return;
+        }
+
         // clone so player is teleported to original location if home is changed mid-teleport-countdown
         final Location homeLocation = empire.getHomeLocation().clone();
         sender.sendMessage(ChatColor.GREEN + "Teleporting to home in 5 seconds, don't move...");
@@ -100,6 +105,21 @@ public class Home implements CommandOption, Listener {
             return;
         Bukkit.getScheduler().cancelTask(playerToTeleportationTask.get(uuid));
         playerToTeleportationTask.remove(uuid);
+    }
+
+    @Override
+    public String getDescription() {
+        return "Teleport to empire home after waiting in place for 5 seconds)";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return null;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e home";
     }
 
 }

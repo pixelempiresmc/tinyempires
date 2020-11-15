@@ -1,6 +1,7 @@
 package dev.sucrose.tinyempires.listeners;
 
 import dev.sucrose.tinyempires.models.TEPlayer;
+import dev.sucrose.tinyempires.utils.BoundUtils;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import org.bukkit.*;
 import org.bukkit.entity.EnderSignal;
@@ -15,17 +16,6 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
 
 public class EndPortal implements Listener {
-
-    private static final int minPitX = 461;
-    private static final int maxPitX = 569;
-    private static final int minPitZ = 303;
-    private static final int maxPitZ = 419;
-    private static final int maxPitY = 41;
-
-    private static final int portalCastleMinX = 495;
-    private static final int portalCastleMaxX = 531;
-    private static final int portalCastleMinZ = 348;
-    private static final int portalCastleMaxZ = 387;
 
     private static final World theEnd;
 
@@ -64,16 +54,13 @@ public class EndPortal implements Listener {
         Location loc = e.getLocation();
         // prevent entity spawning in nether castle
         if (loc.getWorld() != null
-                && loc.getWorld().getName().equals("world_nether")
-                && loc.getX() > portalCastleMinX
-                && loc.getX() < portalCastleMaxX
-                && loc.getZ() > portalCastleMinZ
-                && loc.getZ() < portalCastleMaxZ
+                && BoundUtils.inBoundsOfPortalCastle(loc.getWorld().getName(), loc.getBlockX(), loc.getBlockZ())
                 && e.getEntityType() != EntityType.ENDER_SIGNAL) {
             e.setCancelled(true);
         }
     }
 
+    public static final int PIT_TOP_Y = 41;
     @EventHandler
     public static void onPlayerMove(PlayerMoveEvent e) {
         final Location loc = e.getTo();
@@ -82,12 +69,7 @@ public class EndPortal implements Listener {
         // check if player is near nether castle
         if (loc != null
                 && loc.getWorld() != null
-                && loc.getWorld().getName().equals("world_nether")
-                && loc.getX() > minPitX
-                && loc.getX() < maxPitX
-                && loc.getZ() > minPitZ
-                && loc.getZ() < maxPitZ
-        ) {
+                && BoundUtils.inBoundsOfPit(loc.getWorld().getName(), loc.getBlockX(), loc.getBlockZ())) {
             if (tePlayer == null) {
                 player.sendMessage(ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
                 return;
@@ -100,7 +82,7 @@ public class EndPortal implements Listener {
             }
 
             // nether castle end portal pit
-            if (loc.getY() < maxPitY)
+            if (loc.getY() < PIT_TOP_Y)
                 e.getPlayer().teleport(theEnd.getSpawnLocation());
         }
     }

@@ -1,6 +1,7 @@
 package dev.sucrose.tinyempires.commands.empire.options;
 
 import dev.sucrose.tinyempires.models.*;
+import dev.sucrose.tinyempires.utils.BoundUtils;
 import dev.sucrose.tinyempires.utils.DrawEmpire;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import dev.sucrose.tinyempires.utils.StringUtils;
@@ -19,7 +20,9 @@ public class EmpireClaimFill implements CommandOption {
         // more than CLAIM_FILL_LIMIT chunks tried to claim
         OVER_LIMIT,
         // encountered claim fill perimeter owned by foreign empire
-        UNOWNED_BORDER
+        UNOWNED_BORDER,
+        // claim fill contains special chunk
+        UNCLAIMABLE_CHUNK
     }
 
     private static class ChunkFloodFillResult {
@@ -91,7 +94,6 @@ public class EmpireClaimFill implements CommandOption {
         stack.add(TEChunk.serialize(chunk.getWorld().getName(), chunk.getX(), chunk.getZ()));
 
         int i = 0;
-        long startTime, endTime;
         long startTimeTotal, endTimeTotal;
         double duration;
         while (!stack.empty()) {
@@ -106,6 +108,10 @@ public class EmpireClaimFill implements CommandOption {
             final String world = words[0];
             final int x = Integer.parseInt(words[1]);
             final int z = Integer.parseInt(words[2]);
+
+            if (BoundUtils.inBoundsOfSpecialChunk(world, x, z))
+                return new ChunkFloodFillResult(null, FloodFillStatus.UNCLAIMABLE_CHUNK);
+
 
             // if over-world check map limits
             if (world.equals("world")
@@ -137,10 +143,6 @@ public class EmpireClaimFill implements CommandOption {
                 stack.add(downChunk);
 
             chunks.add(cSerialized);
-            endTimeTotal = System.nanoTime();
-            // get milliseconds
-            duration = (endTimeTotal - startTimeTotal) / 1000000d;
-            System.out.printf("Total iteration %d took %s milliseconds\n", i++, duration);
         }
         return new ChunkFloodFillResult(chunks, FloodFillStatus.SUCCESS);
     }
@@ -179,30 +181,32 @@ public class EmpireClaimFill implements CommandOption {
             return;
         }
 
-        ChunkFloodFillResult result = floodFill(empire, chunk);
+        final ChunkFloodFillResult result = floodFill(empire, chunk);
         if (result.getStatus() != FloodFillStatus.SUCCESS) {
             final String message =
                 result.getStatus() == FloodFillStatus.OVER_LIMIT
                     ? String.format("Claim-fill breached limit of %d chunks", CLAIM_FILL_LIMIT)
-                    : "Your empire does not fully encircle the area you're trying to claim-fill (check the map!)";
+                    : result.getStatus() == FloodFillStatus.UNCLAIMABLE_CHUNK
+                        ? "Your claim-fill selection contains an un-claimable chunk"
+                        : "Your empire does not fully encircle the area you're trying to claim-fill (check the map!)";
             sender.sendMessage(ChatColor.RED + message);
-            return;
-        }
-
-        if (empire.getReserve() < TEChunk.CHUNK_COST) {
-            sender.sendMessage(ChatColor.RED + String.format(
-                "Empire lacks enough coins for a new chunk. (%.1f required, %.1f in reserve)",
-                TEChunk.CHUNK_COST,
-                empire.getReserve()
-            ));
             return;
         }
 
         final double cost = result.getChunks().size() * TEChunk.CHUNK_COST;
         if (args.length > 0) {
-            String option = args[0];
+            final String option = args[0];
             if (option.equals("confirm")) {
-                for (Chunk c : result.getChunks()) {
+                if (empire.getReserve() < cost) {
+                    sender.sendMessage(ChatColor.RED + String.format(
+                        "Empire requires %.1f more coins to run claim fill (%d chunks, %.1f coins required)",
+                        cost - empire.getReserve(),
+                        result.getChunks().size(),
+                        cost
+                    ));
+                    return;
+                }
+                for (final Chunk c : result.getChunks()) {
                     System.out.println("Claiming chunk: " + c.toString());
                     TEChunk.createTEChunk(worldName, c.getX(), c.getZ(), empire);
                     DrawEmpire.drawChunk(empire, worldName, c.getX(), c.getZ());
@@ -229,6 +233,21 @@ public class EmpireClaimFill implements CommandOption {
             cost,
             empire.getReserve()
         ));
+    }
+
+    @Override
+    public String getDescription() {
+        return "Claim wilderness enclosed by empire territory";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return Permission.CHUNKS;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e claimfill [confirm]";
     }
 
 }

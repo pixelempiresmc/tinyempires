@@ -36,7 +36,7 @@ public class CreateEmpireLaw implements CommandOption, Listener {
         }
 
         if (args.length < 1) {
-            sender.sendMessage(ChatColor.RED + "/e newlaw <name>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
@@ -50,8 +50,7 @@ public class CreateEmpireLaw implements CommandOption, Listener {
         }
 
         final ItemStack item = sender.getInventory().getItemInMainHand();
-        if (item.getItemMeta() == null
-                || !(item.getItemMeta() instanceof BookMeta)) {
+        if (!(item.getItemMeta() instanceof BookMeta)) {
             sender.sendMessage(ChatColor.RED + "You must be holding a book to submit a law");
             return;
         }
@@ -68,9 +67,19 @@ public class CreateEmpireLaw implements CommandOption, Listener {
         ));
     }
 
-    @EventHandler
-    void onPlayerCloseBook(PlayerEditBookEvent event) {
-        System.out.println("Player edit book event");
+    @Override
+    public String getDescription() {
+        return "Create empire law from content in a book in the player's hand";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return Permission.LAWS;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e newlaw <name>";
     }
 
 }

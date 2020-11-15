@@ -4,7 +4,6 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.lang.Nullable;
 import dev.sucrose.tinyempires.TinyEmpires;
-import dev.sucrose.tinyempires.commands.empire.options.EmpireCreationCallback;
 import dev.sucrose.tinyempires.discord.DiscordBot;
 import dev.sucrose.tinyempires.utils.DrawEmpire;
 import org.bson.Document;
@@ -16,8 +15,6 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class Empire {
 
@@ -45,6 +42,9 @@ public class Empire {
     // Wars are only twenty minutes and can be stored in memory
     private Empire atWarWith = null;
     private Boolean isAttackerInWar;
+    private int timeLeftInWar;
+    private boolean isWaitingForWar = false;
+    private int timeLeftToWar;
 
     static {
         fillCache();
@@ -97,10 +97,6 @@ public class Empire {
             });
     }
 
-    public static void clearCache() {
-        empireCache.clear();
-    }
-
     public void delete() {
         collection.deleteOne(new Document("_id", id));
         empireCache.remove(id);
@@ -116,12 +112,15 @@ public class Empire {
         discordRoleId = document.getString("discord_id");
 
         final Document homeLocationDocument = document.get("home", Document.class);
-        homeLocation = new Location(
-            Bukkit.getWorld(homeLocationDocument.getString("world")),
-            homeLocationDocument.getDouble("x"),
-            homeLocationDocument.getDouble("y"),
-            homeLocationDocument.getDouble("z")
-        );
+        homeLocation =
+            homeLocationDocument == null
+                ? null
+                : new Location(
+                    Bukkit.getWorld(homeLocationDocument.getString("world")),
+                    homeLocationDocument.getDouble("x"),
+                    homeLocationDocument.getDouble("y"),
+                    homeLocationDocument.getDouble("z")
+                );
 
         final Document lawDocument = document.get("laws", Document.class);
         for (final String lawName : lawDocument.keySet())
@@ -159,7 +158,7 @@ public class Empire {
         return empireCache.values();
     }
 
-    private void updateMemberScoreboards() {
+    public void updateMemberScoreboards() {
         for (final TEPlayer player : members)
             player.updatePlayerScoreboard();
     }
@@ -210,7 +209,7 @@ public class Empire {
             new Document("_id", id),
             new Document(
                 "$addToSet",
-                new Document("members", player.getPlayerUUID())
+                new Document("members", player.getPlayerUUID().toString())
             )
         );
         DrawEmpire.updateEmpireChunkDescriptions(this);
@@ -243,7 +242,7 @@ public class Empire {
     }
 
     public double getReserve() {
-        return reserve;
+        return (double) Math.round(reserve * 10d) / 10d;
     }
 
     public String getDescription() {
@@ -398,6 +397,23 @@ public class Empire {
         putLaw(name, new Law(pages, getLaw(name).getAuthor()));
     }
 
+    public void renameLaw(String originalName, String newName) {
+        // move law in cache
+        laws.put(newName, laws.get(originalName));
+        laws.remove(originalName);
+        // rename embedded field in mongo
+        collection.updateOne(
+            new Document("_id", id),
+            new Document(
+                "$rename",
+                new Document(
+                    "laws." + originalName,
+                    "laws." + newName
+                )
+            )
+        );
+    }
+
     public void addLaw(String name, String author, List<String> pages) {
         putLaw(name, new Law(pages, author));
     }
@@ -410,8 +426,11 @@ public class Empire {
         );
     }
 
-    public void tax(Double amount) {
+    public void tax(Double amount, UUID taxer) {
         members.forEach(m -> {
+            // give everyone except taxer debt
+            if (m.getPlayerUUID().equals(taxer))
+                return;
             final Double debt = memberDebt.get(m.getPlayerUUID());
             memberDebt.put(
                 m.getPlayerUUID(),
@@ -465,6 +484,11 @@ public class Empire {
         return homeLocation;
     }
 
+    public void removeHomeLocation() {
+        homeLocation = null;
+        save(new Document("home", null));
+    }
+
     public void setHomeLocation(Location homeLocation) throws NullPointerException {
         final World world = homeLocation.getWorld();
         if (world == null)
@@ -487,5 +511,36 @@ public class Empire {
         return discordRoleId;
     }
 
+    public void setTimeLeftInWar(int timeLeftInWar) {
+        this.timeLeftInWar = timeLeftInWar;
+    }
+
+    public void decrementTimeLeftInWar() {
+        timeLeftInWar--;
+    }
+
+    public int getTimeLeftInWar() {
+        return timeLeftInWar;
+    }
+
+    public void setIsWaitingForWar(boolean isWaitingForWar) {
+        this.isWaitingForWar = isWaitingForWar;
+    }
+
+    public boolean isWaitingForWar() {
+        return isWaitingForWar;
+    }
+
+    public void setTimeLeftToWar(int timeLeftToWar) {
+        this.timeLeftToWar = timeLeftToWar;
+    }
+
+    public void decrementTimeLeftToWar() {
+        timeLeftToWar--;
+    }
+
+    public int getTimeLeftToWar() {
+        return timeLeftToWar;
+    }
 
 }

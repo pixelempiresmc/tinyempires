@@ -34,7 +34,7 @@ public class DeleteEmpireLaw implements CommandOption {
         }
 
         if (args.length < 1) {
-            sender.sendMessage(ChatColor.RED + "/e repeal <name>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
@@ -61,6 +61,21 @@ public class DeleteEmpireLaw implements CommandOption {
             ChatColor.BOLD + lawName + ChatColor.WHITE,
             law.getAuthor()
         ));
+    }
+
+    @Override
+    public String getDescription() {
+        return "Delete empire law";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return Permission.LAWS;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e repeal <law>";
     }
 
 }

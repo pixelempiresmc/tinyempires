@@ -1,5 +1,6 @@
 package dev.sucrose.tinyempires.listeners;
 
+import dev.sucrose.tinyempires.models.ChunkType;
 import dev.sucrose.tinyempires.models.Empire;
 import dev.sucrose.tinyempires.models.TEChunk;
 import dev.sucrose.tinyempires.models.TEPlayer;
@@ -13,6 +14,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.block.data.type.Door;
 import org.bukkit.entity.Mob;
+import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -114,7 +116,8 @@ public class TerritoryProtection implements Listener {
         if (block.getType().name().contains("DOOR")) {
             event.setCancelled(true);
             player.sendMessage(startOfResponse + "interact with doors");
-        } else if (block.getState() instanceof Chest) {
+        } else if (block.getState() instanceof Chest
+                && teChunk.getType() != ChunkType.TRADING) {
             event.setCancelled(true);
             player.sendMessage(startOfResponse + "open chests");
         } else if (block.getType() == Material.LEVER) {
@@ -131,9 +134,11 @@ public class TerritoryProtection implements Listener {
     @EventHandler
     public static void onMobSpawn(EntitySpawnEvent event) {
         final Location location = event.getLocation();
-        // prevent mob spawning in special chunks
-        if (event.getEntity() instanceof Mob
-                && BoundUtils.inBoundsOfSpecialChunk(location.getBlockX(),
+        // prevent monster (hostile mob) spawning in special chunks
+        if (event.getEntity() instanceof Monster
+                && location.getWorld() != null
+                && BoundUtils.inBoundsOfSpecialChunk(location.getWorld().getName(),
+            location.getBlockX(),
             location.getBlockZ()))
             event.setCancelled(true);
     }

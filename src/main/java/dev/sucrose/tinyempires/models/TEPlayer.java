@@ -8,6 +8,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.*;
+import sun.jvm.hotspot.debugger.NoSuchSymbolException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -89,6 +90,18 @@ public class TEPlayer {
             throw new NullPointerException("Bukkit#getScoreboardManager() returned null on initialization");
     }
 
+    private static String formatSecondsToTime(int seconds) {
+        final int minutes = seconds / 60;
+        final int secondsLeft = seconds % 60;
+        return String.format(
+            "%s:%s",
+            minutes,
+            secondsLeft < 10
+                ? "0" + secondsLeft
+                : secondsLeft
+        );
+    }
+
     public void updatePlayerScoreboard() {
         final Player player = Bukkit.getPlayer(playerUUID);
         if (player == null)
@@ -142,6 +155,25 @@ public class TEPlayer {
             "Name: " + getEmpire().getChatColor() + getEmpire().getName()).setScore(line++);
         objective.getScore(ChatColor.BOLD + "Empire").setScore(line++);
 
+        if (empire != null) {
+            final Empire empire = getEmpire();
+            if (empire.isWaitingForWar()) {
+                final Empire atWarWith = empire.getAtWarWith();
+                objective.getScore(ChatColor.LIGHT_PURPLE + "").setScore(line++);
+                objective.getScore(atWarWith.getChatColor() + atWarWith.getName()).setScore(line++);
+                objective.getScore("" + ChatColor.YELLOW + ChatColor.BOLD +
+                    String.format("War in %s", formatSecondsToTime(empire.getTimeLeftToWar()))
+                ).setScore(line++);
+            } else if (empire.getAtWarWith() != null) {
+                final Empire atWarWith = empire.getAtWarWith();
+                objective.getScore(ChatColor.LIGHT_PURPLE + "").setScore(line++);
+                objective.getScore(atWarWith.getChatColor() + atWarWith.getName()).setScore(line++);
+                objective.getScore("" + ChatColor.RED + ChatColor.BOLD +
+                    String.format("War (%s)", formatSecondsToTime(empire.getTimeLeftInWar()))
+                ).setScore(line++);
+            }
+        }
+
         // spacing, color for uniqueness
         objective.getScore("" + ChatColor.DARK_GREEN).setScore(line++);
 
@@ -172,7 +204,7 @@ public class TEPlayer {
     }
 
     public double getBalance() {
-        return balance;
+        return (double) Math.round(balance * 10d) / 10d;
     }
 
     public void setBalance(double balance) {
@@ -204,6 +236,7 @@ public class TEPlayer {
 
     public void leaveEmpire() {
         setEmpireId(null);
+        setPositionName(null);
     }
 
     public boolean isInEmpire() {

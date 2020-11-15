@@ -1,10 +1,7 @@
 package dev.sucrose.tinyempires.commands.empire.options;
 
 import dev.sucrose.tinyempires.TinyEmpires;
-import dev.sucrose.tinyempires.models.Empire;
-import dev.sucrose.tinyempires.models.CommandOption;
-import dev.sucrose.tinyempires.models.TEChunk;
-import dev.sucrose.tinyempires.models.TEPlayer;
+import dev.sucrose.tinyempires.models.*;
 import dev.sucrose.tinyempires.utils.BoundUtils;
 import dev.sucrose.tinyempires.utils.DrawEmpire;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
@@ -21,7 +18,7 @@ public class CreateEmpire implements CommandOption {
     public void execute(Player sender, String[] args) {
         // /e create <name>
         if (args.length < 1) {
-            sender.sendMessage(ChatColor.RED + "/e create <name>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
@@ -44,6 +41,11 @@ public class CreateEmpire implements CommandOption {
                 "Empire with the name '%s' already exists",
                 empireName
             ));
+            return;
+        }
+
+        if (empireName.length() > 30) {
+            sender.sendMessage(ChatColor.RED + "You cannot have an empire name longer than 30 characters");
             return;
         }
 
@@ -97,6 +99,21 @@ public class CreateEmpire implements CommandOption {
             err.printStackTrace();
             sender.sendMessage(ChatColor.RED + "Failed to create new empire, please notify a developer");
         }
+    }
+
+    @Override
+    public String getDescription() {
+        return "Create empire";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return null;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e create <name>";
     }
 
 }

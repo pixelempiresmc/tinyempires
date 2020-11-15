@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
-public class RemoveEmpireMember implements CommandOption {
+public class KickEmpireMember implements CommandOption {
 
     @Override
     public void execute(Player sender, String[] args) {
@@ -35,7 +35,7 @@ public class RemoveEmpireMember implements CommandOption {
         }
 
         if (args.length < 1) {
-            sender.sendMessage(ChatColor.RED + "/e remove <name>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
@@ -73,6 +73,21 @@ public class RemoveEmpireMember implements CommandOption {
             sender.getName(),
             player
         ));
+    }
+
+    @Override
+    public String getDescription() {
+        return "Kick member from empire";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return Permission.INVITES;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e kick <name>";
     }
 
 }

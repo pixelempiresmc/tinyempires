@@ -2,6 +2,9 @@ package dev.sucrose.tinyempires.commands;
 
 import dev.sucrose.tinyempires.discord.DiscordBot;
 import dev.sucrose.tinyempires.models.CommandOption;
+import dev.sucrose.tinyempires.models.TEPlayer;
+import dev.sucrose.tinyempires.utils.ErrorUtils;
+import net.dv8tion.jda.api.entities.User;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -25,6 +28,28 @@ public class LinkDiscordAccount implements CommandExecutor {
                 ChatColor.BOLD + existingLinkCode + ChatColor.RED
             ));
             return false;
+        }
+
+        final TEPlayer tePlayer = TEPlayer.getTEPlayer(uuid);
+        if (tePlayer == null) {
+            sender.sendMessage(ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
+            return false;
+        }
+
+        if (tePlayer.getDiscordId() != null) {
+            final User user = DiscordBot.getDiscordUsernameFromId(tePlayer.getDiscordId());
+            if (user != null
+                    && args.length > 1
+                    && !args[1].equals("relink")) {
+                sender.sendMessage(ChatColor.LIGHT_PURPLE + String.format(
+                    "You already have a Discord account linked (%s)! Run %s/discord relink%s to link your account " +
+                        "again.",
+                    user.getAsTag(),
+                    ChatColor.BOLD,
+                    ChatColor.LIGHT_PURPLE
+                ));
+                return false;
+            }
         }
 
         final String code = DiscordBot.addPendingLinkCode(uuid);

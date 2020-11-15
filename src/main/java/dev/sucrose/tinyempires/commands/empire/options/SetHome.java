@@ -32,13 +32,13 @@ public class SetHome implements CommandOption {
             return;
         }
 
-        if (!tePlayer.hasPermission(Permission.HOME)) {
-            sender.sendMessage(ErrorUtils.generatePermissionError(Permission.HOME));
+        if (!tePlayer.hasPermission(getPermissionRequired())) {
+            sender.sendMessage(ErrorUtils.generatePermissionError(getPermissionRequired()));
             return;
         }
 
         if (args.length != 0) {
-            sender.sendMessage(ChatColor.RED + "/e sethome");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
@@ -96,6 +96,21 @@ public class SetHome implements CommandOption {
             senderLocation.getBlockZ()
         );
         empire.takeReserveCoins(MOVE_HOME_COST);
+    }
+
+    @Override
+    public String getDescription() {
+        return "Set empire home to current location";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return Permission.EDIT;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e sethome";
     }
 
 }

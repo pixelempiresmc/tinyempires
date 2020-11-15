@@ -19,7 +19,7 @@ public class WorldBorder implements Listener {
         // get highest block at x and y coords
         for (int y = 255; y > 0; y--) {
             if (player.getWorld().getBlockAt((int)loc.getX(), y, (int)loc.getZ()).getType() != Material.AIR) {
-                loc.setY(y + 1);
+                loc.setY(y + 2);
                 break;
             }
         }
@@ -70,25 +70,25 @@ public class WorldBorder implements Listener {
         final double playerX = playerLoc.getX();
         final double playerZ = playerLoc.getZ();
         if (TinyEmpires.WORLD_BORDER_BOTTOM_Z - TinyEmpires.MARGIN <= playerZ) {
-            playerLoc.setZ(TinyEmpires.WORLD_BORDER_TOP_Z + 2 * TinyEmpires.MARGIN);
+            playerLoc.setZ(TinyEmpires.WORLD_BORDER_TOP_Z + 5 + TinyEmpires.MARGIN);
             circumnavigate(player, playerLoc);
             return;
         }
 
         if (TinyEmpires.WORLD_BORDER_TOP_Z + TinyEmpires.MARGIN >= playerZ) {
-            playerLoc.setZ(TinyEmpires.WORLD_BORDER_BOTTOM_Z - 2 * TinyEmpires.MARGIN);
+            playerLoc.setZ(TinyEmpires.WORLD_BORDER_BOTTOM_Z - 5 - TinyEmpires.MARGIN);
             circumnavigate(player, playerLoc);
             return;
         }
 
         if (TinyEmpires.WORLD_BORDER_LEFT_X + TinyEmpires.MARGIN >= playerX) {
-            playerLoc.setX(TinyEmpires.WORLD_BORDER_RIGHT_X - 2 * TinyEmpires.MARGIN);
+            playerLoc.setX(TinyEmpires.WORLD_BORDER_RIGHT_X - 5 - TinyEmpires.MARGIN);
             circumnavigate(player, playerLoc);
             return;
         }
 
         if (TinyEmpires.WORLD_BORDER_RIGHT_X - TinyEmpires.MARGIN <= playerX) {
-            playerLoc.setX(TinyEmpires.WORLD_BORDER_LEFT_X + 2 * TinyEmpires.MARGIN);
+            playerLoc.setX(TinyEmpires.WORLD_BORDER_LEFT_X + 5 + TinyEmpires.MARGIN);
             circumnavigate(player, playerLoc);
         }
     }

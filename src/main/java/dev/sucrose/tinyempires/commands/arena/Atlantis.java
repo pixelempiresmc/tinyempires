@@ -18,6 +18,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
+import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -27,6 +28,7 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,6 +40,7 @@ public class Atlantis implements CommandExecutor, Listener {
     private final static String ERROR_OPTIONS = ChatColor.RED + "/atlantis <join/start/list/cancel>";
 
     private final static Map<UUID, ArenaPlayerEntry> playerArenaEntries = new HashMap<>();
+    private final static Map<UUID, UUID> playerToLastThrownTridentEntityId = new HashMap<>();
     private final static ArenaEntry arena;
     private final static Random random = new Random();
 
@@ -69,7 +72,7 @@ public class Atlantis implements CommandExecutor, Listener {
         }
     }
 
-    private void broadcastToPlayerUUIDList(List<UUID> uuids, String message) {
+    private void broadcastToPlayerUUIDList(Iterable<UUID> uuids, String message) {
         for (final UUID uuid : uuids) {
             final Player player = Bukkit.getPlayer(uuid);
             if (player == null)
@@ -78,7 +81,7 @@ public class Atlantis implements CommandExecutor, Listener {
         }
     }
 
-    private void sendPlayerTitleAndChatMessage(List<UUID> uuids, String title, String message) {
+    private void sendPlayerTitleAndChatMessage(Iterable<UUID> uuids, String title, String message) {
         uuids.forEach(pUUID -> {
             final Player p = Bukkit.getPlayer(pUUID);
             if (p == null)
@@ -137,7 +140,7 @@ public class Atlantis implements CommandExecutor, Listener {
             return false;
         }
 
-        final List<UUID> playersInArena = arena.getPlayers();
+        final Set<UUID> playersInArena = arena.getPlayers();
         switch (option) {
             case "list":
                 sender.sendMessage(ChatColor.GREEN + String.format(
@@ -159,20 +162,7 @@ public class Atlantis implements CommandExecutor, Listener {
                 ));
                 return false;
             case "leave":
-                if (arena.isActive()
-                        || arena.isCountingDown()) {
-                    sender.sendMessage(ChatColor.RED + "You cannot leave while the match is ongoing");
-                    return false;
-                }
-                broadcastToPlayerUUIDList(playersInArena, ChatColor.YELLOW + String.format(
-                        "%s has left the arena",
-                        ChatColor.BOLD + sender.getName() + ChatColor.YELLOW
-                ));
-                arena.removePlayer(player.getUniqueId());
-                playerArenaEntries.get(uuid).restore(player);
-                playerArenaEntries.remove(uuid);
-                player.teleport(arena.getStartLocation());
-                player.setGameMode(GameMode.SURVIVAL);
+                onPlayerLeave(player);
                 return false;
             case "start":
                 if (!playersInArena.contains(uuid)) {
@@ -278,18 +268,55 @@ public class Atlantis implements CommandExecutor, Listener {
         }
     }
 
+    public void onPlayerLeave(Player player) {
+        final UUID uuid = player.getUniqueId();
+        if (arena.isActive())
+            arena.removePlayerFromPlayersLeft(uuid);
+        arena.removePlayer(uuid);
+        final ArenaPlayerEntry playerEntry = playerArenaEntries.get(uuid);
+        // delete trident if exists
+        deleteLastTridentFromPlayerIfExists(uuid);
+        playerEntry.restore(player);
+        playerArenaEntries.remove(uuid);
+        player.teleport(arena.getStartLocation());
+        player.setGameMode(GameMode.SURVIVAL);
+        broadcastToPlayerUUIDList(arena.getPlayers(), ChatColor.YELLOW + String.format(
+            "%s has left the arena",
+            ChatColor.BOLD + player.getName() + ChatColor.YELLOW
+        ));
+    }
+
+    private void deleteLastTridentFromPlayerIfExists(UUID uuid) {
+        if (playerToLastThrownTridentEntityId.containsKey(uuid)) {
+            final Entity lastTridentThrown = Bukkit.getPlayer(
+                playerToLastThrownTridentEntityId.get(uuid)
+            );
+            if (lastTridentThrown != null)
+                lastTridentThrown.remove();
+            playerToLastThrownTridentEntityId.remove(uuid);
+        }
+    }
+
     @EventHandler
     public void onPlayerDamage(EntityDamageByEntityEvent event) {
         final Entity victim = event.getEntity();
         System.out.println("Victim: " + victim.getType() + ", " + victim.getName());
-        if (!BoundUtils.inBoundsOfWaterArena(
-            victim.getLocation().getBlockX(),
-            victim.getLocation().getBlockZ()
-        ))
+        final Location location = victim.getLocation();
+        // return if damage not done in arena
+        if (location.getWorld() != null
+                && !BoundUtils.inBoundsOfWaterArena(
+                    location.getWorld().getName(),
+                    location.getBlockX(),
+                    location.getBlockZ()
+                )
+        )
             return;
+        System.out.println("EntityDamageByEntityEvent in water arena bounds");
 
+        // don't kill squids, fishes or other in-arena mobs
         if (!(victim instanceof Player)) {
             event.setCancelled(true);
+            System.out.println("Cancelling event because victim is not player");
             return;
         }
 
@@ -306,8 +333,11 @@ public class Atlantis implements CommandExecutor, Listener {
         System.out.println("Player Victim: " + player.getName());
         final UUID uuid = player.getUniqueId();
         final ArenaPlayerEntry playerEntry = playerArenaEntries.get(uuid);
-        if (playerEntry == null
-                || !arena.isActive()) {
+        // return if player is in bounds but doesn't have player entry (isn't registered in arena)
+        if (playerEntry == null)
+            return;
+
+        if (!arena.isActive()) {
             // cancel event if player is waiting on coral block for event to start
             event.setCancelled(true);
             return;
@@ -332,6 +362,15 @@ public class Atlantis implements CommandExecutor, Listener {
             return;
         }
 
+        System.out.println(playerEntry);
+        System.out.println(player);
+
+        // remove from players
+        arena.removePlayerFromPlayersLeft(uuid);
+
+        // delete trident
+        deleteLastTridentFromPlayerIfExists(killer.getUniqueId());
+
         // prevent player from dying
         event.setCancelled(true);
 
@@ -342,15 +381,10 @@ public class Atlantis implements CommandExecutor, Listener {
         playerEntry.restore(player);
         player.teleport(arena.getStartLocation());
 
-        // remove from players
-        arena.removePlayerFromOngoingMatch(uuid);
-
         // restore health to full
         player.setHealth(20);
 
-        arena.removePlayerFromOngoingMatch(uuid);
         final int playersLeft = arena.getPlayersLeft().size();
-
         broadcastToPlayerUUIDList(arena.getPlayers(), ChatColor.YELLOW + String.format(
             "%s %s %s! %s",
             ChatColor.BOLD + player.getName() + ChatColor.YELLOW,
@@ -369,7 +403,7 @@ public class Atlantis implements CommandExecutor, Listener {
 
             final UUID killerUUID = killer.getUniqueId();
 
-            playerEntry.restore(killer);
+            playerArenaEntries.get(killerUUID).restore(killer);
             playerArenaEntries.remove(killerUUID);
             arena.removePlayer(killerUUID);
             killer.teleport(arena.getStartLocation());
@@ -399,37 +433,21 @@ public class Atlantis implements CommandExecutor, Listener {
     public void onPlayerQuit(PlayerQuitEvent event) {
         final Player player = event.getPlayer();
         final UUID uuid = player.getUniqueId();
-
         if (!playerArenaEntries.containsKey(uuid))
             return;
-        final ArenaPlayerEntry playerEntry = playerArenaEntries.get(uuid);
-
-        broadcastToPlayerUUIDList(arena.getPlayers(), ChatColor.YELLOW + String.format(
-            "%s has left the arena!",
-            ChatColor.BOLD + player.getName() + ChatColor.YELLOW
-        ));
-
-        // restore original location, inventory and exp
-        playerArenaEntries.get(uuid).restore(player);
-        playerArenaEntries.remove(uuid);
-        arena.removePlayer(uuid);
-        player.setGameMode(GameMode.SURVIVAL);
-
-        final TEPlayer tePlayer = TEPlayer.getTEPlayer(uuid);
-        if (tePlayer == null)
-            throw new NullPointerException(ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
+        onPlayerLeave(player);
     }
 
     private void restoreFractionOfBoostCharge(Player player) {
-        player.setExp(player.getExp() + 0.99F / 60);
+        player.setExp(Math.min(1f, player.getExp() + 0.99F / 60));
     }
 
     @EventHandler
     public void onPlayerSneak(PlayerToggleSneakEvent event) {
         // boosts for water arena
         final Player player = event.getPlayer();
-        final ArenaPlayerEntry arenaPlayerEntry = playerArenaEntries.get(player.getUniqueId());
-        if (arenaPlayerEntry == null)
+        final ArenaPlayerEntry ArenaPlayerEntry = playerArenaEntries.get(player.getUniqueId());
+        if (ArenaPlayerEntry == null)
             return;
 
         // only for water arena and players remaining in match
@@ -456,6 +474,18 @@ public class Atlantis implements CommandExecutor, Listener {
     }
 
     @EventHandler
+    public void onProjectileLaunch(ProjectileLaunchEvent event) {
+        final ProjectileSource source = event.getEntity().getShooter();
+        if (!(source instanceof Player))
+            return;
+        final Player player = (Player) source;
+        playerToLastThrownTridentEntityId.put(
+            player.getUniqueId(),
+            event.getEntity().getUniqueId()
+        );
+    }
+
+    @EventHandler
     public void onPlayerDrop(PlayerDropItemEvent event) {
         final Player player = event.getPlayer();
         // prevent player from accidentally dropping item
@@ -471,8 +501,8 @@ public class Atlantis implements CommandExecutor, Listener {
         if (to == null)
             throw new NullPointerException("Could not get player location");
 
-        final ArenaPlayerEntry arenaPlayerEntry = playerArenaEntries.get(event.getPlayer().getUniqueId());
-        if (arenaPlayerEntry != null) {
+        final ArenaPlayerEntry ArenaPlayerEntry = playerArenaEntries.get(event.getPlayer().getUniqueId());
+        if (ArenaPlayerEntry != null) {
             if (!arena.isActive()
                     && (to.getX() != from.getX()
                     || to.getY() != from.getY()
@@ -483,7 +513,7 @@ public class Atlantis implements CommandExecutor, Listener {
 
         if (arena.getEntrancePlane().isInPlane(to.getBlockX(), to.getBlockY(), to.getBlockZ())) {
             final int playerLimit = arena.getPlayerLimit();
-            final List<UUID> playersInArena = arena.getPlayers();
+            final Set<UUID> playersInArena = arena.getPlayers();
             final Player player = event.getPlayer();
             if (playersInArena.size() == playerLimit) {
                 player.sendMessage(ChatColor.RED + String.format(
@@ -514,6 +544,7 @@ public class Atlantis implements CommandExecutor, Listener {
 
             // health
             player.setHealth(20);
+            player.setFoodLevel(20);
 
             // adventure mode
             player.setGameMode(GameMode.ADVENTURE);
@@ -526,6 +557,9 @@ public class Atlantis implements CommandExecutor, Listener {
                     player.getTotalExperience()
                 )
             );
+
+            // delete trident if they threw one before game begun
+            deleteLastTridentFromPlayerIfExists(uuid);
 
             // set arena inventory and exp
             setPlayerArenaInventory(player);

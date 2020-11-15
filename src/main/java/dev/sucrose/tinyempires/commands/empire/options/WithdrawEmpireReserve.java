@@ -28,13 +28,13 @@ public class WithdrawEmpireReserve implements CommandOption {
             return;
         }
 
-        if (!tePlayer.hasPermission(Permission.RESERVE)) {
-            sender.sendMessage(ErrorUtils.generatePermissionError(Permission.RESERVE));
+        if (!tePlayer.hasPermission(getPermissionRequired())) {
+            sender.sendMessage(ErrorUtils.generatePermissionError(getPermissionRequired()));
             return;
         }
 
         if (args.length < 1) {
-            sender.sendMessage(ChatColor.RED + "/e withdraw <amount>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
@@ -42,7 +42,7 @@ public class WithdrawEmpireReserve implements CommandOption {
         try {
             amount = Double.parseDouble(args[0]);
         } catch (Exception err) {
-            sender.sendMessage(ChatColor.RED + "/e withdraw <amount>");
+            sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
 
@@ -62,6 +62,21 @@ public class WithdrawEmpireReserve implements CommandOption {
             sender.getName(),
             amount
         ));
+    }
+
+    @Override
+    public String getDescription() {
+        return "Withdraw empire funds from reserve";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return Permission.RESERVE;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e <withdraw> <amount>";
     }
 
 }

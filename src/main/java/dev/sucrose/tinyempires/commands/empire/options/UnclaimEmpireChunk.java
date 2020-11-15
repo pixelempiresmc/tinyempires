@@ -51,6 +51,12 @@ public class UnclaimEmpireChunk implements CommandOption {
             return;
         }
 
+        if (empire.getHomeLocation() != null
+                && empire.getHomeLocation().getChunk().equals(sender.getLocation().getChunk())) {
+            sender.sendMessage(ChatColor.RED + "You cannot unclaim a chunk with your empire's home location in it");
+            return;
+        }
+
         TEChunk.deleteChunk(teChunk);
         DrawEmpire.removeChunk(teChunk, empire);
         empire.broadcast(ChatColor.GREEN, String.format(
@@ -60,6 +66,21 @@ public class UnclaimEmpireChunk implements CommandOption {
             chunk.getZ() * 16,
             StringUtils.worldDirToName(teChunk.getWorld())
         ));
+    }
+
+    @Override
+    public String getDescription() {
+        return "Un-claim chunk from empire (no coins are given back)";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return Permission.CHUNKS;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e unclaim";
     }
 
 }

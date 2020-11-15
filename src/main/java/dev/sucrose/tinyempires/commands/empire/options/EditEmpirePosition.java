@@ -25,7 +25,7 @@ public class EditEmpirePosition implements CommandOption {
 
     @Override
     public void execute(Player sender, String[] args) {
-        // /e perm|permission <name> <permission>
+        // /e perm <position> <permission>
         final UUID senderUUID = sender.getUniqueId();
         final TEPlayer tePlayer = TEPlayer.getTEPlayer(senderUUID);
         if (tePlayer == null) {
@@ -46,7 +46,7 @@ public class EditEmpirePosition implements CommandOption {
 
         if (args.length < 2) {
             sender.sendMessage(ChatColor.RED + String.format(
-                "/e perm|permission <name> <%s>",
+                "/e perm <name> <%s>",
                 permString
             ));
             return;
@@ -102,6 +102,21 @@ public class EditEmpirePosition implements CommandOption {
                 }
             }
         }
+    }
+
+    @Override
+    public String getDescription() {
+        return "Toggle empire position permission";
+    }
+
+    @Override
+    public Permission getPermissionRequired() {
+        return Permission.POSITIONS;
+    }
+
+    @Override
+    public String getUsage() {
+        return "/e perm <position> <permission>";
     }
 
 }

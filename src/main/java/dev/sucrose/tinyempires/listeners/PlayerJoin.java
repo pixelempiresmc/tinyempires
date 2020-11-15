@@ -34,10 +34,6 @@ public class PlayerJoin implements Listener {
             if (p != null)
                 player.hidePlayer(TinyEmpires.getInstance(), p);
         }
-
-        // DEBUG FOR YGGDRASIL
-        player.setInvulnerable(false);
-        player.setCollidable(true);
     }
 
 }
