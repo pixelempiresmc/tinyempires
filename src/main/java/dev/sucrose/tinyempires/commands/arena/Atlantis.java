@@ -114,6 +114,10 @@ public class Atlantis implements CommandExecutor, Listener {
         player.updateInventory();
     }
 
+    public static boolean isPlayerInGame(UUID uuid) {
+        return playerArenaEntries.containsKey(uuid);
+    }
+
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         // /arena <option> <arena>
@@ -300,7 +304,6 @@ public class Atlantis implements CommandExecutor, Listener {
     @EventHandler
     public void onPlayerDamage(EntityDamageByEntityEvent event) {
         final Entity victim = event.getEntity();
-        System.out.println("Victim: " + victim.getType() + ", " + victim.getName());
         final Location location = victim.getLocation();
         // return if damage not done in arena
         if (location.getWorld() != null
@@ -311,12 +314,10 @@ public class Atlantis implements CommandExecutor, Listener {
                 )
         )
             return;
-        System.out.println("EntityDamageByEntityEvent in water arena bounds");
 
         // don't kill squids, fishes or other in-arena mobs
         if (!(victim instanceof Player)) {
             event.setCancelled(true);
-            System.out.println("Cancelling event because victim is not player");
             return;
         }
 
@@ -324,13 +325,11 @@ public class Atlantis implements CommandExecutor, Listener {
         final Entity damager = event.getDamager();
         if (damager.getType() != EntityType.TRIDENT
                 && damager.getType() != EntityType.PLAYER) {
-            System.out.println("Damager entity was not a trident or player");
             event.setCancelled(true);
             return;
         }
 
         final Player player = (Player) victim; // get player that was damaged
-        System.out.println("Player Victim: " + player.getName());
         final UUID uuid = player.getUniqueId();
         final ArenaPlayerEntry playerEntry = playerArenaEntries.get(uuid);
         // return if player is in bounds but doesn't have player entry (isn't registered in arena)
@@ -353,7 +352,6 @@ public class Atlantis implements CommandExecutor, Listener {
         final double newHealth = player.getHealth() - event.getFinalDamage();
         killer.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 15, 1);
         if (newHealth > 0) {
-            System.out.println("Player did not die, returning");
             killer.sendMessage(ChatColor.GREEN + String.format(
                 "%s has %.1f hearts left",
                 ChatColor.BOLD + player.getName() + ChatColor.GREEN,
@@ -361,9 +359,6 @@ public class Atlantis implements CommandExecutor, Listener {
             ));
             return;
         }
-
-        System.out.println(playerEntry);
-        System.out.println(player);
 
         // remove from players
         arena.removePlayerFromPlayersLeft(uuid);

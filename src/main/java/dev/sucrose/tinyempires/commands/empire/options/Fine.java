@@ -71,7 +71,7 @@ public class Fine implements CommandOption {
         empire.broadcastText(ChatColor.GREEN + String.format(
             "%s has fined %s %.1f coins! (%.1f coins now indebted)",
             ChatColor.BOLD + sender.getName() + ChatColor.GREEN,
-            ChatColor.BOLD + sender.getName() + ChatColor.GREEN,
+            ChatColor.BOLD + debtor.getName() + ChatColor.GREEN,
             amount,
             debt == null ? 0 : debt
         ));

@@ -6,6 +6,7 @@ import dev.sucrose.tinyempires.models.Empire;
 import dev.sucrose.tinyempires.models.Permission;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
@@ -68,11 +69,22 @@ public class KickEmpireMember implements CommandOption {
 
         DiscordBot.removeEmpireDiscordRoleFromUser(tePlayer, empire);
         empire.removeMember(tePlayerToRemove);
+        tePlayer.leaveEmpire();
+        tePlayer.updatePlayerScoreboard();
+
         empire.broadcast(ChatColor.GREEN, String.format(
             "%s removed %s from the empire",
             sender.getName(),
             player
         ));
+
+        final Player kickedPlayer = Bukkit.getPlayer(tePlayer.getPlayerUUID());
+        if (kickedPlayer != null)
+            kickedPlayer.sendMessage(ChatColor.YELLOW + String.format(
+                "You have been kicked from %s by %s!",
+                "" + empire.getChatColor() + ChatColor.BOLD + empire.getName() + ChatColor.RED,
+                ChatColor.BOLD + sender.getName() + ChatColor.YELLOW
+            ));
     }
 
     @Override

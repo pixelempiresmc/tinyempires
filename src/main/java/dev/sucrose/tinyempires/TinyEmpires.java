@@ -4,6 +4,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import dev.sucrose.tinyempires.commands.LinkDiscordAccount;
+import dev.sucrose.tinyempires.commands.ProximityChat;
 import dev.sucrose.tinyempires.commands.RefreshCaches;
 import dev.sucrose.tinyempires.commands.arena.Atlantis;
 import dev.sucrose.tinyempires.commands.arena.Yggdrasil;
@@ -98,6 +99,7 @@ public final class TinyEmpires extends JavaPlugin {
         registerCommand("olympus", new Olympus());
         registerCommand("discord", new LinkDiscordAccount());
         registerCommand("censor", new Censor());
+        registerCommand("prox", new ProximityChat());
 
         try {
             DiscordBot.init();

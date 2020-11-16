@@ -1,6 +1,8 @@
 package dev.sucrose.tinyempires.commands.empire.options;
 
 import dev.sucrose.tinyempires.TinyEmpires;
+import dev.sucrose.tinyempires.commands.arena.Atlantis;
+import dev.sucrose.tinyempires.commands.arena.Yggdrasil;
 import dev.sucrose.tinyempires.listeners.PlayerLeave;
 import dev.sucrose.tinyempires.models.*;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
@@ -41,6 +43,12 @@ public class Home implements CommandOption, Listener {
 
         if (empire.getHomeLocation() == null) {
             sender.sendMessage(ChatColor.RED + "Your empire does not have a set home location");
+            return;
+        }
+
+        if (Yggdrasil.isPlayerInGame(senderUUID)
+                || Atlantis.isPlayerInGame(senderUUID)) {
+            sender.sendMessage(ChatColor.RED + "You cannot teleport to home while in an arena");
             return;
         }
 
@@ -91,9 +99,9 @@ public class Home implements CommandOption, Listener {
         if (to == null)
             return;
 
-        if (from.getX() != to.getZ()
-                && from.getY() != to.getY()
-                && from.getZ() != to.getZ()
+        if ((from.getX() != to.getZ()
+                || from.getY() != to.getY()
+                || from.getZ() != to.getZ())
                 && playerToTeleportationTask.containsKey(uuid)) {
             cancelPlayerTeleport(uuid);
             player.sendMessage(ChatColor.RED + "You moved! Cancelling teleport...");

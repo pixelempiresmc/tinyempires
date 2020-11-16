@@ -112,7 +112,7 @@ public class TEPlayer {
         final Objective objective = scoreboard.registerNewObjective(
             "title",
             "dummy",
-            "" + ChatColor.YELLOW + ChatColor.BOLD + "Tiny Empires"
+            "" + ChatColor.YELLOW + ChatColor.BOLD + "Pixel Empires"
         );
         objective.setDisplaySlot(DisplaySlot.SIDEBAR);
 
@@ -127,8 +127,12 @@ public class TEPlayer {
         // chunk type
         if (chunk != null
                 && chunk.getType() != ChunkType.NONE)
-            objective.getScore((chunk.getType() == ChunkType.TEMPLE ? ChatColor.GREEN :
-                ChatColor.GOLD) + chunk.getType().name()).setScore(line++);
+            objective.getScore("" +
+                (chunk.getType() == ChunkType.TEMPLE
+                    ? ChatColor.GREEN
+                    : ChatColor.GOLD)
+                + ChatColor.BOLD + chunk.getType().name()
+            ).setScore(line++);
 
         // location empire
         objective.getScore(chunk == null ? ChatColor.GRAY + "Wilderness" :
@@ -151,9 +155,11 @@ public class TEPlayer {
         }
 
         // player empire
-        objective.getScore(empire == null ? ChatColor.GRAY + "Unaffiliated" :
-            "Name: " + getEmpire().getChatColor() + getEmpire().getName()).setScore(line++);
-        objective.getScore(ChatColor.BOLD + "Empire").setScore(line++);
+        if (empire == null || getEmpire().getAtWarWith() == null) {
+            objective.getScore(empire == null ? ChatColor.GRAY + "Unaffiliated" :
+                "Name: " + getEmpire().getChatColor() + getEmpire().getName()).setScore(line++);
+            objective.getScore(ChatColor.BOLD + "Empire").setScore(line++);
+        }
 
         if (empire != null) {
             final Empire empire = getEmpire();

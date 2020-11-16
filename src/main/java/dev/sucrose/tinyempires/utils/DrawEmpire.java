@@ -120,35 +120,41 @@ public class DrawEmpire {
             final Location homeLocation = empire.getHomeLocation();
             if (homeLocation == null)
                 return;
-
-            if (homeLocation.getWorld() == null)
-                throw new NullPointerException("Could not get home location world for empire " + empire.getId() + " " +
-                    "when drawing home marker");
-
-            empireHomeMarkers.put(
-                empire.getId(),
-                new Icon(
-                    empire,
-                    String.format(
-                        "%s (%d, %d, %d)",
-                        empire.getName(),
-                        homeLocation.getBlockX(),
-                        homeLocation.getBlockY(),
-                        homeLocation.getBlockZ()
-                    ),
-                    colorToFlagIcon(empire.getColor()),
-                    homeLocation.getWorld().getName(),
-                    homeLocation.getBlockX(),
-                    homeLocation.getBlockZ()
-                )
-            );
+            makeHomeMarkerIcon(empire);
         }
     }
 
-    public static void moveEmpireHomeMarker(ObjectId empire, String world, int x, int z) {
-        if (!empireHomeMarkers.containsKey(empire))
-            throw new NullPointerException("Could not get home marker for empire");
-        empireHomeMarkers.get(empire).move(world, x, z);
+    public static void makeHomeMarkerIcon(Empire empire) {
+        final Location homeLocation = empire.getHomeLocation();
+        if (homeLocation.getWorld() == null)
+            throw new NullPointerException("Could not get home location world for empire " + empire.getId() + " " +
+                "when drawing home marker");
+
+        empireHomeMarkers.put(
+            empire.getId(),
+            new Icon(
+                empire,
+                String.format(
+                    "%s (%d, %d, %d)",
+                    empire.getName(),
+                    homeLocation.getBlockX(),
+                    homeLocation.getBlockY(),
+                    homeLocation.getBlockZ()
+                ),
+                colorToFlagIcon(empire.getColor()),
+                homeLocation.getWorld().getName(),
+                homeLocation.getBlockX(),
+                homeLocation.getBlockZ()
+            )
+        );
+    }
+
+    public static void moveEmpireHomeMarker(Empire empire, String world, int x, int z) {
+        if (!empireHomeMarkers.containsKey(empire.getId())) {
+            makeHomeMarkerIcon(empire);
+        } else {
+            empireHomeMarkers.get(empire.getId()).move(world, x, z);
+        }
     }
 
     public static void deleteEmpireHomeMarker(ObjectId empire) {
@@ -165,13 +171,8 @@ public class DrawEmpire {
 
     private static void eraseChunkBorderIfExists(String world, int x, int z, Direction direction) {
         final ChunkMarker marker = getChunkMarker(world, x, z);
-        System.out.printf("Erasing chunk marker border at %d %d in %s | direction %s\n", x, z, world, direction.name());
-        if (marker != null && marker.hasBorder(direction)) {
-            System.out.println("Deleting border");
+        if (marker != null && marker.hasBorder(direction))
             marker.removeBorder(direction);
-        } else {
-            System.out.println("Chunk marker does not have specified border");
-        }
     }
 
     public static void drawChunk(Empire empire, String world, int x, int z) {
@@ -185,28 +186,24 @@ public class DrawEmpire {
         if (chunk == null)
             throw new NullPointerException("Could not fetch TEChunk for chunk empire comparison");
 
-        System.out.println("Right chunk differs: " + chunkEmpiresDiffer(chunk, x + 1, z));
         if (chunkEmpiresDiffer(chunk, x + 1, z)) {
             marker.makeBorder(Direction.RIGHT);
         } else {
             eraseChunkBorderIfExists(world, x + 1, z, Direction.LEFT);
         }
 
-        System.out.println("Left chunk differs: " + chunkEmpiresDiffer(chunk, x - 1, z));
         if (chunkEmpiresDiffer(chunk, x - 1, z)) {
             marker.makeBorder(Direction.LEFT);
         } else {
             eraseChunkBorderIfExists(world, x - 1, z, Direction.RIGHT);
         }
 
-        System.out.println("Down chunk differs: " + chunkEmpiresDiffer(chunk, x, z + 1));
         if (chunkEmpiresDiffer(chunk, x, z + 1)) {
             marker.makeBorder(Direction.DOWN);
         } else {
             eraseChunkBorderIfExists(world, x, z + 1, Direction.UP);
         }
 
-        System.out.println("Up chunk differs: " + chunkEmpiresDiffer(chunk, x, z - 1));
         if (chunkEmpiresDiffer(chunk, x, z - 1)) {
             marker.makeBorder(Direction.UP);
         } else {
@@ -312,21 +309,18 @@ public class DrawEmpire {
             eraseChunkBorderIfExists(world, x + 1, z, Direction.LEFT);
         }
 
-        System.out.println("Left chunk differs: " + chunkEmpiresDiffer(chunk, x - 1, z));
         if (chunkEmpiresDiffer(chunk, x - 1, z)) {
             marker.makeBorder(Direction.LEFT);
         } else {
             eraseChunkBorderIfExists(world, x - 1, z, Direction.RIGHT);
         }
 
-        System.out.println("Down chunk differs: " + chunkEmpiresDiffer(chunk, x, z + 1));
         if (chunkEmpiresDiffer(chunk, x, z + 1)) {
             marker.makeBorder(Direction.DOWN);
         } else {
             eraseChunkBorderIfExists(world, x, z + 1, Direction.UP);
         }
 
-        System.out.println("Up chunk differs: " + chunkEmpiresDiffer(chunk, x, z - 1));
         if (chunkEmpiresDiffer(chunk, x, z - 1)) {
             marker.makeBorder(Direction.UP);
         } else {

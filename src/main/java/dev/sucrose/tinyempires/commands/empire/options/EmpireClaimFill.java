@@ -84,9 +84,6 @@ public class EmpireClaimFill implements CommandOption {
      * chunks go over chunk maximum
      */
 
-    // TODO: Floodfill is broken - adds each chunk twice and hangs when fill is called unclosed - change data
-    //  structure for faster #contains()
-
     private ChunkFloodFillResult floodFill(Empire empire, Chunk chunk) {
         // iterative flood-fill
         final Stack<String> stack = new Stack<>();
@@ -109,9 +106,8 @@ public class EmpireClaimFill implements CommandOption {
             final int x = Integer.parseInt(words[1]);
             final int z = Integer.parseInt(words[2]);
 
-            if (BoundUtils.inBoundsOfSpecialChunk(world, x, z))
+            if (BoundUtils.isChunkInBoundsOfSpecialTerritory(chunk))
                 return new ChunkFloodFillResult(null, FloodFillStatus.UNCLAIMABLE_CHUNK);
-
 
             // if over-world check map limits
             if (world.equals("world")
@@ -207,7 +203,6 @@ public class EmpireClaimFill implements CommandOption {
                     return;
                 }
                 for (final Chunk c : result.getChunks()) {
-                    System.out.println("Claiming chunk: " + c.toString());
                     TEChunk.createTEChunk(worldName, c.getX(), c.getZ(), empire);
                     DrawEmpire.drawChunk(empire, worldName, c.getX(), c.getZ());
                 }

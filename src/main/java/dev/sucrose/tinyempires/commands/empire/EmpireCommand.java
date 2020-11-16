@@ -29,7 +29,6 @@ public class EmpireCommand implements CommandExecutor, Listener {
         options.put("perm", new EditEmpirePosition());
         options.put("info", new Info());
         options.put("war", new DeclareWar());
-        options.put("warclaim", new WarClaimChunk());
         options.put("type", new SetChunkType());
         options.put("claimfill", new EmpireClaimFill());
         options.put("leave", new LeaveEmpire());

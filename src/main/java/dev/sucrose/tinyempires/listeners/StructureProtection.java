@@ -32,11 +32,8 @@ public class StructureProtection implements Listener {
     public void onPlayerBreakBlock(BlockBreakEvent event) {
         final Player player = event.getPlayer();
         if (player.isOp()
-                || Yggdrasil.isPlayerInGame(player.getUniqueId())) {
-            System.out.println("Player is op or in Yggdrasil game");
+                || Yggdrasil.isPlayerInGame(player.getUniqueId()))
             return;
-        }
-        System.out.println("Cancelling if in bounds");
         cancelIfInBounds(event, event.getBlock().getLocation());
     }
 

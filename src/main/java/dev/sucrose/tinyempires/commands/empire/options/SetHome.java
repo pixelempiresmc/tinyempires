@@ -13,7 +13,7 @@ import java.util.UUID;
 
 public class SetHome implements CommandOption {
 
-    private static final double MOVE_HOME_COST = 50;
+    private static final double MOVE_HOME_COST = 10;
 
     @Override
     public void execute(Player sender, String[] args) {
@@ -90,7 +90,7 @@ public class SetHome implements CommandOption {
         ));
         empire.setHomeLocation(senderLocation);
         DrawEmpire.moveEmpireHomeMarker(
-            empire.getId(),
+            empire,
             senderLocation.getWorld().getName(),
             senderLocation.getBlockX(),
             senderLocation.getBlockZ()

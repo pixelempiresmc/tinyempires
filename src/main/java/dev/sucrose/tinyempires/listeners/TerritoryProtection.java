@@ -92,28 +92,31 @@ public class TerritoryProtection implements Listener {
     public void onPlayerInteract(PlayerInteractEvent event) {
         final Player player = event.getPlayer();
         final TEPlayer tePlayer = TEPlayer.getTEPlayer(player.getUniqueId());
-        final Chunk chunk = player.getLocation().getChunk();
-        final TEChunk teChunk = TEChunk.getChunk(chunk);
 
         if (tePlayer == null) {
             player.sendMessage(ChatColor.RED + ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
             return;
         }
 
-        // return if no empire owns chunk
-        if (playerInChunkOwner(tePlayer, teChunk))
-            return;
-
-        // different empire, cancel event
+        // return if event is not block-related
         final Block block = event.getClickedBlock();
         if (block == null)
             return;
+        final Chunk chunk = block.getLocation().getChunk();
+        final TEChunk teChunk = TEChunk.getChunk(chunk);
+
+        // return if player not in empire
+        if (playerInChunkOwner(tePlayer, teChunk))
+            return;
 
         final String startOfResponse = ChatColor.RED + String.format(
-                "You are in the empire of %s and you cannot ",
-                teChunk.getEmpire().getName()
+            "You are in the empire of %s and you cannot ",
+            teChunk.getEmpire().getName()
         );
-        if (block.getType().name().contains("DOOR")) {
+        if (block.getType().name().contains("TRAPDOOR")) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "open trapdoors");
+        } else if (block.getType().name().contains("DOOR")) {
             event.setCancelled(true);
             player.sendMessage(startOfResponse + "interact with doors");
         } else if (block.getState() instanceof Chest
@@ -123,7 +126,7 @@ public class TerritoryProtection implements Listener {
         } else if (block.getType() == Material.LEVER) {
             event.setCancelled(true);
             player.sendMessage(startOfResponse + "flip levers");
-        } else if (block.getState().getType().name().contains("BUTTON")) {
+        } else if (block.getType().name().contains("BUTTON")) {
             event.setCancelled(true);
             player.sendMessage(startOfResponse + "press buttons");
         } else if (block.getType().name().contains("PRESSURE_PLATE")) {
@@ -138,9 +141,12 @@ public class TerritoryProtection implements Listener {
         if (event.getEntity() instanceof Monster
                 && location.getWorld() != null
                 && BoundUtils.inBoundsOfSpecialChunk(location.getWorld().getName(),
-            location.getBlockX(),
-            location.getBlockZ()))
+                    location.getBlockX(),
+                    location.getBlockZ()
+        )) {
             event.setCancelled(true);
+            System.out.println("Cancelling mob spawn (TerritoryProtection:onMobSpawn)");
+        }
     }
 
 }

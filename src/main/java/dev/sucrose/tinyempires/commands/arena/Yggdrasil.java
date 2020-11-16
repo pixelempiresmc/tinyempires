@@ -113,7 +113,6 @@ public class Yggdrasil implements Listener, CommandExecutor {
                 if (player == null)
                     throw new NullPointerException("Could not get player of uuid " + uuid + " when running arena-wide" +
                         " player functor in Yggdrasil");
-                System.out.println("Mapping function over player: " + player.getName());
                 functor.run(player);
             });
         }
@@ -345,8 +344,6 @@ public class Yggdrasil implements Listener, CommandExecutor {
             p.removePotionEffect(PotionEffectType.INVISIBILITY);
             arenaPlayerEntryMap.remove(p.getUniqueId());
             scoreboardTeams.get(pEntry.getTeam()).removeEntry(p.getName());
-
-            System.out.println("Win function for: " + p.getUniqueId());
         });
 
         teams.clear();
@@ -411,8 +408,6 @@ public class Yggdrasil implements Listener, CommandExecutor {
         // if player was killed by player/arrow/entity then make killer, else keep it null (e.g. died by fall damage)
         if (event instanceof EntityDamageByEntityEvent) {
             final EntityDamageByEntityEvent entityDamageByEntityEvent = (EntityDamageByEntityEvent) event;
-            System.out.println(entityDamageByEntityEvent.getDamager().getType());
-            System.out.println(entityDamageByEntityEvent.getEntity().getType());
             // if melee than killer is player else arrow shooter
             killer = entityDamageByEntityEvent.getDamager().getType() == EntityType.ARROW
                 ? (Player) ((Arrow) entityDamageByEntityEvent.getDamager()).getShooter()
@@ -491,7 +486,6 @@ public class Yggdrasil implements Listener, CommandExecutor {
             onWinnerDetermined(killerEntry);
         } else {
             // go into flying mode if match is not over
-            System.out.println("Cancelling event");
             victim.setGameMode(GameMode.ADVENTURE);
             victim.setHealth(20);
             victim.setFoodLevel(20);

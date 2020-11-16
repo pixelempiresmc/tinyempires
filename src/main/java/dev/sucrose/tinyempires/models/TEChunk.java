@@ -115,15 +115,8 @@ public class TEChunk {
 
     public final static double CHUNK_COST = 0.1;
     public static void createTEChunk(String world, int x, int z, Empire empire) {
-        if (getChunk(world, x, z) != null) {
-            System.out.println(ChatColor.DARK_RED + String.format(
-                "Chunk at %d, %d in %s is already claimed; returning",
-                x,
-                z,
-                StringUtils.worldDirToName(world)
-            ));
+        if (getChunk(world, x, z) != null)
             return;
-        }
 
         final Document document = new Document("world", world)
             .append("x", x)

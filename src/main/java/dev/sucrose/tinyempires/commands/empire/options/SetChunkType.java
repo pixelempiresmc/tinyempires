@@ -92,6 +92,7 @@ public class SetChunkType implements CommandOption {
             StringUtils.worldDirToName(chunk.getWorld()),
             ChatColor.BOLD + type.name().toLowerCase()
         ));
+        tePlayer.updatePlayerScoreboard();
     }
 
     @Override

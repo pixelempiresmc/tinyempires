@@ -34,8 +34,8 @@ public class EndWar implements CommandOption {
             return;
         }
 
-        if (!tePlayer.hasPermission(Permission.WAR)) {
-            sender.sendMessage(ErrorUtils.generatePermissionError(Permission.WAR));
+        if (!tePlayer.hasPermission(getPermissionRequired())) {
+            sender.sendMessage(ErrorUtils.generatePermissionError(getPermissionRequired()));
             return;
         }
 
@@ -61,15 +61,15 @@ public class EndWar implements CommandOption {
                 ));
                 return;
             }
-            DeclareWar.endWar(
-                attacker,
-                defender
-            );
             empire.getAtWarWith().broadcastText(ChatColor.GREEN + String.format(
                 "%s has agreed to end the war, it is now over!",
                 "" + ChatColor.BOLD + empire.getChatColor() + empire.getName() + ChatColor.GREEN
             ));
             empire.broadcastText(ChatColor.GREEN + "Both empires have agreed to end the war, it is now over!");
+            DeclareWar.endWar(
+                attacker,
+                defender
+            );
             attacker.updateMemberScoreboards();
             defender.updateMemberScoreboards();
             empireAttackerToWarEndOfferer.remove(attacker.getId());
@@ -82,7 +82,7 @@ public class EndWar implements CommandOption {
         ));
         empire.getAtWarWith().broadcastText("" + ChatColor.GREEN + ChatColor.BOLD + String.format(
             "%s has offered to end the war! Run /e endwar to accept their offer",
-            empire.getChatColor() + empire.getName() + ChatColor.GREEN
+            "" + empire.getChatColor() + ChatColor.BOLD + empire.getName() + ChatColor.GREEN
         ));
         empireAttackerToWarEndOfferer.put(attacker.getId(), empire.getId());
     }

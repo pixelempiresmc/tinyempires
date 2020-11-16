@@ -103,10 +103,10 @@ public class ChunkMarker {
     public void makeBorder(Direction direction) {
         double[] xCoords = new double[2];
         double[] zCoords = new double[2];
-        final int leftX    = x * 16 + 1;
-        final int rightX   = leftX + 14;
-        final int topZ     = z * 16 + 1;
-        final int bottomZ  = topZ + 14;
+        final int leftX    = x * 16;
+        final int rightX   = leftX + 16;
+        final int topZ     = z * 16;
+        final int bottomZ  = topZ + 16;
 
         switch (direction) {
             case UP:

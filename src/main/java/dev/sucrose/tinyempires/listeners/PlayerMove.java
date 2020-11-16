@@ -58,7 +58,6 @@ public class PlayerMove implements Listener {
         if (currentChunk == null) {
             // autoclaiming
             if (AutoClaimEmpireChunk.isAutoclaiming(uuid)) {
-                System.out.println("Player walked into new chunk");
                 if (tePlayer.getEmpire().getReserve() < TEChunk.CHUNK_COST) {
                     AutoClaimEmpireChunk.removeAutoclaimer(uuid);
                     player.sendMessage(ChatColor.RED + String.format(
@@ -88,17 +87,17 @@ public class PlayerMove implements Listener {
             currentChunk.getEmpire().getId())) {
             final Empire enemy = empire.getAtWarWith();
             // send leaving message
-            if (lastChunkEntry != null
-                    && lastChunkEntry.getChunk() != null
-                    && conquerTaskIds.containsKey(lastChunkEntry.getChunk().toString())) {
-                player.sendMessage(ChatColor.DARK_RED + String.format(
-                    "Stopped contesting %s chunk at %d, %d in %s",
-                    "" + enemy.getChatColor() + ChatColor.BOLD + enemy.getName(),
-                    lastChunkEntry.getChunk().getWorldX(),
-                    lastChunkEntry.getChunk().getWorldZ(),
-                    StringUtils.worldDirToName(gameChunk.getWorld().getName())
-                ));
-            }
+//            if (lastChunkEntry != null
+//                    && lastChunkEntry.getChunk() != null
+//                    && conquerTaskIds.containsKey(lastChunkEntry.getChunk().toString())) {
+//                player.sendMessage(ChatColor.DARK_RED + String.format(
+//                    "Stopped contesting %s chunk at %d, %d in %s",
+//                    "" + enemy.getChatColor() + ChatColor.BOLD + enemy.getName() + ChatColor.DARK_RED,
+//                    lastChunkEntry.getChunk().getWorldX(),
+//                    lastChunkEntry.getChunk().getWorldZ(),
+//                    StringUtils.worldDirToName(gameChunk.getWorld().getName())
+//                ));
+//            }
 
             if (!conquerTaskIds.containsKey(currentChunk.toString())) {
                 // can't conquer unless on perimeter of defender territory

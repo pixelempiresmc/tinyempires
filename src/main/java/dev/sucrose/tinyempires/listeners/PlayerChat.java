@@ -54,9 +54,11 @@ public class PlayerChat implements Listener {
 
         final String message = String.format(
             "[%s] %s » %s",
-            empire == null
-                ? "Unaffiliated"
-                : empire.getName(),
+            player.isOp()
+                ? "GOD"
+                : empire == null
+                    ? "Unaffiliated"
+                    : empire.getName(),
             player.getName(),
             CensorUtils.censorCurses(
                 event.getMessage()

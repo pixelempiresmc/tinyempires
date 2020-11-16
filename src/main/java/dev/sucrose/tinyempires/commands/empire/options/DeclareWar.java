@@ -20,6 +20,7 @@ public class DeclareWar implements CommandOption {
 
     final static Map<ObjectId, Integer> empireWarTaskIds = new HashMap<>();
     final static int WAR_START_DELAY_SECONDS = 60;
+    final static float WAR_START_COST = 30;
 
     @Override
     public void execute(Player sender, String[] args) {
@@ -70,23 +71,24 @@ public class DeclareWar implements CommandOption {
             return;
         }
 
+        if (empire.getReserve() < WAR_START_COST) {
+            sender.sendMessage(ChatColor.RED + String.format(
+                "Your empire needs %.1f more coins to start a war (%.1f coins required)",
+                WAR_START_COST - empire.getReserve(),
+                WAR_START_COST
+            ));
+            return;
+        }
+
         int defenderPlayersOnline = 0;
         for (final TEPlayer member : defender.getMembers()) {
             // check if player is online
-            System.out.println(member.getPlayerUUID());
-            System.out.println(member.getName());
             final Player p = Bukkit.getPlayer(member.getPlayerUUID());
-            System.out.println(p);
-            if (p != null) {
+            if (p != null)
                 defenderPlayersOnline++;
-                System.out.println("Incrementing players online");
-            }
         }
-        System.out.println(defenderPlayersOnline);
 
         final int defenderPlayerOnlineRequirement = defender.getMembers().size() > 1 ? 2 : 1;
-        System.out.println(defenderPlayersOnline);
-
         if (defenderPlayersOnline < defenderPlayerOnlineRequirement) {
             sender.sendMessage(ChatColor.RED + String.format(
                 "At least %d players from this empire must be online to declare war against them. (%d currently " +
@@ -99,8 +101,9 @@ public class DeclareWar implements CommandOption {
 
         empire.setAtWarWith(defender, true);
         empire.broadcast(ChatColor.DARK_GREEN, String.format(
-            "%s has made the empire declare war against %s! It will start in %d seconds",
+            "%s spent %.1f coins and has made the empire declare war against %s! It will start in %d seconds",
             sender.getName(),
+            WAR_START_COST,
             "" + defender.getChatColor() + ChatColor.BOLD + empireName + ChatColor.DARK_GREEN,
             WAR_START_DELAY_SECONDS
         ));
@@ -113,6 +116,8 @@ public class DeclareWar implements CommandOption {
             Empire.WAR_TIME_MINUTES
         ));
 
+        // take coins
+        empire.takeReserveCoins(WAR_START_COST);
         empire.setTimeLeftToWar(WAR_START_DELAY_SECONDS);
         empire.setIsWaitingForWar(true);
         defender.setTimeLeftToWar(WAR_START_DELAY_SECONDS);

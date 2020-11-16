@@ -169,6 +169,7 @@ public class Empire {
     }
 
     public void endWar() {
+        isWaitingForWar = false;
         atWarWith = null;
         isAttackerInWar = null;
     }
@@ -274,7 +275,6 @@ public class Empire {
 
     public void removeMember(TEPlayer player) {
         for (int index = 0; index < members.size(); index++) {
-            System.out.println(index);
             if (members.get(index).getPlayerUUID().equals(player.getPlayerUUID())) {
                 members.remove(index);
                 break;

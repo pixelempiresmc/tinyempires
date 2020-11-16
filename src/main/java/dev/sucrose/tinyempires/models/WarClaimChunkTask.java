@@ -7,6 +7,7 @@ import dev.sucrose.tinyempires.utils.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
+import org.bukkit.Location;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.graalvm.compiler.core.phases.EconomyMidTier;
@@ -39,16 +40,6 @@ public class WarClaimChunkTask implements Runnable {
     private void broadcastToTwoPlayerLists(List<TEPlayer> players1, List<TEPlayer> players2, String message) {
         broadcastPlayerList(players1, message);
         broadcastPlayerList(players2, message);
-    }
-
-    private String playerListToGrammaticalEmboldenedList(List<String> list) {
-        final StringBuilder stringBuilder = new StringBuilder();
-        for (int i = 0; i < list.size() - 1; i++)
-            stringBuilder.append(ChatColor.BOLD)
-                .append(list.get(i))
-                .append(ChatColor.YELLOW)
-                .append(i == list.size() - 2 ? " " : ", ");
-        return stringBuilder.append(list.get(list.size() - 1)).toString();
     }
 
     @Override
@@ -89,8 +80,9 @@ public class WarClaimChunkTask implements Runnable {
             broadcastToTwoPlayerLists(attackers, defenders, ChatColor.YELLOW + String.format(
                 "Defender%s %s %s of %s contested the chunk, the claim attempt has been cancelled",
                 defenders.size() > 1 ? "s" : "",
-                ChatColor.BOLD + playerListToGrammaticalEmboldenedList(
-                    defenders.stream().map(TEPlayer::getName).collect(Collectors.toList())
+                ChatColor.BOLD + StringUtils.stringListToGrammaticalList(
+                    defenders.stream().map(TEPlayer::getName).collect(Collectors.toList()),
+                    ChatColor.YELLOW
                 ) + ChatColor.YELLOW,
                 defenders.size() > 1 ? "have" : "has",
                 "" + defender.getChatColor() + ChatColor.BOLD + defender.getName() + ChatColor.YELLOW
@@ -124,8 +116,9 @@ public class WarClaimChunkTask implements Runnable {
                 "" + ChatColor.BOLD + defender.getChatColor() + defender.getName() + ChatColor.GREEN,
                 chunk.getWorldX(),
                 chunk.getWorldZ(),
-                playerListToGrammaticalEmboldenedList(
-                    attackers.stream().map(TEPlayer::getName).collect(Collectors.toList())
+                StringUtils.stringListToGrammaticalList(
+                    attackers.stream().map(TEPlayer::getName).collect(Collectors.toList()),
+                    ChatColor.GREEN
                 )
             ));
 
@@ -137,6 +130,15 @@ public class WarClaimChunkTask implements Runnable {
             ));
             chunk.setType(ChunkType.NONE);
             chunk.setEmpire(attacker);
+            if (defender.getHomeLocation() != null) {
+                final Chunk homeLocationChunk = defender.getHomeLocation().getChunk();
+                if (homeLocationChunk.getWorld().getName().equals(chunk.getWorld())
+                        && homeLocationChunk.getX() == chunk.getX()
+                        && homeLocationChunk.getZ() == chunk.getZ()) {
+                    defender.removeHomeLocation();
+                    DrawEmpire.deleteEmpireHomeMarker(defender.getId());
+                }
+            }
 
             PlayerMove.cancelChunkWarClaimTask(chunk);
             DrawEmpire.setEmpire(chunk.getWorld(), chunk.getX(), chunk.getZ(), attacker);

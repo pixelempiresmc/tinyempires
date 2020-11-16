@@ -44,7 +44,8 @@ public class WorldBorder implements Listener {
     // prevent portal lighting outside nether limits
     @EventHandler
     public static void onPortalLight(PortalCreateEvent event) {
-        if (event.getBlocks().stream().anyMatch(b -> {
+        if (event.getBlocks().get(0).getWorld().getName().equals("world_nether")
+                && event.getBlocks().stream().anyMatch(b -> {
             final Location location = b.getLocation();
             return location.getBlockX() > TinyEmpires.WORLD_BORDER_RIGHT_X / 8
                 || location.getBlockX() < TinyEmpires.WORLD_BORDER_LEFT_X / 8

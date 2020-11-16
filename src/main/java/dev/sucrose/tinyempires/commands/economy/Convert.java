@@ -93,8 +93,6 @@ public class Convert implements CommandExecutor, Listener {
     @EventHandler
     public void onPlayerInventoryClick(InventoryClickEvent e) {
         // check clicked inventory was converter and if click was in top inventory
-        System.out.println(e.getView().getTitle());
-        System.out.println(e.getRawSlot());
         if (e.getView().getTitle().equals(INVENTORY_GUI_NAME)
                 && e.getRawSlot() < e.getView().getTopInventory().getSize()) {
             e.setCancelled(true);

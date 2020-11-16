@@ -1,5 +1,9 @@
 package dev.sucrose.tinyempires.utils;
 
+import org.bukkit.ChatColor;
+
+import java.util.List;
+
 public class StringUtils {
 
     /**
@@ -34,6 +38,19 @@ public class StringUtils {
             case "chess": return "Chess";
         }
         return null;
+    }
+
+    public static String stringListToGrammaticalList(List<String> strings, ChatColor spacerColor) {
+        final StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0; i < strings.size() - 1; i++)
+            stringBuilder.append(ChatColor.BOLD)
+                .append(strings.get(i))
+                .append(spacerColor)
+                .append(i == strings.size() - 2 ? " " : ", ");
+        return stringBuilder
+            .append(strings.size() > 1 ? "and" : "")
+            .append(strings.get(strings.size() - 1))
+            .toString();
     }
 
 }

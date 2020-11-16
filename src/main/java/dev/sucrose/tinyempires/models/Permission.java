@@ -7,7 +7,7 @@ public enum Permission {
     CHUNKS,
     // can give a permission to another member if they have it
     POSITIONS,
-    // can take funds from reserve
+    // can withdraw funds from reserve
     RESERVE,
     // can write and publish laws
     LAWS,

@@ -55,7 +55,6 @@ public class DiscordBot extends ListenerAdapter {
             token = reader.nextLine();
             reader.close();
         } catch (FileNotFoundException e) {
-            System.out.println("An error occurred.");
             e.printStackTrace();
         }
 
@@ -212,7 +211,8 @@ public class DiscordBot extends ListenerAdapter {
         final Role role = discordServer.getRoleById(empire.getDiscordRoleId());
         if (role == null)
             throw new NullPointerException("Could not get empire's Discord role from ID: " + empire.getDiscordRoleId());
-        discordServer.removeRoleFromMember(player.getDiscordId(), role).queue();
+        if (player.getDiscordId() != null)
+            discordServer.removeRoleFromMember(player.getDiscordId(), role).queue();
     }
 
     public static void giveUserEmpireDiscordRole(TEPlayer player, Empire empire) {
@@ -220,19 +220,22 @@ public class DiscordBot extends ListenerAdapter {
         final Role role = discordServer.getRoleById(empire.getDiscordRoleId());
         if (role == null)
             throw new NullPointerException("Could not get empire's Discord role from ID: " + empire.getDiscordRoleId());
-        discordServer.addRoleToMember(player.getDiscordId(), role).queue();
+        if (player.getDiscordId() != null)
+            discordServer.addRoleToMember(player.getDiscordId(), role).queue();
     }
 
     public static void giveUserEmpireOwnerRole(TEPlayer tePlayer) {
-        discordServer
-            .addRoleToMember(tePlayer.getDiscordId(), empireOwnerRole)
-            .queue();
+        if (tePlayer.getDiscordId() != null)
+            discordServer
+                .addRoleToMember(tePlayer.getDiscordId(), empireOwnerRole)
+                .queue();
     }
 
     public static void removeEmpireOwnerRoleFromUser(TEPlayer tePlayer) {
-        discordServer
-            .removeRoleFromMember(tePlayer.getDiscordId(), empireOwnerRole)
-            .queue();
+        if (tePlayer.getDiscordId() != null)
+            discordServer
+                .removeRoleFromMember(tePlayer.getDiscordId(), empireOwnerRole)
+                .queue();
     }
 
     private static final Pattern codePattern = Pattern.compile("[0-9]{3}-[0-9]{3}");

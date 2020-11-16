@@ -25,11 +25,16 @@ public class PreventForeignTNTAndPistons implements Listener {
         final Location location = event.getBlock().getLocation();
         final Empire originalChunkEmpire = TEChunk.getChunk(location.getChunk()).getEmpire();
         final Empire currentChunkEmpire =
-            TEChunk.getChunk(location.subtract(event.getDirection().getDirection()).getChunk()).getEmpire();
-        if (originalChunkEmpire != currentChunkEmpire
-                || currentChunkEmpire.getId().equals(originalChunkEmpire.getId())) {
+            TEChunk.getChunk(location.add(event.getDirection().getDirection()).getChunk()).getEmpire();
+        final boolean empiresEqual =
+            (originalChunkEmpire == null && currentChunkEmpire == null)
+                || (originalChunkEmpire != null && originalChunkEmpire.getId().equals(
+                    currentChunkEmpire == null
+                        ? null
+                        : currentChunkEmpire.getId()
+                ));
+        if (!empiresEqual)
             event.setCancelled(true);
-        }
     }
 
     @EventHandler
@@ -38,8 +43,12 @@ public class PreventForeignTNTAndPistons implements Listener {
             return;
 
         final TEChunk chunk = TEChunk.getChunk(event.getLocation().getChunk());
-        tntToTriggeredEmpireID.put(event.getEntity().getUniqueId(),
-            chunk == null ? null : chunk.getEmpire().getId());
+        tntToTriggeredEmpireID.put(
+            event.getEntity().getUniqueId(),
+            chunk == null
+                ? null
+                : chunk.getEmpire().getId()
+        );
     }
 
     @EventHandler

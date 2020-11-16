@@ -56,6 +56,7 @@ public class EndPortal implements Listener {
         if (loc.getWorld() != null
                 && BoundUtils.inBoundsOfPortalCastle(loc.getWorld().getName(), loc.getBlockX(), loc.getBlockZ())
                 && e.getEntityType() != EntityType.ENDER_SIGNAL) {
+            System.out.println("Cancelling entity spawn");
             e.setCancelled(true);
         }
     }

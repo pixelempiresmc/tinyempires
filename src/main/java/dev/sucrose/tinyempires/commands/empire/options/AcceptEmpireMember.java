@@ -70,7 +70,8 @@ public class AcceptEmpireMember implements CommandOption {
         empire.acceptPlayerJoinRequest(tePlayerToAccept);
         JoinEmpire.cancelExpireJoinRequest(tePlayerToAccept.getPlayerUUID());
         Empire.getPlayerToEmpireJoinRequest().remove(tePlayerToAccept.getPlayerUUID());
-        DiscordBot.giveUserEmpireDiscordRole(tePlayer, empire);
+        if (tePlayer.getDiscordId() != null)
+            DiscordBot.giveUserEmpireDiscordRole(tePlayer, empire);
         empire.broadcast(ChatColor.GREEN, String.format(
             "%s accepted %s to the empire. Welcome!",
             sender.getName(),
