@@ -37,7 +37,8 @@ import java.util.Objects;
 
 public final class TinyEmpires extends JavaPlugin {
 
-    private static final DynmapAPI dynmap = (DynmapAPI) Bukkit.getServer().getPluginManager().getPlugin("Dynmap");
+    private static final Plugin dynmapPlugin = Bukkit.getServer().getPluginManager().getPlugin("Dynmap");
+    private static final DynmapAPI dynmap = (DynmapAPI) dynmapPlugin;
     private static final MongoClient mongoClient = MongoClients.create();
     private static final MongoDatabase database = mongoClient.getDatabase("tinyempires");
     private static Plugin instance;
@@ -124,6 +125,10 @@ public final class TinyEmpires extends JavaPlugin {
         System.out.println(ChatColor.GREEN + "Shut down Pixel Empires Discord Bot");
         Yggdrasil.removeYggdrasilScoreboardTeams();
         System.out.println(ChatColor.GREEN + "Unregistered Yggdrasil scoreboard teams");
+    }
+
+    public static Plugin getDynmapPlugin() {
+        return dynmapPlugin;
     }
 
     public static DynmapAPI getDynmap() {

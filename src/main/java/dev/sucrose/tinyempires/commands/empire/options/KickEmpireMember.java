@@ -67,10 +67,10 @@ public class KickEmpireMember implements CommandOption {
             return;
         }
 
-        DiscordBot.removeEmpireDiscordRoleFromUser(tePlayer, empire);
+        DiscordBot.removeEmpireDiscordRoleFromUser(tePlayerToRemove, empire);
         empire.removeMember(tePlayerToRemove);
-        tePlayer.leaveEmpire();
-        tePlayer.updatePlayerScoreboard();
+        tePlayerToRemove.leaveEmpire();
+        tePlayerToRemove.updatePlayerScoreboard();
 
         empire.broadcast(ChatColor.GREEN, String.format(
             "%s removed %s from the empire",
@@ -78,7 +78,7 @@ public class KickEmpireMember implements CommandOption {
             player
         ));
 
-        final Player kickedPlayer = Bukkit.getPlayer(tePlayer.getPlayerUUID());
+        final Player kickedPlayer = Bukkit.getPlayer(tePlayerToRemove.getPlayerUUID());
         if (kickedPlayer != null)
             kickedPlayer.sendMessage(ChatColor.YELLOW + String.format(
                 "You have been kicked from %s by %s!",

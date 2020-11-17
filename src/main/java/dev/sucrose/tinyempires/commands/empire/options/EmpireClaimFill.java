@@ -206,6 +206,7 @@ public class EmpireClaimFill implements CommandOption {
                     TEChunk.createTEChunk(worldName, c.getX(), c.getZ(), empire);
                     DrawEmpire.drawChunk(empire, worldName, c.getX(), c.getZ());
                 }
+                empire.takeReserveCoins(cost);
                 empire.broadcast(ChatColor.GREEN, String.format(
                     "%s claim-filled %d chunks for %.1f coins (%.1f in reserve)",
                     sender.getName(),

@@ -184,7 +184,7 @@ public class TEPlayer {
         objective.getScore("" + ChatColor.DARK_GREEN).setScore(line++);
 
         // balance
-        objective.getScore("Balance: " + ChatColor.GREEN + String.format("%.1f coins", balance + 0.0)).setScore(line++);
+        objective.getScore("Balance: " + ChatColor.GREEN + String.format("%.1f coins", balance)).setScore(line++);
 
         // spacing, color for uniqueness
         objective.getScore("" + ChatColor.AQUA).setScore(line);

@@ -54,6 +54,15 @@ public class Pay implements CommandExecutor {
             return false;
         }
 
+        if (senderTEPlayer.getBalance() < amount) {
+            player.sendMessage(ChatColor.RED + String.format(
+                "You need %.1f more coins to make this transaction (%.1f in balance)",
+                amount - senderTEPlayer.getBalance(),
+                senderTEPlayer.getBalance()
+            ));
+            return false;
+        }
+
         senderTEPlayer.pay(receiver, amount);
         player.sendMessage(ChatColor.GREEN + String.format(
             "Paid %.1f coins to %s",

@@ -65,6 +65,7 @@ public class PlayerChat implements Listener {
                     .replace("`", "\\`")
                     .replace("*", "\\*")
                     .replace("_", "\\_")
+                    .replace("@everyone", "everyone")
             )
         );
         DiscordBot.sendMessageInBridgeChat(player.isOp() ? "**" + message + "**" : message);

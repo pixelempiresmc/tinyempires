@@ -10,6 +10,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionAttachment;
 import org.dynmap.DynmapAPI;
 
 import java.util.UUID;
@@ -21,6 +22,13 @@ public class PlayerJoin implements Listener {
         final Player player = event.getPlayer();
         final UUID playerId = event.getPlayer().getUniqueId();
         final TEPlayer tePlayer = TEPlayer.getTEPlayer(playerId);
+
+        final PermissionAttachment permissionAttachment =
+            player.addAttachment(TinyEmpires.getDynmapPlugin());
+        permissionAttachment.setPermission("dynmap.hide.self", false);
+        permissionAttachment.setPermission("dynmap.hide.others", false);
+        permissionAttachment.setPermission("dynmap.show.self", false);
+        permissionAttachment.setPermission("dynmap.show.others", false);
 
         player.sendMessage(ChatColor.GREEN + "Welcome to the Pixel Empires server!");
         if (tePlayer == null) {
@@ -36,6 +44,9 @@ public class PlayerJoin implements Listener {
             if (p != null)
                 player.hidePlayer(TinyEmpires.getInstance(), p);
         }
+
+        // debug for arenas not working properly
+        player.setGlowing(false);
     }
 
 }
