@@ -37,3 +37,13 @@ commands:
     description: Link Pixel Empires Discord and Minecraft accounts
   prox:
     description: Send chat message to all players within a specific range
+  close-bot:
+    description: Close bot
+  tpa:
+    description: Make teleport request
+  tpreject:
+    description: Reject teleport request
+  tpaccept:
+    description: Accept teleport request
+  nick:
+    description: Nickname player

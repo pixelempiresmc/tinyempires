@@ -62,8 +62,13 @@ public class TEPlayer {
         return null;
     }
 
-    public static void clearCache() {
-        playerCache.clear();
+    public static TEPlayer getTEPlayerFromDiscordId(String discordId) {
+        for (final TEPlayer p : playerCache.values()) {
+            if (p.getDiscordId() != null
+                    && p.getDiscordId().equals(discordId))
+                return p;
+        }
+        return null;
     }
 
     public static TEPlayer getTEPlayer(UUID uuid) {
@@ -118,6 +123,7 @@ public class TEPlayer {
 
         final TEChunk chunk = TEChunk.getChunk(player.getLocation().getChunk());
         int line = 1;
+
         // website
         objective.getScore(ChatColor.YELLOW + "www.pixelempiresmc.net").setScore(line++);
 

@@ -42,6 +42,11 @@ public class Tax implements CommandOption {
             return;
         }
 
+        if (amount <= 0) {
+            sender.sendMessage(ChatColor.RED + "You can only tax your members a positive amount");
+            return;
+        }
+
         empire.tax(amount, senderUUID);
         empire.broadcastText(String.format(
             "%s has taxed all members %.1f coins! (%s/e contribute %.1f%s to pay)",

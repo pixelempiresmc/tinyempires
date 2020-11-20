@@ -10,17 +10,25 @@ import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Barrel;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
+import org.bukkit.block.Furnace;
+import org.bukkit.block.data.Openable;
 import org.bukkit.block.data.type.Door;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
+import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.material.PressureSensor;
 
@@ -63,16 +71,12 @@ public class TerritoryProtection implements Listener {
         ));
     }
 
-    @EventHandler
-    public void onPlayerPlaceBlock(BlockPlaceEvent event) {
-        final Player player = event.getPlayer();
-
-        final TEPlayer tePlayer = TEPlayer.getTEPlayer(player.getUniqueId());
-        final Chunk chunk = event.getBlock().getChunk();
+    private void handleBlockPlaceEvent(Cancellable placeEvent, Chunk chunk, Player placer) {
+        final TEPlayer tePlayer = TEPlayer.getTEPlayer(placer.getUniqueId());
         final TEChunk teChunk = TEChunk.getChunk(chunk);
 
         if (tePlayer == null) {
-            player.sendMessage(ChatColor.RED + ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
+            placer.sendMessage(ChatColor.RED + ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
             return;
         }
 
@@ -81,11 +85,21 @@ public class TerritoryProtection implements Listener {
             return;
 
         // different empire, cancel event
-        event.setCancelled(true);
-        player.sendMessage(ChatColor.RED + String.format(
+        placeEvent.setCancelled(true);
+        placer.sendMessage(ChatColor.RED + String.format(
             "You are in the empire of %s and cannot place blocks",
             teChunk.getEmpire().getName()
         ));
+    }
+
+    @EventHandler
+    public void onPlayerPlaceLava(PlayerBucketEmptyEvent event) {
+        handleBlockPlaceEvent(event, event.getBlock().getChunk(), event.getPlayer());
+    }
+
+    @EventHandler
+    public void onPlayerPlaceBlock(BlockPlaceEvent event) {
+        handleBlockPlaceEvent(event, event.getBlock().getChunk(), event.getPlayer());
     }
 
     @EventHandler
@@ -131,8 +145,46 @@ public class TerritoryProtection implements Listener {
             player.sendMessage(startOfResponse + "press buttons");
         } else if (block.getType().name().contains("PRESSURE_PLATE")) {
             event.setCancelled(true);
+        } else if (block.getState() instanceof Furnace) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "open furnaces");
+        } else if (block.getState() instanceof Barrel) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "open barrels");
         }
     }
+
+    @EventHandler
+    public static void onCreeperExplode(EntityExplodeEvent event) {
+        // prevent creepers from exploding in empire chunks
+        if (event.getEntityType() == EntityType.CREEPER
+                && TEChunk.getChunk(event.getEntity().getLocation().getChunk()) != null)
+            event.setCancelled(true);
+    }
+
+//    @EventHandler
+//    public static void onEntityDamage(EntityDamageByEntityEvent event) {
+//        if (!(event.getDamager() instanceof Player))
+//            return;
+//
+//        final Player player = (Player) event.getDamager();
+//        final TEPlayer tePlayer = TEPlayer.getTEPlayer(player.getUniqueId());
+//        if (tePlayer == null)
+//            throw new NullPointerException("Could not get TEPlayer for " + player.getUniqueId());
+//
+//        final Location location = event.getEntity().getLocation();
+//        final TEChunk teChunk = TEChunk.getChunk(location.getChunk());
+//        if (teChunk != null
+//                && teChunk.getEmpire().getId().equals(
+//                    tePlayer.getEmpire() == null
+//                        ? null
+//                        : tePlayer.getEmpire().getId()
+//                    )
+//        ) {
+//            player.sendMessage(ChatColor.RED + "You cannot damage entities belonging to other empires!");
+//            event.setCancelled(true);
+//        }
+//    }
 
     @EventHandler
     public static void onMobSpawn(EntitySpawnEvent event) {

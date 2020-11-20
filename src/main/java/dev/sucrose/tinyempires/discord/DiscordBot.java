@@ -16,6 +16,8 @@ import net.dv8tion.jda.api.requests.restaction.RoleAction;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.Server;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
@@ -299,7 +301,85 @@ public class DiscordBot extends ListenerAdapter {
             return;
         }
 
+        // TODO: Op commands
+//        final Member discordMember = discordServer.getMember(msg.getAuthor());
+        // Discord opped Minecraft commands
+//        if (discordMember != null
+//                && discordMember.getRoles().contains(discordServer.getRoleById("739979260856631368"))
+//                && content.charAt(0) == '/') {
+//            final String command = content.substring(1);
+//            final String[] words = content.split(" ");
+//            final String[] args = Arrays.copyOfRange(words, 1, words.length);
+//            switch (command) {
+//                case "give":
+//                    if (args.length < 3) {
+//                        channel.sendMessage("/give <player> <item> <amount>").queue();
+//                        return;
+//                    }
+//
+//                    final String playerName = args[0];
+//                    final Player player = Bukkit.getPlayer(playerName);
+//                    if (player == null) {
+//                        channel.sendMessage(String.format("'%s' is not currently in the game! (/list to see players)"));
+//                        return;
+//                    }
+//
+//
+//            }
+//        }
+
         if (channel.getId().equals(BRIDGE_CHANNEL_ID)) {
+            if (content.charAt(0) == '/') {
+                final String command = content.substring(1);
+                switch (command) {
+                    case "list":
+                        final Collection<? extends Player> players = Bukkit.getOnlinePlayers();
+                        final StringBuilder messageBuilder = new StringBuilder();
+                        messageBuilder.append(
+                            players.size() == 0
+                                ? "No players are currently online"
+                                : String.format(
+                                    "%d players are currently online:",
+                                    players.size()
+                                )
+                        );
+                        for (final Player p : players) {
+                            final UUID pUUID = p.getUniqueId();
+                            final TEPlayer teP = TEPlayer.getTEPlayer(pUUID);
+                            if (teP == null)
+                                throw new NullPointerException("Could not get TEPlayer for UUID " + pUUID);
+                            messageBuilder.append(String.format(
+                                "\n - [%s] %s",
+                                teP.getEmpire() == null
+                                    ? "Unaffiliated"
+                                    : teP.getEmpire().getName(),
+                                p.getName()
+                            ));
+                        }
+                        channel.sendMessage("```" + messageBuilder.toString() + "```").queue();
+                        return;
+//                    case "tps":
+//                        Bukkit.dispatchCommand(
+//                            TinyEmpires.getCommandSenderExtractor(),
+//                            "tps"
+//                        );
+//                        channel
+//                            .sendMessage(
+//                                '`'
+//                                + TinyEmpires.getCommandSenderExtractor().getLastMessage()
+//                                + '`'
+//                            )
+//                            .queue();
+//                        return;
+                    default:
+                        channel
+                            .sendMessage(
+                            "Invalid command (list)"
+                            )
+                            .queue();
+                        return;
+                }
+            }
             Bukkit.broadcastMessage("" + ChatColor.GRAY + ChatColor.BOLD + String.format(
                 "[DISCORD]%s %s » %s",
                 ChatColor.RESET,

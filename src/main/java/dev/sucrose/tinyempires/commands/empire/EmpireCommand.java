@@ -55,6 +55,7 @@ public class EmpireCommand implements CommandExecutor, Listener {
         options.put("reject", new RejectEmpireMember());
         options.put("renamelaw", new RenameEmpireLaw());
         options.put("endwar", new EndWar());
+        options.put("chat", new Chat());
     }
 
     @Override
@@ -129,28 +130,8 @@ public class EmpireCommand implements CommandExecutor, Listener {
         return false;
     }
 
-    @EventHandler
-    public static void onTabComplete(TabCompleteEvent event) {
-        final String[] currentArgs = event
-            .getBuffer()
-            .replaceAll(" +", " ")
-            .trim()
-            .split(" ");
-        final String command = currentArgs[0];
-        if (!(command.equals("/e")
-                || command.equals("/empire")))
-            return;
-
-        if (currentArgs.length == 1) {
-            event.setCompletions(new ArrayList<>(options.keySet()));
-        } else if (currentArgs.length == 2) {
-            event.setCompletions(
-                (new ArrayList<>(options.keySet()))
-                    .stream()
-                    .filter(option -> option.contains(currentArgs[1]))
-                    .collect(Collectors.toList())
-            );
-        }
+    public static Set<String> getOptions() {
+        return options.keySet();
     }
 
 }

@@ -41,6 +41,11 @@ public class TEChunk {
         return world + ' ' + x + ' ' + z;
     }
 
+    public static double getCostOfNewEmpireChunk(Empire empire) {
+        final double numberOfChunks = TEChunk.getEmpireChunks(empire.getId()).size();
+        return (double) Math.min(1, (numberOfChunks / 500) * 0.1);
+    }
+
     public static List<TEChunk> getChunks() {
         final List<TEChunk> chunks = new ArrayList<>();
         for (final Document document : collection.find())
@@ -113,7 +118,7 @@ public class TEChunk {
         return getChunk(world, x, z) != null;
     }
 
-    public final static double CHUNK_COST = 0.1;
+    public final static double CHUNK_COST = 0.3;
     public static void createTEChunk(String world, int x, int z, Empire empire) {
         if (getChunk(world, x, z) != null)
             return;

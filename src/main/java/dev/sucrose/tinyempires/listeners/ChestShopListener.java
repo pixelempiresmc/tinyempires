@@ -197,9 +197,17 @@ public class ChestShopListener implements Listener {
         if (location == null)
             return;
 
+        final World world = location.getWorld();
+        if (world == null) {
+            player.sendMessage(ErrorUtils.COULD_NOT_FETCH_WORLD);
+            return;
+        }
+
+        final boolean isWyattWorld = world.getName().equals("wyatt");
         final TEChunk chunk = TEChunk.getChunk(location.getChunk());
-        if (chunk == null
-                || chunk.getType() != ChunkType.TRADING)
+        if (!isWyattWorld
+                && (chunk == null
+                || chunk.getType() != ChunkType.TRADING))
             return;
 
         // fetch/check slot price for single and double chest cases
@@ -287,12 +295,6 @@ public class ChestShopListener implements Listener {
         }
 
         // fetch and check if player is owner
-        final World world = location.getWorld();
-        if (world == null) {
-            player.sendMessage(ErrorUtils.COULD_NOT_FETCH_WORLD);
-            return;
-        }
-
         final UUID chestOwnerId = TEChest.getChestCoordinatesToPlayer(
             world.getName(),
             location.getBlockX(),
@@ -301,8 +303,8 @@ public class ChestShopListener implements Listener {
         );
 
         if (chestOwnerId == null) {
-            player.sendMessage(ChatColor.RED
-                + "ERROR: Chest owner could not be fetched. Please notify a developer and we will tend to this " +
+            player.sendMessage(ChatColor.RED +
+                "ERROR: Chest owner could not be fetched. Please notify a developer and we will tend to this " +
                 "promptly."
             );
             return;
@@ -331,6 +333,13 @@ public class ChestShopListener implements Listener {
                 "Insufficient funds to purchase slot (%.1f coins required)",
                 costPerSlot
             ));
+            return;
+        }
+
+        if (costPerSlot < 0) {
+            player.sendMessage(ChatColor.RED +
+                "You can't buy an item for a negative price! Tell the shop owner (%s) to change the slot price"
+            );
             return;
         }
 

@@ -99,7 +99,7 @@ public class Home implements CommandOption, Listener {
         if (to == null)
             return;
 
-        if ((from.getX() != to.getZ()
+        if ((from.getX() != to.getX()
                 || from.getY() != to.getY()
                 || from.getZ() != to.getZ())
                 && playerToTeleportationTask.containsKey(uuid)) {

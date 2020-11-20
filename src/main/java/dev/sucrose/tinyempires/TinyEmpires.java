@@ -4,8 +4,10 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import dev.sucrose.tinyempires.commands.LinkDiscordAccount;
+import dev.sucrose.tinyempires.commands.Nick;
 import dev.sucrose.tinyempires.commands.ProximityChat;
-import dev.sucrose.tinyempires.commands.RefreshCaches;
+import dev.sucrose.tinyempires.commands.debug.CloseBot;
+import dev.sucrose.tinyempires.commands.debug.RefreshCaches;
 import dev.sucrose.tinyempires.commands.arena.Atlantis;
 import dev.sucrose.tinyempires.commands.arena.Yggdrasil;
 import dev.sucrose.tinyempires.commands.economy.Convert;
@@ -16,9 +18,11 @@ import dev.sucrose.tinyempires.commands.empire.EmpireCommand;
 import dev.sucrose.tinyempires.commands.empire.options.CreateEmpireLaw;
 import dev.sucrose.tinyempires.commands.empire.options.Home;
 import dev.sucrose.tinyempires.commands.godsuite.*;
+import dev.sucrose.tinyempires.commands.tpa.AcceptTeleportRequest;
+import dev.sucrose.tinyempires.commands.tpa.RejectTeleportRequest;
+import dev.sucrose.tinyempires.commands.tpa.TeleportRequest;
 import dev.sucrose.tinyempires.discord.DiscordBot;
 import dev.sucrose.tinyempires.listeners.*;
-import dev.sucrose.tinyempires.models.Empire;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.DrawEmpire;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
@@ -59,12 +63,10 @@ public final class TinyEmpires extends JavaPlugin {
         // assign to variable so same instance is assigned as event listener and command executor
         final Atlantis atlantis = new Atlantis();
         final Yggdrasil yggdrasil = new Yggdrasil();
-        final EmpireCommand empireCommand = new EmpireCommand();
         final Convert convert = new Convert();
         registerEvents(
             yggdrasil,
             atlantis,
-            empireCommand,
             convert,
             new ChestShopListener(),
             new EndPortal(),
@@ -79,16 +81,18 @@ public final class TinyEmpires extends JavaPlugin {
             new WorldBorder(),
             new StructureProtection(),
             new EntityChangePotionEffect(),
-            new Home()
+            new Home(),
+            new TabComplete(),
+            new PreventCombatLogging()
         );
 
         // load worlds
         getServer().createWorld(new WorldCreator("chess"));
 
-        registerCommand("empire", empireCommand);
         registerCommand("atlantis", atlantis);
         registerCommand("yggdrasil", yggdrasil);
         registerCommand("convert", convert);
+        registerCommand("empire", new EmpireCommand());
         registerCommand("gift", new Gift());
         registerCommand("pay", new Pay());
         registerCommand("take", new Take());
@@ -101,6 +105,11 @@ public final class TinyEmpires extends JavaPlugin {
         registerCommand("discord", new LinkDiscordAccount());
         registerCommand("censor", new Censor());
         registerCommand("prox", new ProximityChat());
+        registerCommand("close-bot", new CloseBot());
+        registerCommand("tpa", new TeleportRequest());
+        registerCommand("tpaccept", new AcceptTeleportRequest());
+        registerCommand("tpreject", new RejectTeleportRequest());
+        registerCommand("nick", new Nick());
 
         try {
             DiscordBot.init();

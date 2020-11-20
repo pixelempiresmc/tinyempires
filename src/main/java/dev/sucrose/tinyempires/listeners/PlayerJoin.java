@@ -29,6 +29,7 @@ public class PlayerJoin implements Listener {
         permissionAttachment.setPermission("dynmap.hide.others", false);
         permissionAttachment.setPermission("dynmap.show.self", false);
         permissionAttachment.setPermission("dynmap.show.others", false);
+        permissionAttachment.setPermission(" bukkit.command.tps", true);
 
         player.sendMessage(ChatColor.GREEN + "Welcome to the Pixel Empires server!");
         if (tePlayer == null) {

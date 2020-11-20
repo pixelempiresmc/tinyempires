@@ -12,14 +12,12 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class DeclareWar implements CommandOption {
 
     final static Map<ObjectId, Integer> empireWarTaskIds = new HashMap<>();
-    final static int WAR_START_DELAY_SECONDS = 60;
+    final static int WAR_START_DELAY_SECONDS = 300;
     final static float WAR_START_COST = 30;
 
     @Override
@@ -53,6 +51,12 @@ public class DeclareWar implements CommandOption {
             sender.sendMessage(ChatColor.RED + "You cannot declare a war against your own empire");
             return;
         }
+
+//        if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) >= 2
+//                && Calendar.getInstance().get(Calendar.HOUR_OF_DAY) <= 7) {
+//            sender.sendMessage(ChatColor.RED + "You cannot declare war between the hours of 2AM and 7AM PST");
+//            return;
+//        }
 
         final Empire defender = Empire.getEmpire(empireName);
         if (defender == null) {

@@ -46,6 +46,11 @@ public class WithdrawEmpireReserve implements CommandOption {
             return;
         }
 
+        if (empire.getReserve() <= 0) {
+            sender.sendMessage(ChatColor.RED + "You can only withdraw a positive amount from your empire reserve");
+            return;
+        }
+
         if (empire.getReserve() < amount) {
             sender.sendMessage(ChatColor.RED + String.format(
                 "Empire has insufficent coins for withdraw (%.1f requested, %.1f in reserve)",

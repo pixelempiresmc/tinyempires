@@ -164,7 +164,6 @@ public class EmpireClaimFill implements CommandOption {
             return;
         }
 
-        // all checks passed, make empire
         final Location location = sender.getLocation();
         final Chunk chunk = location.getChunk();
         final World world = location.getWorld();
@@ -173,7 +172,12 @@ public class EmpireClaimFill implements CommandOption {
 
         final String worldName = world.getName();
         if (TEChunk.getChunk(worldName, chunk.getX(), chunk.getZ()) != null) {
-            sender.sendMessage(ChatColor.RED + "This chunk is already owned by another empire");
+            if (TEChunk.getChunk(chunk).getEmpire().getId().equals(empire.getId())) {
+                sender.sendMessage(ChatColor.RED + "Claim-fill must be called in an unclaimed chunk");
+                return;
+            }
+            sender.sendMessage(ChatColor.RED + "This chunk is already owned by another empire; claim-fill must be " +
+                "called in an unclaim chunk");
             return;
         }
 
