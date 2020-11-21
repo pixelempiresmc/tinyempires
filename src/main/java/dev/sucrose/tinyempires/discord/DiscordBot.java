@@ -336,10 +336,9 @@ public class DiscordBot extends ListenerAdapter implements Listener {
 
         if (channel.getId().equals(BRIDGE_CHANNEL_ID)) {
             if (content.charAt(0) == '/') {
-                final String command = content.substring(1);
                 final StringBuilder messageBuilder = new StringBuilder();
                 final String[] args = content.split(" ");
-                switch (args[0]) {
+                switch (args[0].substring(1)) {
                     case "list":
                         final Collection<? extends Player> players = Bukkit.getOnlinePlayers();
                         messageBuilder.append(
