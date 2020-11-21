@@ -46,59 +46,11 @@ public class TeleportRequest implements CommandExecutor {
             sender.sendMessage(ChatColor.RED + "/tpa <player>");
             return false;
         }
-
-        final String requestReceiverName = args[0];
-        final Player requestReceiver = Bukkit.getPlayer(requestReceiverName);
-        if (requestReceiver == null) {
-            sender.sendMessage(ChatColor.RED + String.format(
-                "%s is not currently online",
-                ChatColor.BOLD + requestReceiverName
-            ));
-            return false;
-        }
-
-        if (senderToReceiverTeleportationRequests.containsKey(senderUUID)) {
-            sender.sendMessage(ChatColor.RED + String.format(
-                "You have already requested to %s",
-                ChatColor.BOLD + requestReceiverName
-            ));
-            return false;
-        }
-
-        requestReceiver.sendMessage(ChatColor.YELLOW + String.format(
-            "%s has requested to teleport to you! You have 30 seconds to accept (%s/tpaccept %s%s to accept, " +
-                "%s/tpreject %s%s to reject)",
-            ChatColor.BOLD + sender.getName() + ChatColor.YELLOW,
-            ChatColor.BOLD,
-            sender.getName(),
-            ChatColor.YELLOW,
-            ChatColor.BOLD,
-            sender.getName(),
-            ChatColor.YELLOW
-        ));
-        sender.sendMessage(ChatColor.GREEN + String.format(
-            "Requested to teleport to %s",
+        sender.sendMessage(ChatColor.RED + String.format(
+            "tpa is currently broken, please be patient",
             ChatColor.BOLD + requestReceiverName
         ));
-        receiverToSenderTeleportationRequests.put(requestReceiver.getUniqueId(), senderUUID);
-        senderToReceiverTeleportationRequests.put(senderUUID, requestReceiver.getUniqueId());
-        Bukkit.getScheduler().scheduleSyncDelayedTask(
-            TinyEmpires.getInstance(),
-            () -> {
-                receiverToSenderTeleportationRequests.remove(requestReceiver.getUniqueId());
-                receiverToSenderTeleportationRequests.remove(senderUUID);
-                requestReceiver.sendMessage(ChatColor.RED + String.format(
-                    "You took too long to accept or reject %s's teleport request and it has expired",
-                    ChatColor.BOLD + player.getName() + ChatColor.RED
-                ));
-                requestReceiver.sendMessage(ChatColor.RED + String.format(
-                    "%s took too long to accept or reject your teleport request and it has expired",
-                    ChatColor.BOLD + requestReceiverName + ChatColor.RED
-                ));
-            },
-            20 * 30
-        );
-        return true;
+        return false;
     }
 
     public static UUID getReceiverToSenderTpRequest(UUID uuid) {
