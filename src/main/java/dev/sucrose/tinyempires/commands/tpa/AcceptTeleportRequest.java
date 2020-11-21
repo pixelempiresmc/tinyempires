@@ -79,6 +79,7 @@ public class AcceptTeleportRequest implements CommandExecutor, Listener {
                             ));
                             Bukkit.getScheduler().cancelTask(teleportationTaskIds.get(requesterUUID));
                             TeleportRequest.removeReceiverToSenderTpRequest(senderUUID);
+                            TeleportRequest.removeSenderToReceiverTpRequest(requesterUUID);
                             return;
                         }
                         requester.sendMessage(ChatColor.GREEN + String.format(

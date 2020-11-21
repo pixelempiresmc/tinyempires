@@ -3,6 +3,7 @@ package dev.sucrose.tinyempires.discord;
 import dev.sucrose.tinyempires.TinyEmpires;
 import dev.sucrose.tinyempires.models.DiscordLinkRequest;
 import dev.sucrose.tinyempires.models.Empire;
+import dev.sucrose.tinyempires.models.TEChunk;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.CensorUtils;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
@@ -19,6 +20,10 @@ import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.jetbrains.annotations.Nullable;
@@ -33,7 +38,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
-public class DiscordBot extends ListenerAdapter {
+public class DiscordBot extends ListenerAdapter implements Listener {
 
     private static final String GUILD_ID = "739978697041248296";
     private static final String BRIDGE_CHANNEL_ID = "774537181049257984";
@@ -139,7 +144,7 @@ public class DiscordBot extends ListenerAdapter {
     }
 
     public static void close() {
-        bot.shutdownNow();
+        bot.shutdown();
     }
 
     private static String generateLinkCode() {
@@ -331,10 +336,10 @@ public class DiscordBot extends ListenerAdapter {
         if (channel.getId().equals(BRIDGE_CHANNEL_ID)) {
             if (content.charAt(0) == '/') {
                 final String command = content.substring(1);
+                final StringBuilder messageBuilder = new StringBuilder();
                 switch (command) {
                     case "list":
                         final Collection<? extends Player> players = Bukkit.getOnlinePlayers();
-                        final StringBuilder messageBuilder = new StringBuilder();
                         messageBuilder.append(
                             players.size() == 0
                                 ? "No players are currently online"
@@ -358,6 +363,58 @@ public class DiscordBot extends ListenerAdapter {
                         }
                         channel.sendMessage("```" + messageBuilder.toString() + "```").queue();
                         return;
+                    case "empires":
+                        final Collection<Empire> empires = Empire.getEmpires();
+                        messageBuilder.append(
+                            empires.size() == 0
+                                ? "There are no empires on the server"
+                                : String.format(
+                                    "There are %d empires:",
+                                    empires.size()
+                                )
+                        );
+                        for (final Empire e : empires) {
+                            messageBuilder.append(String.format(
+                                "\n - *%s*: %d member%s, %.1f coin%s, %d law%s, %d chunk%s",
+                                e.getName(),
+                                e.getMembers().size(),
+                                e.getMembers().size() != 1 ? "s" : "",
+                                e.getReserve(),
+                                e.getReserve() != 1f ? "s" : "",
+                                e.getLaws().size(),
+                                e.getLaws().size() != 1 ? "s" : "",
+                                TEChunk.getEmpireChunks(e.getId()).size(),
+                                TEChunk.getEmpireChunks(e.getId()).size() != 1 ? "s" : ""
+                            ));
+                        }
+                        channel.sendMessage("```" + messageBuilder.toString() + "```").queue();
+                        return;
+                    case "run":
+                        // /run <command>
+                        final Member discordMember = discordServer.getMember(msg.getAuthor());
+                        // Discord opped Minecraft commands
+                        if (discordMember == null
+                                || !discordMember.getRoles().contains(discordServer.getRoleById("739979260856631368"))) {
+                            channel.sendMessage("`You must have the **God** role to run a command!`").queue();
+                            return;
+                        }
+
+                        final String[] args = content.split(" ");
+                        if (args.length < 1) {
+                            channel.sendMessage("`/run <command>`").queue();
+                            return;
+                        }
+
+                        final String commandString = args[1];
+                        Bukkit.dispatchCommand(
+                            Bukkit.getConsoleSender(),
+                            commandString
+                        );
+                        channel.sendMessage(String.format(
+                            "`Ran command **%s** on the Minecraft server`",
+                            commandString
+                        )).queue();
+                        return;
 //                    case "tps":
 //                        Bukkit.dispatchCommand(
 //                            TinyEmpires.getCommandSenderExtractor(),
@@ -374,7 +431,7 @@ public class DiscordBot extends ListenerAdapter {
                     default:
                         channel
                             .sendMessage(
-                            "Invalid command (list)"
+                            "Invalid command (list/run/empires)"
                             )
                             .queue();
                         return;
@@ -394,6 +451,34 @@ public class DiscordBot extends ListenerAdapter {
                     .queue(response -> System.out.println("Successfully sent message from Discord"));
             } catch (Exception ignore) {}
         }
+    }
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        final Player player = event.getPlayer();
+        final TEPlayer tePlayer = TEPlayer.getTEPlayer(player.getUniqueId());
+        if (tePlayer == null)
+            throw new NullPointerException("Could not get TEPlayer for UUID " + player.getUniqueId());
+
+        final Empire empire = tePlayer.getEmpire();
+        sendMessageInBridgeChat(String.format(
+            "**[%s] %s has joined the game!**",
+            empire == null ? "Unaffiliated" : empire.getName(),
+            player.getName()
+        ));
+    }
+
+    @EventHandler
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        final Player player = event.getEntity();
+        final TEPlayer tePlayer = TEPlayer.getTEPlayer(player.getUniqueId());
+        if (tePlayer == null)
+            throw new NullPointerException("Could not get TEPlayer for UUID " + player.getUniqueId());
+
+        sendMessageInBridgeChat(String.format(
+            "**%s**",
+            event.getDeathMessage()
+        ));
     }
 
     public static User getDiscordUsernameFromId(String discordId) {

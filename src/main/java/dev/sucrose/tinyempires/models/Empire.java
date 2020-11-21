@@ -24,6 +24,7 @@ public class Empire {
     private static final Map<ObjectId, Empire> empireCache = new HashMap<>();
     private static final MongoCollection<Document> collection = TinyEmpires.getDatabase().getCollection("empires");
     private static final Map<UUID, ObjectId> playerToEmpireJoinRequest = new HashMap<>();
+    private static final Map<ObjectId, ObjectId> empireAllyRequests = new HashMap<>();
 
     private final ObjectId id;
     private String name;
@@ -38,6 +39,7 @@ public class Empire {
     private final Map<String, Law> laws = new HashMap<>();
     private final Map<UUID, Double> memberDebt = new HashMap<>();
     private final String discordRoleId;
+    private final Set<ObjectId> allies = new HashSet<>();
 
     // Wars are only twenty minutes and can be stored in memory
     private Empire atWarWith = null;
@@ -84,7 +86,8 @@ public class Empire {
                         .append("y", homeY)
                         .append("z", homeZ)
                     )
-                    .append("discord_id", role.getId());
+                    .append("discord_id", role.getId())
+                    .append("allies", new ArrayList<>());
                 final InsertOneResult result = collection.insertOne(document);
                 if (result.getInsertedId() == null)
                     throw new NullPointerException("Unable to insert document");
@@ -110,6 +113,8 @@ public class Empire {
         owner = UUID.fromString(document.getString("owner"));
         color = Color.valueOf(document.getString("color"));
         discordRoleId = document.getString("discord_id");
+        if (document.containsKey("allies"))
+            allies.addAll(document.getList("allies", ObjectId.class));
 
         final Document homeLocationDocument = document.get("home", Document.class);
         homeLocation =
@@ -156,6 +161,19 @@ public class Empire {
 
     public static Collection<Empire> getEmpires() {
         return empireCache.values();
+    }
+
+    @Nullable
+    public static ObjectId getAllyRequestForEmpire(ObjectId empire) {
+        return empireAllyRequests.get(empire);
+    }
+
+    public static void putAllyRequest(ObjectId empire, ObjectId allyId) {
+        empireAllyRequests.put(allyId, empire);
+    }
+
+    public static void removeAllyRequest(ObjectId requestingAlly) {
+        empireAllyRequests.remove(requestingAlly);
     }
 
     public void updateMemberScoreboards() {
@@ -214,6 +232,36 @@ public class Empire {
             )
         );
         DrawEmpire.updateEmpireChunkDescriptions(this);
+    }
+
+    public void addAlliedEmpire(ObjectId id) {
+        allies.add(id);
+        collection.updateOne(
+            new Document("_id", id),
+            new Document(
+                "$addToSet",
+                new Document("allies", id)
+            )
+        );
+    }
+
+    public void removeAlliedEmpire(ObjectId id) {
+        allies.add(id);
+        collection.updateOne(
+            new Document("_id", id),
+            new Document(
+                "$pull",
+                new Document("allies", id)
+            )
+        );
+    }
+
+    public boolean isAlliedWithEmpire(ObjectId id) {
+        return allies.contains(id);
+    }
+
+    public Set<ObjectId> getAllies() {
+        return allies;
     }
 
     public void setColor(Color color) {
@@ -424,6 +472,13 @@ public class Empire {
             new Document("_id", id),
             new Document("$unset", new Document("laws." + name, 1))
         );
+    }
+
+    public boolean isAnyMemberOnline() {
+        // check if any member is currently online
+        return members
+            .stream()
+            .anyMatch(p -> Bukkit.getPlayer(p.getPlayerUUID()) != null);
     }
 
     public void tax(Double amount, UUID taxer) {

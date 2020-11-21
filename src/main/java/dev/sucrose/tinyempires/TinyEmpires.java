@@ -83,7 +83,8 @@ public final class TinyEmpires extends JavaPlugin {
             new EntityChangePotionEffect(),
             new Home(),
             new TabComplete(),
-            new PreventCombatLogging()
+            new PreventCombatLogging(),
+            new DiscordBot() // to broadcast death, join and other event messages
         );
 
         // load worlds
@@ -125,10 +126,13 @@ public final class TinyEmpires extends JavaPlugin {
                 throw new NullPointerException(ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
             tePlayer.updatePlayerScoreboard();
         }
+
+        DiscordBot.sendMessageInBridgeChat("**The server has started up!**");
     }
 
     @Override
     public void onDisable() {
+        DiscordBot.sendMessageInBridgeChat("**The server has shut down!**");
         System.out.println("" + ChatColor.RED + ChatColor.BOLD + "+=== Disabled Tiny Empires ===+");
         DiscordBot.close();
         System.out.println(ChatColor.GREEN + "Shut down Pixel Empires Discord Bot");

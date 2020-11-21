@@ -2,6 +2,7 @@ package dev.sucrose.tinyempires.commands.empire.options;
 
 import dev.sucrose.tinyempires.models.*;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
+import org.bson.types.ObjectId;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
@@ -82,6 +83,21 @@ public class Info implements CommandOption {
                 ));
         }
 
+        sender.sendMessage("");
+        sender.sendMessage("" + ChatColor.BOLD + "Alliances");
+        if (empire.getAllies().size() > 0) {
+            for (final ObjectId empireId : empire.getAllies()) {
+                final Empire ally = Empire.getEmpire(empireId);
+                if (ally == null)
+                    throw new NullPointerException("Could not get empire ally with ID " + empireId);
+                sender.sendMessage(String.format(
+                    " - %s",
+                    ally.getChatColor() + ally.getName()
+                ));
+            }
+        } else {
+            sender.sendMessage(ChatColor.GREEN + " - None");
+        }
 
         sender.sendMessage("");
         sender.sendMessage("" + ChatColor.BOLD + "Laws");
@@ -92,8 +108,9 @@ public class Info implements CommandOption {
                     entry.getKey(),
                     entry.getValue().getAuthor()
                 ));
-        } else
-            sender.sendMessage(ChatColor.GRAY + " - " + "No existing laws");
+        } else {
+            sender.sendMessage(ChatColor.GRAY + " - No existing laws");
+        }
 
         final Set<Map.Entry<UUID, Double>> debtors = empire.getDebtEntries();
         if (debtors.size() > 0) {

@@ -47,8 +47,8 @@ public class JoinEmpire implements CommandOption {
             return;
         }
 
-        String empireToJoinName = StringUtils.buildWordsFromArray(args, 0);
-        Empire empireToJoin = Empire.getEmpire(empireToJoinName);
+        final String empireToJoinName = StringUtils.buildWordsFromArray(args, 0);
+        final Empire empireToJoin = Empire.getEmpire(empireToJoinName);
         if (empireToJoin == null) {
             sender.sendMessage(ChatColor.RED + String.format(
                 "Empire with name '%s' does not exist",
@@ -57,7 +57,7 @@ public class JoinEmpire implements CommandOption {
             return;
         }
 
-        if (empireToJoin.getMembers().size() == 0) {
+        if (!empireToJoin.isAnyMemberOnline()) {
             sender.sendMessage(ChatColor.RED + String.format(
                 "No-one in the empire of %s is online and can accept invitation you",
                 "" + empireToJoin.getChatColor() + ChatColor.BOLD + empireToJoinName + ChatColor.RED
@@ -65,20 +65,11 @@ public class JoinEmpire implements CommandOption {
             return;
         }
 
-//        String acceptCommandText = "/e accept " + tePlayer.getName();
-//        TextComponent acceptCommand = new TextComponent(acceptCommandText);
-//        acceptCommand.setColor(net.md_5.bungee.api.ChatColor.GREEN);
-//        acceptCommand.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, acceptCommandText));
-//
-//        String rejectCommandText = "/e reject " + tePlayer.getName();
-//        TextComponent rejectCommand = new TextComponent(rejectCommandText);
-//        acceptCommand.setColor(net.md_5.bungee.api.ChatColor.DARK_RED);
-//        acceptCommand.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, rejectCommandText));
-
         empireToJoin.broadcast(ChatColor.GREEN, String.format(
             "%s has requested to join the empire!",
             tePlayer.getName()
         ));
+
         empireToJoin.broadcastText(ChatColor.GREEN + String.format(
             "You have 60 seconds to run %s to accept, or %s to reject (%sinvite%s permission required)",
             ChatColor.BOLD + "/e accept " + tePlayer.getName() + ChatColor.GREEN,
@@ -86,6 +77,7 @@ public class JoinEmpire implements CommandOption {
             ChatColor.BOLD,
             ChatColor.GREEN
         ));
+
         sender.sendMessage(ChatColor.GREEN + String.format(
             "Sent an invite to join the empire of %s! They have 60 seconds to accept",
             "" + empireToJoin.getChatColor() + ChatColor.BOLD + empireToJoinName + ChatColor.GREEN
@@ -101,6 +93,11 @@ public class JoinEmpire implements CommandOption {
                     empireToJoin.broadcast(ChatColor.GOLD, String.format(
                         "Join request to accept %s expired",
                         ChatColor.BOLD + tePlayer.getName() + ChatColor.GOLD
+                    ));
+
+                    sender.sendMessage(ChatColor.RED + String.format(
+                        "Request to join %s expired",
+                        "" + ChatColor.BOLD + empireToJoin.getChatColor() + empireToJoin.getName() + ChatColor.RED
                     ));
                 },
                 60 * 20

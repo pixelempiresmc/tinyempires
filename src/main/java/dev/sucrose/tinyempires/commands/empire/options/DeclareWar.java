@@ -1,6 +1,7 @@
 package dev.sucrose.tinyempires.commands.empire.options;
 
 import dev.sucrose.tinyempires.TinyEmpires;
+import dev.sucrose.tinyempires.discord.DiscordBot;
 import dev.sucrose.tinyempires.models.Empire;
 import dev.sucrose.tinyempires.models.CommandOption;
 import dev.sucrose.tinyempires.models.Permission;
@@ -18,7 +19,7 @@ public class DeclareWar implements CommandOption {
 
     final static Map<ObjectId, Integer> empireWarTaskIds = new HashMap<>();
     final static int WAR_START_DELAY_SECONDS = 300;
-    final static float WAR_START_COST = 30;
+    final static float WAR_START_COST = 50;
 
     @Override
     public void execute(Player sender, String[] args) {
@@ -63,6 +64,15 @@ public class DeclareWar implements CommandOption {
             sender.sendMessage(ChatColor.RED + String.format(
                 "Empire '%s' does not exist",
                 empireName
+            ));
+            return;
+        }
+
+        if (empire.getAllies().contains(defender.getId())) {
+            sender.sendMessage(ChatColor.RED + String.format(
+                "You cannot go to war against your own allies. (%s/e unally%s to unally)",
+                ChatColor.BOLD,
+                ChatColor.RED
             ));
             return;
         }
@@ -120,6 +130,18 @@ public class DeclareWar implements CommandOption {
             Empire.WAR_TIME_MINUTES
         ));
 
+        DiscordBot.sendMessageInBridgeChat(String.format(
+            "**The empire of %s has declared war against %s!**",
+            empire.getName(),
+            defender.getName()
+        ));
+
+        Bukkit.broadcastMessage(ChatColor.GREEN + String.format(
+            "The empire of %s has declared war against %s!",
+            "" + empire.getChatColor() + ChatColor.BOLD + empire.getName() + ChatColor.GREEN,
+            "" + defender.getChatColor() + ChatColor.BOLD + defender.getName() + ChatColor.GREEN
+        ));
+
         // take coins
         empire.takeReserveCoins(WAR_START_COST);
         empire.setTimeLeftToWar(WAR_START_DELAY_SECONDS);
@@ -154,6 +176,16 @@ public class DeclareWar implements CommandOption {
                                         defender.broadcast(ChatColor.GREEN, String.format(
                                             "The war against %s has ended!",
                                             "" + defender.getChatColor() + ChatColor.BOLD + empire.getName() + ChatColor.GREEN
+                                        ));
+                                        Bukkit.broadcastMessage(ChatColor.GREEN + String.format(
+                                            "The empire of %s and %s has ended!",
+                                            "" + empire.getChatColor() + ChatColor.BOLD + empire.getName() + ChatColor.GREEN,
+                                            "" + defender.getChatColor() + ChatColor.BOLD + defender.getName() + ChatColor.GREEN
+                                        ));
+                                        DiscordBot.sendMessageInBridgeChat(String.format(
+                                            "**The empire of %s and %s has ended!**",
+                                            empire.getName(),
+                                            defender.getName()
                                         ));
                                         endWar(empire, defender);
                                     }

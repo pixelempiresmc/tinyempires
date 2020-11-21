@@ -1,6 +1,7 @@
 package dev.sucrose.tinyempires.commands.empire.options;
 
 import dev.sucrose.tinyempires.TinyEmpires;
+import dev.sucrose.tinyempires.discord.DiscordBot;
 import dev.sucrose.tinyempires.models.CommandOption;
 import dev.sucrose.tinyempires.models.Empire;
 import dev.sucrose.tinyempires.models.Permission;
@@ -73,6 +74,16 @@ public class EndWar implements CommandOption {
             attacker.updateMemberScoreboards();
             defender.updateMemberScoreboards();
             empireAttackerToWarEndOfferer.remove(attacker.getId());
+            DiscordBot.sendMessageInBridgeChat(String.format(
+                "**The empire of %s has ended the war against %s!**",
+                attacker.getName(),
+                defender.getName()
+            ));
+            Bukkit.broadcastMessage(ChatColor.GREEN + String.format(
+                "The empire of %s has declared war against %s!",
+                "" + attacker.getChatColor() + ChatColor.BOLD + attacker.getName() + ChatColor.GREEN,
+                "" + defender.getChatColor() + ChatColor.BOLD + defender.getName() + ChatColor.GREEN
+            ));
             return;
         }
 

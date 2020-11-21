@@ -4,6 +4,7 @@ import dev.sucrose.tinyempires.discord.DiscordBot;
 import dev.sucrose.tinyempires.models.*;
 import dev.sucrose.tinyempires.utils.DrawEmpire;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
+import org.bson.types.ObjectId;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -80,7 +81,20 @@ public class LeaveEmpire implements CommandOption {
                 DrawEmpire.removeChunk(chunk, empire);
             }
 
+            // delete flag marker
             DrawEmpire.deleteEmpireHomeMarker(empire.getId());
+
+            // delete empire alliances
+            for (final ObjectId empireId : empire.getAllies()) {
+                final Empire ally = Empire.getEmpire(empireId);
+                if (ally == null)
+                    throw new NullPointerException("Could not get ally with object id " + empireId);
+                ally.removeAlliedEmpire(empire.getId());
+                ally.broadcastText(ChatColor.RED + String.format(
+                    "The empire is no longer allies with %s",
+                    ChatColor.BOLD + ally.getName()
+                ));
+            }
 
             // delete empire in mongo
             empire.delete();

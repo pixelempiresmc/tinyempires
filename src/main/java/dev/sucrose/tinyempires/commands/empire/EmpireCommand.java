@@ -56,6 +56,10 @@ public class EmpireCommand implements CommandExecutor, Listener {
         options.put("renamelaw", new RenameEmpireLaw());
         options.put("endwar", new EndWar());
         options.put("chat", new Chat());
+        options.put("ally", new Ally());
+        options.put("allyaccept", new AllyAcceptRequest());
+        options.put("allyreject", new AllyRejectRequest());
+        options.put("unally", new Unally());
     }
 
     @Override

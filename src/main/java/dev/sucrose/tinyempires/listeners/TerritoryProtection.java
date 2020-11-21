@@ -14,10 +14,7 @@ import org.bukkit.block.Barrel;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Furnace;
-import org.bukkit.block.data.Openable;
-import org.bukkit.block.data.type.Door;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Mob;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
@@ -25,26 +22,28 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.material.PressureSensor;
 
 /**
  * Bukkit event listener that prevents players from damaging or interacting with chests, doors, buttons or levers other empires' territories
  */
 public class TerritoryProtection implements Listener {
 
-    private boolean playerInChunkOwner(TEPlayer player, TEChunk chunk) {
+    private boolean playerInChunkOwnerAndNotAlly(TEPlayer player, TEChunk chunk) {
         if (chunk == null)
             return true;
         final Empire owner = chunk.getEmpire();
         if (owner == null)
             throw new NullPointerException("Owner for chunk found as null");
         final Empire playerEmpire = player.getEmpire();
-        return player.getEmpire() != null && owner.getId().equals(playerEmpire.getId());
+        // true if player is not in the same empire as the owner of
+        // the chunk and is not in an empire allying with them
+        return player.getEmpire() != null
+            && owner.getId().equals(playerEmpire.getId())
+            && !owner.getAllies().contains(player.getEmpire().getId());
     }
 
     @EventHandler
@@ -60,7 +59,7 @@ public class TerritoryProtection implements Listener {
         }
 
         // return if no empire owns chunk
-        if (playerInChunkOwner(tePlayer, teChunk))
+        if (playerInChunkOwnerAndNotAlly(tePlayer, teChunk))
             return;
 
         // different empire, cancel event
@@ -81,7 +80,7 @@ public class TerritoryProtection implements Listener {
         }
 
         // return if no empire owns chunk
-        if (playerInChunkOwner(tePlayer, teChunk))
+        if (playerInChunkOwnerAndNotAlly(tePlayer, teChunk))
             return;
 
         // different empire, cancel event
@@ -120,7 +119,7 @@ public class TerritoryProtection implements Listener {
         final TEChunk teChunk = TEChunk.getChunk(chunk);
 
         // return if player not in empire
-        if (playerInChunkOwner(tePlayer, teChunk))
+        if (playerInChunkOwnerAndNotAlly(tePlayer, teChunk))
             return;
 
         final String startOfResponse = ChatColor.RED + String.format(

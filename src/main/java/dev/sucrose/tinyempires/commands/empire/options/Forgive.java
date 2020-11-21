@@ -67,7 +67,7 @@ public class Forgive implements CommandOption {
 
         // forgive debt
         empire.removeDebt(debtor.getPlayerUUID(), amount);
-        final double debt = empire.getDebt(debtor.getPlayerUUID());
+        final Object debt = empire.getDebt(debtor.getPlayerUUID());
         sender.sendMessage(ChatColor.GREEN + String.format(
             "%s has been forgiven %.1f coins of debt by %s! (%.1f coins still indebted)",
             ChatColor.BOLD + debtorName + ChatColor.GREEN,
