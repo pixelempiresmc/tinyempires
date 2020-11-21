@@ -38,6 +38,9 @@ public class PreventCombatLogging implements Listener {
         if (killerTePlayer == null)
             throw new NullPointerException("Could not get TEPlayer for " + killerUUID);
 
+        if (!(event.getEntity() instanceof Player))
+            return;
+
         final Player player = (Player) event.getEntity();
         final TEPlayer victimTePlayer = TEPlayer.getTEPlayer(player.getUniqueId());
         if (victimTePlayer == null)

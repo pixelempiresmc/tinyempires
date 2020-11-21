@@ -44,7 +44,7 @@ public class Dimension implements CommandExecutor {
     public boolean onCommand(CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         // /e dimension <dimension>
         if (!sender.isOp()) {
-            sender.sendMessage(ErrorUtils.YOU_MUST_BE_IN_AN_EMPIRE);
+            sender.sendMessage(ErrorUtils.INSUFFICIENT_PERMS);
             return false;
         }
 

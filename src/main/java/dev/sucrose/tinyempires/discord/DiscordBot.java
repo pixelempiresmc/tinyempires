@@ -7,6 +7,7 @@ import dev.sucrose.tinyempires.models.TEChunk;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.CensorUtils;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
+import dev.sucrose.tinyempires.utils.StringUtils;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -337,7 +338,8 @@ public class DiscordBot extends ListenerAdapter implements Listener {
             if (content.charAt(0) == '/') {
                 final String command = content.substring(1);
                 final StringBuilder messageBuilder = new StringBuilder();
-                switch (command) {
+                final String[] args = content.split(" ");
+                switch (args[0]) {
                     case "list":
                         final Collection<? extends Player> players = Bukkit.getOnlinePlayers();
                         messageBuilder.append(
@@ -375,7 +377,7 @@ public class DiscordBot extends ListenerAdapter implements Listener {
                         );
                         for (final Empire e : empires) {
                             messageBuilder.append(String.format(
-                                "\n - *%s*: %d member%s, %.1f coin%s, %d law%s, %d chunk%s",
+                                "\n - %s: %d member%s, %.1f coin%s, %d law%s, %d chunk%s",
                                 e.getName(),
                                 e.getMembers().size(),
                                 e.getMembers().size() != 1 ? "s" : "",
@@ -394,40 +396,26 @@ public class DiscordBot extends ListenerAdapter implements Listener {
                         final Member discordMember = discordServer.getMember(msg.getAuthor());
                         // Discord opped Minecraft commands
                         if (discordMember == null
-                                || !discordMember.getRoles().contains(discordServer.getRoleById("739979260856631368"))) {
-                            channel.sendMessage("`You must have the **God** role to run a command!`").queue();
+                                || !memberHasRole(discordMember, "739979260856631368")) {
+                            channel.sendMessage("`You must have the God role to run a server command!`").queue();
                             return;
                         }
 
-                        final String[] args = content.split(" ");
-                        if (args.length < 1) {
+                        if (args.length < 2) {
                             channel.sendMessage("`/run <command>`").queue();
                             return;
                         }
 
-                        final String commandString = args[1];
+                        final String commandString = StringUtils.buildWordsFromArray(args, 1);
                         Bukkit.dispatchCommand(
                             Bukkit.getConsoleSender(),
                             commandString
                         );
                         channel.sendMessage(String.format(
-                            "`Ran command **%s** on the Minecraft server`",
+                            "`Ran command \"%s\" on the Minecraft server`",
                             commandString
                         )).queue();
                         return;
-//                    case "tps":
-//                        Bukkit.dispatchCommand(
-//                            TinyEmpires.getCommandSenderExtractor(),
-//                            "tps"
-//                        );
-//                        channel
-//                            .sendMessage(
-//                                '`'
-//                                + TinyEmpires.getCommandSenderExtractor().getLastMessage()
-//                                + '`'
-//                            )
-//                            .queue();
-//                        return;
                     default:
                         channel
                             .sendMessage(
@@ -451,6 +439,12 @@ public class DiscordBot extends ListenerAdapter implements Listener {
                     .queue(response -> System.out.println("Successfully sent message from Discord"));
             } catch (Exception ignore) {}
         }
+    }
+
+    public boolean memberHasRole(Member member, String name) {
+        final List<Role> roles = member.getRoles();
+        return roles.stream()
+            .anyMatch(role -> role.getId().equals(name));
     }
 
     @EventHandler

@@ -23,15 +23,16 @@ import dev.sucrose.tinyempires.commands.tpa.RejectTeleportRequest;
 import dev.sucrose.tinyempires.commands.tpa.TeleportRequest;
 import dev.sucrose.tinyempires.discord.DiscordBot;
 import dev.sucrose.tinyempires.listeners.*;
+import dev.sucrose.tinyempires.listeners.WorldBorder;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.DrawEmpire;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.WorldCreator;
+import org.bukkit.*;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -107,9 +108,9 @@ public final class TinyEmpires extends JavaPlugin {
         registerCommand("censor", new Censor());
         registerCommand("prox", new ProximityChat());
         registerCommand("close-bot", new CloseBot());
-        registerCommand("tpa", new TeleportRequest());
-        registerCommand("tpaccept", new AcceptTeleportRequest());
-        registerCommand("tpreject", new RejectTeleportRequest());
+//        registerCommand("tpa", new TeleportRequest());
+//        registerCommand("tpaccept", new AcceptTeleportRequest());
+//        registerCommand("tpreject", new RejectTeleportRequest());
         registerCommand("nick", new Nick());
 
         try {
@@ -126,6 +127,9 @@ public final class TinyEmpires extends JavaPlugin {
                 throw new NullPointerException(ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
             tePlayer.updatePlayerScoreboard();
         }
+
+        // create recipe
+        addHoneyStickyPistonRecipe();
 
         DiscordBot.sendMessageInBridgeChat("**The server has started up!**");
     }
@@ -164,6 +168,22 @@ public final class TinyEmpires extends JavaPlugin {
         final PluginManager pluginManager = getServer().getPluginManager();
         for (final Listener listener : listeners)
             pluginManager.registerEvents(listener, this);
+    }
+
+    private void addHoneyStickyPistonRecipe() {
+        // honey bottle sticky piston recipe
+        ShapedRecipe stickyPiston = new ShapedRecipe(
+            new NamespacedKey(this, NamespacedKey.BUKKIT),
+            new ItemStack(Material.STICKY_PISTON)
+        );
+
+        stickyPiston.shape("***","*H*","*P*");
+
+        stickyPiston.setIngredient('*', Material.AIR);
+        stickyPiston.setIngredient('H', Material.HONEY_BOTTLE);
+        stickyPiston.setIngredient('P', Material.PISTON);
+
+        getServer().addRecipe(stickyPiston);
     }
 
 }

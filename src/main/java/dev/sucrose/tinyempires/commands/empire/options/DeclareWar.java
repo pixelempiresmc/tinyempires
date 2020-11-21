@@ -178,12 +178,12 @@ public class DeclareWar implements CommandOption {
                                             "" + defender.getChatColor() + ChatColor.BOLD + empire.getName() + ChatColor.GREEN
                                         ));
                                         Bukkit.broadcastMessage(ChatColor.GREEN + String.format(
-                                            "The empire of %s and %s has ended!",
+                                            "The war between %s and %s has ended!",
                                             "" + empire.getChatColor() + ChatColor.BOLD + empire.getName() + ChatColor.GREEN,
                                             "" + defender.getChatColor() + ChatColor.BOLD + defender.getName() + ChatColor.GREEN
                                         ));
                                         DiscordBot.sendMessageInBridgeChat(String.format(
-                                            "**The empire of %s and %s has ended!**",
+                                            "**The war between %s and %s has ended!**",
                                             empire.getName(),
                                             defender.getName()
                                         ));

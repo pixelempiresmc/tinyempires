@@ -25,7 +25,7 @@ public class Invisible implements CommandExecutor {
     public boolean onCommand(CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         // /invisible <true/false>
         if (!sender.isOp()) {
-            sender.sendMessage(ChatColor.RED + ErrorUtils.INSUFFICIENT_PERMS);
+            sender.sendMessage(ErrorUtils.INSUFFICIENT_PERMS);
             return false;
         }
 
