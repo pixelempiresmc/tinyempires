@@ -1,10 +1,7 @@
 package dev.sucrose.tinyempires.utils;
 
-import dev.sucrose.tinyempires.models.TEChest;
 import dev.sucrose.tinyempires.models.TEChunk;
-import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
-import org.bukkit.World;
 
 public class BoundUtils {
 
@@ -32,6 +29,11 @@ public class BoundUtils {
     private static final int PIXEL_RIGHT_X = -4628;
     private static final int PIXEL_BOTTOM_Z = -1086;
     private static final int PIXEL_TOP_Z = -1070;
+
+    private static final int OPIKALIWDGTUW_LEFT_X = 2323;
+    private static final int OPIKALIWDGTUW_RIGHT_X = 2346;
+    private static final int OPIKALIWDGTUW_BOTTOM_Z = -177;
+    private static final int OPIKALIWDGTUW_TOP_Z = -157;
 
     private static boolean inBounds(int x, int z, int leftX, int rightX, int bottomZ, int topZ) {
         return x >= leftX
@@ -65,6 +67,11 @@ public class BoundUtils {
             && inBounds(x, z, PORTAL_CASTLE_LEFT_X, PORTAL_CASTLE_RIGHT_X, PORTAL_CASTLE_BOTTOM_Z, PORTAL_CASTLE_TOP_Z);
     }
 
+    public static boolean inBoundsOfOPIKALIWDGTUW(String world, int x, int z) {
+        return world.equals("world")
+            && inBounds(x, z, OPIKALIWDGTUW_LEFT_X, OPIKALIWDGTUW_RIGHT_X, OPIKALIWDGTUW_BOTTOM_Z, OPIKALIWDGTUW_TOP_Z);
+    }
+
     public static boolean isChunkInBoundsOfSpecialTerritory(Chunk chunk) {
         final int x = chunk.getX() * 16;
         final int z = chunk.getZ() * 16;
@@ -81,7 +88,8 @@ public class BoundUtils {
         return inBoundsOfOlympus(world, x, z)
             || inBoundsOfWaterArena(world, x, z)
             || inBoundsOfPortalCastle(world, x, z)
-            || inBoundsOfPixel(world, x, z);
+            || inBoundsOfPixel(world, x, z)
+            || inBoundsOfOPIKALIWDGTUW(world, x, z);
     }
 
     public static boolean coordsInChunk(String world, int x, int z, TEChunk chunk) {

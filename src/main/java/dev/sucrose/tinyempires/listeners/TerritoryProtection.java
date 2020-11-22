@@ -45,8 +45,7 @@ public class TerritoryProtection implements Listener {
         final Empire playerEmpire = player.getEmpire();
         // true if player is not in the same empire as the owner of
         // the chunk and is not in an empire allying with them
-        return (player.getEmpire() != null
-            && owner.getId().equals(playerEmpire.getId()))
+        return owner.getId().equals(playerEmpire == null ? null : playerEmpire.getId())
             || owner.getAllies().contains(player.getEmpire().getId());
     }
 
@@ -165,6 +164,11 @@ public class TerritoryProtection implements Listener {
                 && block.getState() instanceof ItemFrame) {
             event.setCancelled(true);
             player.sendMessage(startOfResponse + "interact with item-frames");
+        } else if (event.getAction() == Action.RIGHT_CLICK_BLOCK
+                && event.getItem() != null
+                && event.getItem().getType() == Material.FLINT_AND_STEEL) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "light fires");
         }
     }
 

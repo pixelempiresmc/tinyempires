@@ -554,10 +554,13 @@ public class Empire {
             new Document("_id", id),
             new Document(
                 "$set",
-                new Document("home.world", homeLocation.getWorld().getName())
-                    .append("home.x", homeLocation.getX())
-                    .append("home.y", homeLocation.getY())
-                    .append("home.z", homeLocation.getZ())
+                new Document(
+                    "home",
+                    new Document("world", homeLocation.getWorld().getName())
+                        .append("x", homeLocation.getX())
+                        .append("y", homeLocation.getX())
+                        .append("z", homeLocation.getX())
+                )
             )
         );
     }

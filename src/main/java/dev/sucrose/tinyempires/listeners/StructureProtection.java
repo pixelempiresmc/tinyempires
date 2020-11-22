@@ -9,6 +9,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.CreeperPowerEvent;
 import org.bukkit.event.entity.ExplosionPrimeEvent;
@@ -49,6 +50,14 @@ public class StructureProtection implements Listener {
     public void onEntityExplosion(ExplosionPrimeEvent event) {
         // prevent explosions from damaging special territory
         final Location location = event.getEntity().getLocation();
+        if (BoundUtils.isChunkInBoundsOfSpecialTerritory(location.getChunk()))
+            event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onBlockExplosion(BlockExplodeEvent event) {
+        // prevent explosions from damaging special territory
+        final Location location = event.getBlock().getLocation();
         if (BoundUtils.isChunkInBoundsOfSpecialTerritory(location.getChunk()))
             event.setCancelled(true);
     }
