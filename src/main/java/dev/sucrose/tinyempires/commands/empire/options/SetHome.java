@@ -56,16 +56,6 @@ public class SetHome implements CommandOption {
             return;
         }
 
-        final Location originalHome = empire.getHomeLocation();
-        final World originalHomeWorld = originalHome.getWorld();
-        if (originalHomeWorld == null) {
-            sender.sendMessage(ChatColor.RED +
-                "Could not fetch the world for the original home location. This is unexpected behavior. " +
-                "Please contact a developer and we will attend to it promptly."
-            );
-            return;
-        }
-
         if (empire.getReserve() < MOVE_HOME_COST) {
             sender.sendMessage(ChatColor.RED + String.format(
                 "%.1f more funds needed to move the empire home. (%.1f needed, %.1f in reserve)",
@@ -77,17 +67,31 @@ public class SetHome implements CommandOption {
         }
 
         // checks passed, set location and send message
-        empire.broadcastText(ChatColor.GREEN + String.format(
-            "%s set the home to %d, %d in %s from %d, %d in %s for %.1f coins",
-            ChatColor.BOLD + sender.getName() + ChatColor.GREEN,
-            senderLocation.getBlockX(),
-            senderLocation.getBlockZ(),
-            StringUtils.worldDirToName(world.getName()),
-            originalHome.getBlockX(),
-            originalHome.getBlockZ(),
-            StringUtils.worldDirToName(originalHome.getWorld().getName()),
-            MOVE_HOME_COST
-        ));
+        final Location originalHome = empire.getHomeLocation();
+        if (originalHome == null
+                || originalHome.getWorld() == null) {
+            empire.broadcastText(ChatColor.GREEN + String.format(
+                "%s set the empire home location to %d, %d, %d in the %s",
+                ChatColor.BOLD + sender.getName() + ChatColor.GREEN,
+                senderLocation.getBlockX(),
+                senderLocation.getBlockY(),
+                senderLocation.getBlockZ(),
+                StringUtils.worldDirToName(senderLocation.getWorld().getName())
+            ));
+        } else {
+            empire.broadcastText(ChatColor.GREEN + String.format(
+                "%s changed the empire home location from %d, %d, %d in the %s to %d, %d, %d in the %s",
+                ChatColor.BOLD + sender.getName() + ChatColor.GREEN,
+                originalHome.getBlockX(),
+                originalHome.getBlockY(),
+                originalHome.getBlockZ(),
+                StringUtils.worldDirToName(originalHome.getWorld().getName()),
+                senderLocation.getBlockX(),
+                senderLocation.getBlockY(),
+                senderLocation.getBlockZ(),
+                StringUtils.worldDirToName(senderLocation.getWorld().getName())
+            ));
+        }
         empire.setHomeLocation(senderLocation);
         DrawEmpire.moveEmpireHomeMarker(
             empire,

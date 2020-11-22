@@ -392,10 +392,13 @@ public class DiscordBot extends ListenerAdapter implements Listener {
                         return;
                     case "run":
                         // /run <command>
-                        final Member discordMember = discordServer.getMember(msg.getAuthor());
+                        final Member discordMember = event.getMember();
+                        System.out.println(discordMember);
+                        if (discordMember != null)
+                            System.out.println(discordMember.getRoles());
                         // Discord opped Minecraft commands
                         if (discordMember == null
-                                || !memberHasRole(discordMember, "739979260856631368")) {
+                                || !memberHasRole(discordMember, "God")) {
                             channel.sendMessage("`You must have the God role to run a server command!`").queue();
                             return;
                         }
@@ -406,9 +409,12 @@ public class DiscordBot extends ListenerAdapter implements Listener {
                         }
 
                         final String commandString = StringUtils.buildWordsFromArray(args, 1);
-                        Bukkit.dispatchCommand(
-                            Bukkit.getConsoleSender(),
-                            commandString
+                        Bukkit.getScheduler().runTask(
+                            TinyEmpires.getInstance(),
+                            () -> Bukkit.dispatchCommand(
+                                Bukkit.getConsoleSender(),
+                                commandString
+                            )
                         );
                         channel.sendMessage(String.format(
                             "`Ran command \"%s\" on the Minecraft server`",
@@ -443,7 +449,7 @@ public class DiscordBot extends ListenerAdapter implements Listener {
     public boolean memberHasRole(Member member, String name) {
         final List<Role> roles = member.getRoles();
         return roles.stream()
-            .anyMatch(role -> role.getId().equals(name));
+            .anyMatch(role -> role.getName().equals(name));
     }
 
     @EventHandler

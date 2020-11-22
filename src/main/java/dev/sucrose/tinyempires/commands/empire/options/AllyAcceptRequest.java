@@ -52,9 +52,9 @@ public class AllyAcceptRequest implements CommandOption {
         }
 
         if (Empire.getAllyRequestForEmpire(empireRequestingToAlly.getId()) == null
-                || Objects.equals(Empire.getAllyRequestForEmpire(empireRequestingToAlly.getId()), empire.getId())) {
+                || !Objects.equals(Empire.getAllyRequestForEmpire(empireRequestingToAlly.getId()), empire.getId())) {
             sender.sendMessage(ChatColor.RED + String.format(
-                "%s is not currently requesting to join",
+                "%s is not currently requesting to ally",
                 "" + ChatColor.BOLD + empireRequestingToAlly.getChatColor() + empireName + ChatColor.RED
             ));
             return;

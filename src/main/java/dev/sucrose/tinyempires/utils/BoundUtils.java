@@ -1,5 +1,7 @@
 package dev.sucrose.tinyempires.utils;
 
+import dev.sucrose.tinyempires.models.TEChest;
+import dev.sucrose.tinyempires.models.TEChunk;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.World;
@@ -80,6 +82,18 @@ public class BoundUtils {
             || inBoundsOfWaterArena(world, x, z)
             || inBoundsOfPortalCastle(world, x, z)
             || inBoundsOfPixel(world, x, z);
+    }
+
+    public static boolean coordsInChunk(String world, int x, int z, TEChunk chunk) {
+        return world.equals(chunk.getWorld())
+            && inBounds(
+                x,
+                z,
+            chunk.getX() * 16,
+            chunk.getX() * 16 + 16,
+            chunk.getZ() * 16,
+            chunk.getZ() * 16 + 16
+            );
     }
 
 }

@@ -42,6 +42,7 @@ public class Nick implements CommandExecutor {
         ));
 
         player.setDisplayName(nickname);
+        player.setPlayerListName(nickname);
         return true;
     }
 

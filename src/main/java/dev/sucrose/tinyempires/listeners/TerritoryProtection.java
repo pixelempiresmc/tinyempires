@@ -14,12 +14,16 @@ import org.bukkit.block.Barrel;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Furnace;
+import org.bukkit.block.data.type.Farmland;
+import org.bukkit.block.data.type.Gate;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
@@ -32,7 +36,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
  */
 public class TerritoryProtection implements Listener {
 
-    private boolean playerInChunkOwnerAndNotAlly(TEPlayer player, TEChunk chunk) {
+    private boolean playerInChunkOwnerOrAllyAndUnopped(TEPlayer player, TEChunk chunk) {
         if (chunk == null)
             return true;
         final Empire owner = chunk.getEmpire();
@@ -41,9 +45,9 @@ public class TerritoryProtection implements Listener {
         final Empire playerEmpire = player.getEmpire();
         // true if player is not in the same empire as the owner of
         // the chunk and is not in an empire allying with them
-        return player.getEmpire() != null
-            && owner.getId().equals(playerEmpire.getId())
-            && !owner.getAllies().contains(player.getEmpire().getId());
+        return (player.getEmpire() != null
+            && owner.getId().equals(playerEmpire.getId()))
+            || owner.getAllies().contains(player.getEmpire().getId());
     }
 
     @EventHandler
@@ -58,8 +62,7 @@ public class TerritoryProtection implements Listener {
             return;
         }
 
-        // return if no empire owns chunk
-        if (playerInChunkOwnerAndNotAlly(tePlayer, teChunk))
+        if (playerInChunkOwnerOrAllyAndUnopped(tePlayer, teChunk))
             return;
 
         // different empire, cancel event
@@ -80,7 +83,7 @@ public class TerritoryProtection implements Listener {
         }
 
         // return if no empire owns chunk
-        if (playerInChunkOwnerAndNotAlly(tePlayer, teChunk))
+        if (playerInChunkOwnerOrAllyAndUnopped(tePlayer, teChunk))
             return;
 
         // different empire, cancel event
@@ -119,13 +122,14 @@ public class TerritoryProtection implements Listener {
         final TEChunk teChunk = TEChunk.getChunk(chunk);
 
         // return if player not in empire
-        if (playerInChunkOwnerAndNotAlly(tePlayer, teChunk))
+        if (playerInChunkOwnerOrAllyAndUnopped(tePlayer, teChunk))
             return;
 
         final String startOfResponse = ChatColor.RED + String.format(
             "You are in the empire of %s and you cannot ",
             teChunk.getEmpire().getName()
         );
+
         if (block.getType().name().contains("TRAPDOOR")) {
             event.setCancelled(true);
             player.sendMessage(startOfResponse + "open trapdoors");
@@ -150,6 +154,17 @@ public class TerritoryProtection implements Listener {
         } else if (block.getState() instanceof Barrel) {
             event.setCancelled(true);
             player.sendMessage(startOfResponse + "open barrels");
+        } else if (event.getAction() == Action.PHYSICAL
+                && block.getState() instanceof Farmland) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "trample crops");
+        } else if (block.getState() instanceof Gate) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "interact with gates");
+        } else if (event.getAction() == Action.LEFT_CLICK_BLOCK
+                && block.getState() instanceof ItemFrame) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "interact with item-frames");
         }
     }
 

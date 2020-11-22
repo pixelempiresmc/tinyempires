@@ -140,6 +140,7 @@ public class WarClaimChunkTask implements Runnable {
                 }
             }
 
+            TEChest.removeChestMappingsInChunk(chunk);
             PlayerMove.cancelChunkWarClaimTask(chunk);
             DrawEmpire.setEmpire(chunk.getWorld(), chunk.getX(), chunk.getZ(), attacker);
             return;

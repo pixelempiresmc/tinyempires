@@ -2,7 +2,9 @@ package dev.sucrose.tinyempires.models;
 
 import com.mongodb.client.MongoCollection;
 import dev.sucrose.tinyempires.TinyEmpires;
+import dev.sucrose.tinyempires.utils.BoundUtils;
 import org.bson.Document;
+import org.bukkit.Chunk;
 
 import java.util.*;
 
@@ -36,6 +38,21 @@ public class TEChest {
             );
         }
 
+    }
+
+    public static void removeChestMappingsInChunk(TEChunk chunk) {
+        for (final String coordinateString : chestToPlayerCache.keySet()) {
+            final String[] words = coordinateString.split(" ");
+            final String world = words[0];
+            final int x = Integer.parseInt(words[1]);
+            final int z = Integer.parseInt(words[3]);
+            // if world, x, and z are within chunk then remove mapping
+            if (BoundUtils.coordsInChunk(world, x, z, chunk)) {
+                // only need y if removing chest mapping
+                final int y = Integer.parseInt(words[2]);
+                removeChestToPlayerMapping(world, x, y, z);
+            }
+        }
     }
 
     private static String coordinatesToCacheKey(String world, int x, int y, int z) {
