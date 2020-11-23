@@ -558,8 +558,8 @@ public class Empire {
                     "home",
                     new Document("world", homeLocation.getWorld().getName())
                         .append("x", homeLocation.getX())
-                        .append("y", homeLocation.getX())
-                        .append("z", homeLocation.getX())
+                        .append("y", homeLocation.getY())
+                        .append("z", homeLocation.getZ())
                 )
             )
         );

@@ -26,6 +26,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
@@ -46,7 +47,7 @@ public class TerritoryProtection implements Listener {
         // true if player is not in the same empire as the owner of
         // the chunk and is not in an empire allying with them
         return owner.getId().equals(playerEmpire == null ? null : playerEmpire.getId())
-            || owner.getAllies().contains(player.getEmpire().getId());
+            || (player.getEmpire() != null && owner.getAllies().contains(player.getEmpire().getId()));
     }
 
     @EventHandler
@@ -58,6 +59,13 @@ public class TerritoryProtection implements Listener {
 
         if (tePlayer == null) {
             player.sendMessage(ChatColor.RED + ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
+            return;
+        }
+
+        if (player.isOp()) {
+            player.sendMessage(ChatColor.YELLOW +
+                "Block break would be cancelled but player is opped, returning"
+            );
             return;
         }
 
@@ -78,6 +86,13 @@ public class TerritoryProtection implements Listener {
 
         if (tePlayer == null) {
             placer.sendMessage(ChatColor.RED + ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
+            return;
+        }
+
+        if (placer.isOp()) {
+            placer.sendMessage(ChatColor.YELLOW +
+                "Block break would be cancelled but player is opped, returning"
+            );
             return;
         }
 
@@ -123,6 +138,13 @@ public class TerritoryProtection implements Listener {
         // return if player not in empire
         if (playerInChunkOwnerOrAllyAndUnopped(tePlayer, teChunk))
             return;
+
+        if (player.isOp()) {
+            player.sendMessage(ChatColor.YELLOW +
+                "Block break would be cancelled but player is opped, returning"
+            );
+            return;
+        }
 
         final String startOfResponse = ChatColor.RED + String.format(
             "You are in the empire of %s and you cannot ",
@@ -180,29 +202,29 @@ public class TerritoryProtection implements Listener {
             event.setCancelled(true);
     }
 
-//    @EventHandler
-//    public static void onEntityDamage(EntityDamageByEntityEvent event) {
-//        if (!(event.getDamager() instanceof Player))
-//            return;
-//
-//        final Player player = (Player) event.getDamager();
-//        final TEPlayer tePlayer = TEPlayer.getTEPlayer(player.getUniqueId());
-//        if (tePlayer == null)
-//            throw new NullPointerException("Could not get TEPlayer for " + player.getUniqueId());
-//
-//        final Location location = event.getEntity().getLocation();
-//        final TEChunk teChunk = TEChunk.getChunk(location.getChunk());
-//        if (teChunk != null
-//                && teChunk.getEmpire().getId().equals(
-//                    tePlayer.getEmpire() == null
-//                        ? null
-//                        : tePlayer.getEmpire().getId()
-//                    )
-//        ) {
-//            player.sendMessage(ChatColor.RED + "You cannot damage entities belonging to other empires!");
-//            event.setCancelled(true);
-//        }
-//    }
+    @EventHandler
+    public static void onEntityDamage(EntityDamageByEntityEvent event) {
+        if (!(event.getDamager() instanceof Player))
+            return;
+
+        final Player player = (Player) event.getDamager();
+        final TEPlayer tePlayer = TEPlayer.getTEPlayer(player.getUniqueId());
+        if (tePlayer == null)
+            throw new NullPointerException("Could not get TEPlayer for " + player.getUniqueId());
+
+        final Location location = event.getEntity().getLocation();
+        final TEChunk teChunk = TEChunk.getChunk(location.getChunk());
+        if (teChunk != null
+                && !teChunk.getEmpire().getId().equals(
+                    tePlayer.getEmpire() == null
+                        ? null
+                        : tePlayer.getEmpire().getId()
+                    )
+        ) {
+            player.sendMessage(ChatColor.RED + "You cannot damage entities belonging to other empires!");
+            event.setCancelled(true);
+        }
+    }
 
     @EventHandler
     public static void onMobSpawn(EntitySpawnEvent event) {
