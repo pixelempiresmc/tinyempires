@@ -101,8 +101,8 @@ public class DeclareWar implements CommandOption {
             if (p != null)
                 defenderPlayersOnline++;
         }
-
-        final int defenderPlayerOnlineRequirement = defender.getMembers().size() > 1 ? 2 : 1;
+        
+        final int defenderPlayerOnlineRequirement = (int) Math.ceil((float) defender.getMembers().size() / 2);
         if (defenderPlayersOnline < defenderPlayerOnlineRequirement) {
             sender.sendMessage(ChatColor.RED + String.format(
                 "At least %d players from this empire must be online to declare war against them. (%d currently " +
