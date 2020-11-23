@@ -80,7 +80,7 @@ public class EndWar implements CommandOption {
                 defender.getName()
             ));
             Bukkit.broadcastMessage(ChatColor.GREEN + String.format(
-                "The empire of %s has declared war against %s!",
+                "The empire of %s has ended the war against %s!",
                 "" + attacker.getChatColor() + ChatColor.BOLD + attacker.getName() + ChatColor.GREEN,
                 "" + defender.getChatColor() + ChatColor.BOLD + defender.getName() + ChatColor.GREEN
             ));
