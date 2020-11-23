@@ -39,10 +39,19 @@ public class ChangeEmpireName implements CommandOption {
             sender.sendMessage(ChatColor.RED + getUsage());
             return;
         }
+        
 
         final String name = StringUtils.buildWordsFromArray(args, 0);
         if (name.length() > 30) {
             sender.sendMessage(ChatColor.RED + "You cannot have an empire name longer than 30 characters");
+            return;
+        }
+        
+        if (Empire.getEmpire(name) != null) {
+            sender.sendMessage(ChatColor.RED + String.format(
+                "Empire with the name '%s' already exists",
+                name
+            ));
             return;
         }
 
