@@ -393,9 +393,6 @@ public class DiscordBot extends ListenerAdapter implements Listener {
                     case "run":
                         // /run <command>
                         final Member discordMember = event.getMember();
-                        System.out.println(discordMember);
-                        if (discordMember != null)
-                            System.out.println(discordMember.getRoles());
                         // Discord opped Minecraft commands
                         if (discordMember == null
                                 || !memberHasRole(discordMember, "God")) {
