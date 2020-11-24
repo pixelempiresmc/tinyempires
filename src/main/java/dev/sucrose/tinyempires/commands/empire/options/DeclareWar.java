@@ -101,18 +101,37 @@ public class DeclareWar implements CommandOption {
             if (p != null)
                 defenderPlayersOnline++;
         }
+        
+        int empirePlayersOnline = 0;
+        for (final TEPlayer member : tePlayer.getMembers()) {
+            // check if player is online
+            final Player p = Bukkit.getPlayer(member.getPlayerUUID());
+            if (p != null)
+                empirePlayersOnline++;
+        }
 
         final int defenderPlayerOnlineRequirement = defender.getMembers().size() > 1 ? 2 : 1;
         if (defenderPlayersOnline < defenderPlayerOnlineRequirement) {
             sender.sendMessage(ChatColor.RED + String.format(
-                "At least %d players from this empire must be online to declare war against them. (%d currently " +
+                "At least %d players from their empire must be online to declare war against them. (%d currently " +
                     "online)",
                 defenderPlayerOnlineRequirement,
                 defenderPlayersOnline
             ));
             return;
         }
-
+        
+        final int empirePlayersOnlineRequirement = tePlayer.getMembers().size() > 1 ? 2 : 1;
+        if (empirePlayersOnline < empirePlayersOnlineRequirement) {
+            sender.sendMessage(ChatColor.RED + String.format(
+                "At least %d players from this empire must be online to declare war against them. (%d currently " +
+                    "online)",
+                empirePlayersOnlineRequirement,
+                empirePlayersOnline
+            ));
+            return;
+        }
+        
         empire.setAtWarWith(defender, true);
         empire.broadcast(ChatColor.DARK_GREEN, String.format(
             "%s spent %.1f coins and has made the empire declare war against %s! It will start in %d seconds",
