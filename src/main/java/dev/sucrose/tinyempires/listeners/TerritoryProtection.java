@@ -15,6 +15,8 @@ import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Furnace;
 import org.bukkit.block.ShulkerBox;
+import org.bukkit.block.BrewingStand;
+import org.bukkit.block.NoteBlock;
 import org.bukkit.block.data.type.Farmland;
 import org.bukkit.block.data.type.Gate;
 import org.bukkit.entity.EntityType;
