@@ -14,6 +14,7 @@ import org.bukkit.block.Barrel;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Furnace;
+import org.bukkit.block.ShulkerBox;
 import org.bukkit.block.data.type.Farmland;
 import org.bukkit.block.data.type.Gate;
 import org.bukkit.entity.EntityType;
@@ -175,6 +176,36 @@ public class TerritoryProtection implements Listener {
         } else if (block.getState() instanceof Barrel) {
             event.setCancelled(true);
             player.sendMessage(startOfResponse + "open barrels");
+        } else if (block.getState() instanceof ShulkerBox) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "open shulkers");
+        } else if (block.getState() instanceof BrewingStand) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "interact with brewing stands");
+        } else if (block.getState() instanceof NoteBlock) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "interact with note blocks");
+        } else if (block.getType() == Material.DROPPER) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "interact with droppers");
+        } else if (block.getType() == Material.DISPENSER) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "interact with dispensers");
+        } else if (block.getType() == Material.HOPPER) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "interact with hoppers");
+        } else if (block.getType() == Material.HOPPER) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "interact with hoppers");
+        } else if (block.getType() == Material.DIODE) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "interact with repeaters");
+        } else if (block.getType() == Material.COMPARATOR) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "interact with comparators");
+        } else if (block.getType() == Material.REDSTONE) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "interact with redstone dust");
         } else if (event.getAction() == Action.PHYSICAL
                 && block.getState() instanceof Farmland) {
             event.setCancelled(true);
