@@ -113,8 +113,11 @@ public class Empire {
         owner = UUID.fromString(document.getString("owner"));
         color = Color.valueOf(document.getString("color"));
         discordRoleId = document.getString("discord_id");
-        if (document.containsKey("allies"))
+        if (document.containsKey("allies")) {
             allies.addAll(document.getList("allies", ObjectId.class));
+        } else {
+            collection.insertOne(new Document("allies", new ArrayList<>()));
+        }
 
         final Document homeLocationDocument = document.get("home", Document.class);
         homeLocation =

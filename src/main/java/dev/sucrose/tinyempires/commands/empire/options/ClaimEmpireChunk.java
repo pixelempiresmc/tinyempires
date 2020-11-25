@@ -55,6 +55,12 @@ public class ClaimEmpireChunk implements CommandOption {
             return;
         }
 
+        if (BoundUtils.InBoundsOfMainEndIsland(location.getWorld().getName(), location.getBlockX(),
+            location.getBlockZ())) {
+            sender.sendMessage(ChatColor.RED + "You cannot claim the Main End Island!");
+            return;
+        }
+
         if (empire.getReserve() < TEChunk.CHUNK_COST) {
             sender.sendMessage(ChatColor.RED + String.format(
                 "Empire lacks enough coins for a new chunk. (%.1f required, %.1f in reserve)",

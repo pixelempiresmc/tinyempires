@@ -207,6 +207,11 @@ public class TerritoryProtection implements Listener {
         if (!(event.getDamager() instanceof Player))
             return;
 
+        // players aren't protected
+        if (event.getEntity() instanceof Player
+                || event.getEntity() instanceof Monster)
+            return;
+
         final Player player = (Player) event.getDamager();
         final TEPlayer tePlayer = TEPlayer.getTEPlayer(player.getUniqueId());
         if (tePlayer == null)

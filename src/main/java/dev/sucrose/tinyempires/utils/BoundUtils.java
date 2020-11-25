@@ -35,6 +35,11 @@ public class BoundUtils {
     private static final int OPIKALIWDGTUW_BOTTOM_Z = -177;
     private static final int OPIKALIWDGTUW_TOP_Z = -157;
 
+    private static final int MAIN_END_ISLAND_LEFT_X = -118;
+    private static final int MAIN_END_ISLAND_RIGHT_X = 164;
+    private static final int MAIN_END_ISLAND_BOTTOM_Z = -119;
+    private static final int MAIN_END_ISLAND_TOP_Z = 110;
+
     private static boolean inBounds(int x, int z, int leftX, int rightX, int bottomZ, int topZ) {
         return x >= leftX
             && x <= rightX
@@ -90,6 +95,12 @@ public class BoundUtils {
             || inBoundsOfPortalCastle(world, x, z)
             || inBoundsOfPixel(world, x, z)
             || inBoundsOfOPIKALIWDGTUW(world, x, z);
+    }
+
+    public static boolean InBoundsOfMainEndIsland(String world, int x, int z) {
+        return world.equals("world_the_end")
+            && inBounds(x, z, MAIN_END_ISLAND_LEFT_X, MAIN_END_ISLAND_RIGHT_X, MAIN_END_ISLAND_BOTTOM_Z,
+            MAIN_END_ISLAND_TOP_Z);
     }
 
     public static boolean coordsInChunk(String world, int x, int z, TEChunk chunk) {

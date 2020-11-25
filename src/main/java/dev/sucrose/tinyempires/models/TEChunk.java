@@ -118,7 +118,7 @@ public class TEChunk {
         return getChunk(world, x, z) != null;
     }
 
-    public final static double CHUNK_COST = 0.3;
+    public final static double CHUNK_COST = 1;
     public static void createTEChunk(String world, int x, int z, Empire empire) {
         if (getChunk(world, x, z) != null)
             return;

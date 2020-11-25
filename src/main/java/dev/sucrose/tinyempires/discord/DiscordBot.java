@@ -25,6 +25,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.jetbrains.annotations.Nullable;
@@ -474,6 +475,21 @@ public class DiscordBot extends ListenerAdapter implements Listener {
         sendMessageInBridgeChat(String.format(
             "**%s**",
             event.getDeathMessage()
+        ));
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        final Player player = event.getPlayer();
+        final TEPlayer tePlayer = TEPlayer.getTEPlayer(player.getUniqueId());
+        if (tePlayer == null)
+            throw new NullPointerException("Could not get TEPlayer for UUID " + player.getUniqueId());
+
+        final Empire empire = tePlayer.getEmpire();
+        sendMessageInBridgeChat(String.format(
+            "**[%s] %s** has left the game",
+            empire == null ? "Unaffiliated" : empire.getName(),
+            player.getName()
         ));
     }
 
