@@ -10,13 +10,10 @@ import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.block.Barrel;
-import org.bukkit.block.Block;
-import org.bukkit.block.Chest;
-import org.bukkit.block.Furnace;
-import org.bukkit.block.ShulkerBox;
+import org.bukkit.block.*;
 import org.bukkit.block.data.type.Farmland;
 import org.bukkit.block.data.type.Gate;
+import org.bukkit.block.data.type.NoteBlock;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Monster;
@@ -63,12 +60,8 @@ public class TerritoryProtection implements Listener {
             return;
         }
 
-        if (player.isOp()) {
-            player.sendMessage(ChatColor.YELLOW +
-                "Block break would be cancelled but player is opped, returning"
-            );
+        if (player.isOp())
             return;
-        }
 
         if (playerInChunkOwnerOrAllyAndUnopped(tePlayer, teChunk))
             return;
@@ -197,7 +190,7 @@ public class TerritoryProtection implements Listener {
         } else if (block.getType() == Material.HOPPER) {
             event.setCancelled(true);
             player.sendMessage(startOfResponse + "interact with hoppers");
-        } else if (block.getType() == Material.DIODE) {
+        } else if (block.getType() == Material.REPEATER) {
             event.setCancelled(true);
             player.sendMessage(startOfResponse + "interact with repeaters");
         } else if (block.getType() == Material.COMPARATOR) {
