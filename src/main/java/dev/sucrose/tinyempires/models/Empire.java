@@ -249,7 +249,7 @@ public class Empire {
     }
 
     public void removeAlliedEmpire(ObjectId id) {
-        allies.add(id);
+        allies.remove(id);
         collection.updateOne(
             new Document("_id", id),
             new Document(
