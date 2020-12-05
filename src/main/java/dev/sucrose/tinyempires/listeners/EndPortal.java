@@ -4,6 +4,7 @@ import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.BoundUtils;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import org.bukkit.*;
+import org.bukkit.Material;
 import org.bukkit.entity.EnderSignal;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -87,5 +88,19 @@ public class EndPortal implements Listener {
                 e.getPlayer().teleport(theEnd.getSpawnLocation());
         }
     }
-
+    
+    //refreshes end platform when broken
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        final Player player = event.getPlayer();
+        final Block block = event.getBlock();
+        
+        if (player.getWorld().getName().equals("world_the_end")) {
+            Location loc = block.getLocation();
+            if(loc.getY() == 48 && 98 <= loc.getX() && loc.getX() <= 102 && -2 <= loc.getZ() && loc.getZ() <= 2) {
+                block.breakNaturally();
+                block.setType(Material.OBSIDIAN);
+            }
+        }
+    }
 }
