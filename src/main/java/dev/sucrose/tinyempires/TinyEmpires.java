@@ -130,6 +130,7 @@ public final class TinyEmpires extends JavaPlugin {
 
         // create recipe
         addHoneyStickyPistonRecipe();
+        addGodAppleRecipe();
 
         DiscordBot.sendMessageInBridgeChat("**The server has started up!**");
     }
@@ -185,5 +186,20 @@ public final class TinyEmpires extends JavaPlugin {
 
         getServer().addRecipe(stickyPiston);
     }
-
+    
+    private void addGodAppleRecipe() {
+        //enchanted golden apple recipe
+        ShapedRecipe godApple = new ShapedRecipe(
+            new NamespacedKey(this, NamespacedKey.BUKKIT),
+            new ItemStack(Material.GOLDEN_APPLE, 1, (short)1)
+        );
+        
+        godApple.shape("DGD", "GAG", "DGD");
+        
+        godApple.setIngredient('D', Material.DIAMOND_BLOCK);
+        godApple.setIngredient('G', Material.GOLD_BLOCK);
+        godApple.setIngredient('A', Material.APPLE);
+        
+        getServer().addRecipe(godApple);
+    }
 }
