@@ -94,7 +94,7 @@ public class DeclareWar implements CommandOption {
             return;
         }
 
-        if (defender.hasMemberOnline()) {
+        if (!defender.hasMemberOnline()) {
             sender.sendMessage(ChatColor.RED +
                 "At least 1 player from this empire must be online to declare war against them"
             );
