@@ -38,7 +38,7 @@ public class PlayerChat implements Listener {
             event.setCancelled(true);
             Bukkit.broadcastMessage("" + ChatColor.GOLD + ChatColor.BOLD + String.format(
                 "[GOD] <%s> %s",
-                player.getName(),
+                player.getDisplayName(),
                 content
             ));
         } else {
@@ -47,7 +47,7 @@ public class PlayerChat implements Listener {
                 (empire == null
                     ? ChatColor.GRAY + "Unaffiliated"
                     : "[" + empire.getChatColor() + empire.getName() + ChatColor.WHITE + "]") + ChatColor.WHITE,
-                tePlayer.getName(),
+                player.getDisplayName(),
                 content
             ));
         }
@@ -59,7 +59,7 @@ public class PlayerChat implements Listener {
                 : empire == null
                     ? "Unaffiliated"
                     : empire.getName(),
-            player.getName(),
+            player.getDisplayName(),
             CensorUtils.censorCurses(
                 event.getMessage()
                     .replace("`", "\\`")
