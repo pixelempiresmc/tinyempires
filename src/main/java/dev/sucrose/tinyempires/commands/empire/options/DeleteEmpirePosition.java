@@ -54,8 +54,8 @@ public class DeleteEmpirePosition implements CommandOption {
         for (TEPlayer player : empire.getMembers()) {
             if (player.getPositionName() != null
                     && player.getPositionName().equals(position))
-                membersWithPosition.append(player.getName()).append(index < empire.getMembers().size() - 1 ? ", " :
-                    "");
+                membersWithPosition.append(player.getName())
+                    .append(index < empire.getMembers().size() - 1 ? ", " : "");
             index++;
         }
 

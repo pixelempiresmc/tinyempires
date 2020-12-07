@@ -16,11 +16,16 @@ public class Nick implements CommandExecutor {
         // /nick <name>
         final Player player = (Player) sender;
         if (args.length < 1) {
-            player.setDisplayName(player.getName());
             player.sendMessage(ChatColor.GREEN + String.format(
                 "Reset display name to %s",
                 ChatColor.BOLD + player.getName()
             ));
+            Bukkit.broadcastMessage(ChatColor.YELLOW + String.format(
+                "%s reset their nickname to %s",
+                ChatColor.BOLD + player.getDisplayName() + ChatColor.YELLOW,
+                ChatColor.BOLD + player.getName()
+            ));
+            player.setDisplayName(player.getName());
             return true;
         }
 
@@ -37,7 +42,7 @@ public class Nick implements CommandExecutor {
 
         Bukkit.broadcastMessage(ChatColor.YELLOW + String.format(
             "%s nicknamed themselves to %s",
-            ChatColor.BOLD + player.getName() + ChatColor.YELLOW,
+            ChatColor.BOLD + player.getDisplayName() + ChatColor.YELLOW,
             ChatColor.BOLD + nickname
         ));
 

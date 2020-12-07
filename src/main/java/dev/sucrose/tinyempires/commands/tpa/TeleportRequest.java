@@ -89,7 +89,7 @@ public class TeleportRequest implements CommandExecutor {
                 receiverToSenderTeleportationRequests.remove(senderUUID);
                 requestReceiver.sendMessage(ChatColor.RED + String.format(
                     "You took too long to accept or reject %s's teleport request and it has expired",
-                    ChatColor.BOLD + player.getName() + ChatColor.RED
+                    ChatColor.BOLD + player.getDisplayName() + ChatColor.RED
                 ));
                 requestReceiver.sendMessage(ChatColor.RED + String.format(
                     "%s took too long to accept or reject your teleport request and it has expired",

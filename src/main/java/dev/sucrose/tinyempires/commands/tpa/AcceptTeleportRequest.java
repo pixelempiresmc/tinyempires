@@ -60,7 +60,7 @@ public class AcceptTeleportRequest implements CommandExecutor, Listener {
         final Location senderLocation = player.getLocation().clone();
         requester.sendMessage(ChatColor.GREEN + String.format(
             "TPA accepted! Teleporting to %s in 5 seconds, don't move...",
-            ChatColor.BOLD + player.getName() + ChatColor.GREEN
+            ChatColor.BOLD + player.getDisplayName() + ChatColor.GREEN
         ));
         teleportationTaskIds.put(
             requesterUUID,
@@ -75,7 +75,7 @@ public class AcceptTeleportRequest implements CommandExecutor, Listener {
                             requester.teleport(senderLocation);
                             requester.sendMessage(ChatColor.GREEN + String.format(
                                 "Teleported to %s!",
-                                ChatColor.BOLD + player.getName() + ChatColor.GREEN
+                                ChatColor.BOLD + player.getDisplayName() + ChatColor.GREEN
                             ));
                             Bukkit.getScheduler().cancelTask(teleportationTaskIds.get(requesterUUID));
                             TeleportRequest.removeReceiverToSenderTpRequest(senderUUID);
@@ -117,7 +117,7 @@ public class AcceptTeleportRequest implements CommandExecutor, Listener {
             if (receiver != null) {
                 receiver.sendMessage(ChatColor.RED + String.format(
                     "%s failed to teleport to your location, accept or reject request again",
-                    ChatColor.BOLD + player.getName() + ChatColor.RED
+                    ChatColor.BOLD + player.getDisplayName() + ChatColor.RED
                 ));
                 player.sendMessage(ChatColor.RED + String.format(
                     "You moved! Teleport cancelled. %s must accept your request again for you to teleport",

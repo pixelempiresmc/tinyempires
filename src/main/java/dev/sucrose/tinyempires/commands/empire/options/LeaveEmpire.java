@@ -54,7 +54,7 @@ public class LeaveEmpire implements CommandOption {
         empire.removeMember(tePlayer);
         Bukkit.broadcastMessage(ChatColor.YELLOW + String.format(
             "%s has left the empire of %s!",
-            tePlayer.getName(),
+            sender.getDisplayName(),
             empire.getName()
         ));
 

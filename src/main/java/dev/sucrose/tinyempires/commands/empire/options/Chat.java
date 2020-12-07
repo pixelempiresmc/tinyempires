@@ -37,7 +37,7 @@ public class Chat implements CommandOption {
         final String message = StringUtils.buildWordsFromArray(args, 0);
         empire.broadcastText(ChatColor.ITALIC + String.format(
             "%s sent message to empire: %s",
-            ChatColor.BOLD + tePlayer.getName() + ChatColor.ITALIC,
+            ChatColor.BOLD + sender.getDisplayName() + ChatColor.ITALIC,
             message
         ));
     }

@@ -89,7 +89,7 @@ public class CreateEmpire implements CommandOption {
                     DrawEmpire.drawChunk(empire, world.getName(), chunk.getX(), chunk.getZ());
                     Bukkit.broadcastMessage(ChatColor.GREEN + String.format(
                         "%s created the empire of %s",
-                        ChatColor.BOLD + tePlayer.getName() + ChatColor.GREEN,
+                        ChatColor.BOLD + sender.getDisplayName() + ChatColor.GREEN,
                         ChatColor.BOLD + empireName
                     ));
                 }

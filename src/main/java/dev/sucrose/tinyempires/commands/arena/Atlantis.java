@@ -195,7 +195,7 @@ public class Atlantis implements CommandExecutor, Listener {
                 // checks passed, start arena battle
                 broadcastToPlayerUUIDList(playersInArena, ChatColor.BOLD + String.format(
                         "%s has started the match!",
-                        player.getName()
+                        player.getDisplayName()
                 ));
 
                 arena.setCountdownTask(

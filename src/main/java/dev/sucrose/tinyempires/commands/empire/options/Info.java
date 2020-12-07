@@ -3,7 +3,9 @@ package dev.sucrose.tinyempires.commands.empire.options;
 import dev.sucrose.tinyempires.models.*;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import org.bson.types.ObjectId;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import java.util.*;
@@ -33,7 +35,7 @@ public class Info implements CommandOption {
         final Empire empire = tePlayer.getEmpire();
         if (empire == null) {
             // if player is not in an empire
-            sender.sendMessage(tePlayer.getName());
+            sender.sendMessage(sender.getDisplayName());
             sender.sendMessage("Unaffiliated with empire");
             sender.sendMessage("" + tePlayer.getBalance() + " coins");
             return;

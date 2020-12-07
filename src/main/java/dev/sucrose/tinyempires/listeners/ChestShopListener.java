@@ -365,7 +365,7 @@ public class ChestShopListener implements Listener {
         if (ownerPlayer != null)
             ownerPlayer.sendMessage(ChatColor.GREEN + String.format(
                 "%s purchased %d %s for %.1f coins from one of your chest shops",
-                ChatColor.BOLD + player.getName() + ChatColor.GREEN,
+                ChatColor.BOLD + player.getDisplayName() + ChatColor.GREEN,
                 itemsInSlot.getAmount(),
                 itemsInSlot.getType().name().toLowerCase().replace('_', ' ') + (itemsInSlotAmount > 1 ? "s" : ""),
                 costPerSlot

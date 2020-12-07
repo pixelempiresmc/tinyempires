@@ -58,7 +58,7 @@ public class EndWar implements CommandOption {
                 empireAttackerToWarEndOfferer.remove(attacker.getId());
                 empire.broadcastText(ChatColor.GREEN + String.format(
                     "%s has retracted the empire's offer to end the war",
-                    ChatColor.BOLD + tePlayer.getName() + ChatColor.GREEN
+                    ChatColor.BOLD + sender.getDisplayName() + ChatColor.GREEN
                 ));
                 return;
             }
@@ -89,7 +89,7 @@ public class EndWar implements CommandOption {
 
         empire.broadcastText(ChatColor.GREEN + String.format(
             "%s made the empire offer to end the war, it will end if the enemy decides to as well",
-            ChatColor.BOLD + tePlayer.getName() + ChatColor.GREEN
+            ChatColor.BOLD + sender.getDisplayName() + ChatColor.GREEN
         ));
         empire.getAtWarWith().broadcastText("" + ChatColor.GREEN + ChatColor.BOLD + String.format(
             "%s has offered to end the war! Run /e endwar to accept their offer",

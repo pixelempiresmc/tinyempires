@@ -35,7 +35,6 @@ public class ProximityChat implements CommandExecutor {
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         // /prox message
         final Player player = (Player) sender;
-        final UUID uuid = player.getUniqueId();
         final String message = StringUtils.buildWordsFromArray(args, 0);
         final Location location = player.getLocation();
         final List<String> playerNamesTold = new ArrayList<>();
@@ -58,10 +57,10 @@ public class ProximityChat implements CommandExecutor {
                     (empire == null
                         ? ChatColor.GRAY + "Unaffiliated"
                         : "[" + empire.getChatColor() + empire.getName() + ChatColor.WHITE + "]") + ChatColor.WHITE,
-                    tePlayer.getName(),
+                    player.getDisplayName(),
                     message
                 ));
-                playerNamesTold.add(p.getName());
+                playerNamesTold.add(p.getDisplayName());
             }
         }
 

@@ -526,7 +526,7 @@ public class Yggdrasil implements Listener, CommandExecutor {
                 && active) {
             broadcast(ChatColor.YELLOW + String.format(
                 "%s has stopped spectating the arena",
-                ChatColor.BOLD + player.getName() + ChatColor.YELLOW
+                ChatColor.BOLD + player.getDisplayName() + ChatColor.YELLOW
             ));
             removePlayerFromPresentTeams(yggdrasilTeam, uuid);
             return;
@@ -540,7 +540,7 @@ public class Yggdrasil implements Listener, CommandExecutor {
         if (active) {
             broadcast(ChatColor.YELLOW + String.format(
                 "%s of team %s has left the arena",
-                "" + teamColor + ChatColor.BOLD + player.getName() +
+                "" + teamColor + ChatColor.BOLD + player.getDisplayName() +
                     ChatColor.YELLOW,
                 "" + teamColor + ChatColor.BOLD + yggdrasilTeam.name() + ChatColor.YELLOW
             ));
@@ -562,7 +562,7 @@ public class Yggdrasil implements Listener, CommandExecutor {
         } else {
             broadcast(ChatColor.YELLOW + String.format(
                 "%s has left the arena",
-                ChatColor.BOLD + player.getName() + ChatColor.YELLOW
+                ChatColor.BOLD + player.getDisplayName() + ChatColor.YELLOW
             ));
             removePlayerFromPresentTeams(yggdrasilTeam, uuid);
         }
