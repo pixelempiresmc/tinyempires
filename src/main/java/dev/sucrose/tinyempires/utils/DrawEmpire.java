@@ -114,8 +114,14 @@ public class DrawEmpire {
     }
 
     public static void draw() {
-        for (final TEChunk chunk : TEChunk.getChunks())
+        for (final TEChunk chunk : TEChunk.getChunks()) {
+            if (chunk.getEmpire() == null
+                    || chunk.getWorld() == null) {
+                System.out.println("Invalid world or empire for chunk: " + chunk);
+                continue;
+            }
             drawChunk(chunk.getEmpire(), chunk.getWorld(), chunk.getX(), chunk.getZ());
+        }
         for (final Empire empire : Empire.getEmpires()) {
             final Location homeLocation = empire.getHomeLocation();
             if (homeLocation == null)

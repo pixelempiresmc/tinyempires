@@ -26,7 +26,7 @@ public class Empire {
     private static final Map<UUID, ObjectId> playerToEmpireJoinRequest = new HashMap<>();
     private static final Map<ObjectId, ObjectId> empireAllyRequests = new HashMap<>();
 
-    private final ObjectId id;
+    private ObjectId id;
     private String name;
     private double reserve;
     private String description;
@@ -55,11 +55,16 @@ public class Empire {
     public static void fillCache() {
         empireCache.clear();
         for (final Document document : collection.find()) {
-            final Empire empire = new Empire(document);
-            empireCache.put(
-                empire.getId(),
-                empire
-            );
+            try {
+                final Empire empire = new Empire(document);
+                empireCache.put(
+                    empire.getId(),
+                    empire
+                );
+            } catch (Exception err) {
+                System.out.println("Failed to parse empire document (" + document.toJson() + ")");
+                err.printStackTrace();
+            }
         }
     }
 
@@ -116,7 +121,7 @@ public class Empire {
         if (document.containsKey("allies")) {
             allies.addAll(document.getList("allies", ObjectId.class));
         } else {
-            collection.insertOne(new Document("allies", new ArrayList<>()));
+            save(new Document("allies", new ArrayList<>()));
         }
 
         final Document homeLocationDocument = document.get("home", Document.class);
@@ -124,11 +129,11 @@ public class Empire {
             homeLocationDocument == null
                 ? null
                 : new Location(
-                    Bukkit.getWorld(homeLocationDocument.getString("world")),
-                    homeLocationDocument.getDouble("x"),
-                    homeLocationDocument.getDouble("y"),
-                    homeLocationDocument.getDouble("z")
-                );
+                Bukkit.getWorld(homeLocationDocument.getString("world")),
+                homeLocationDocument.getDouble("x"),
+                homeLocationDocument.getDouble("y"),
+                homeLocationDocument.getDouble("z")
+            );
 
         final Document lawDocument = document.get("laws", Document.class);
         for (final String lawName : lawDocument.keySet())
@@ -340,6 +345,17 @@ public class Empire {
         );
         updateMemberScoreboards();
         DrawEmpire.updateEmpireChunkDescriptions(this);
+    }
+
+    public boolean hasMemberOnline() {
+        for (final TEPlayer member : members) {
+            // check if player is online
+            final Player p = Bukkit.getPlayer(member.getPlayerUUID());
+            if (p != null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public Position getPosition(String name) {

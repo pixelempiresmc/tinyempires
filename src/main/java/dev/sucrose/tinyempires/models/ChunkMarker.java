@@ -46,6 +46,7 @@ public class ChunkMarker {
     }
 
     private static String generateChunkDescription(Empire empire, int x, int z) {
+        System.out.println(empire);
         final TEPlayer owner = TEPlayer.getTEPlayer(empire.getOwner());
         if (owner == null)
             throw new NullPointerException(ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);

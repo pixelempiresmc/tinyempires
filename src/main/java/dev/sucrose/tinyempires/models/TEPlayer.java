@@ -79,6 +79,7 @@ public class TEPlayer {
     }
 
     public TEPlayer(Document document) {
+        System.out.println(document.toJson());
         this.playerUUID = UUID.fromString(document.getString("uuid"));
         this.name = document.getString("name");
         this.balance = document.getDouble("balance");

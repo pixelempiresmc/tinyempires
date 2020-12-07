@@ -487,7 +487,7 @@ public class DiscordBot extends ListenerAdapter implements Listener {
 
         final Empire empire = tePlayer.getEmpire();
         sendMessageInBridgeChat(String.format(
-            "**[%s] %s** has left the game",
+            "**[%s] %s has left the game**",
             empire == null ? "Unaffiliated" : empire.getName(),
             player.getName()
         ));

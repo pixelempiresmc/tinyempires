@@ -19,7 +19,7 @@ public class DeclareWar implements CommandOption {
 
     final static Map<ObjectId, Integer> empireWarTaskIds = new HashMap<>();
     final static int WAR_START_DELAY_SECONDS = 300;
-    final static float WAR_START_COST = 50;
+    final static float WAR_START_COST = 250;
 
     @Override
     public void execute(Player sender, String[] args) {
@@ -94,22 +94,10 @@ public class DeclareWar implements CommandOption {
             return;
         }
 
-        int defenderPlayersOnline = 0;
-        for (final TEPlayer member : defender.getMembers()) {
-            // check if player is online
-            final Player p = Bukkit.getPlayer(member.getPlayerUUID());
-            if (p != null)
-                defenderPlayersOnline++;
-        }
-
-        final int defenderPlayerOnlineRequirement = defender.getMembers().size() > 1 ? 2 : 1;
-        if (defenderPlayersOnline < defenderPlayerOnlineRequirement) {
-            sender.sendMessage(ChatColor.RED + String.format(
-                "At least %d players from this empire must be online to declare war against them. (%d currently " +
-                    "online)",
-                defenderPlayerOnlineRequirement,
-                defenderPlayersOnline
-            ));
+        if (defender.hasMemberOnline()) {
+            sender.sendMessage(ChatColor.RED +
+                "At least 1 player from this empire must be online to declare war against them"
+            );
             return;
         }
 

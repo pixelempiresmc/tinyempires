@@ -33,6 +33,9 @@ public class TEChunk {
         chunkCache.clear();
         for (final Document document : collection.find()) {
             final TEChunk chunk = new TEChunk(document);
+            if (chunk.getWorld() == null
+                    || chunk.getEmpire() == null)
+                continue;
             chunkCache.put(chunkToKey(chunk.getWorld(), chunk.getX(), chunk.getZ()), chunk);
         }
     }
