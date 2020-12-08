@@ -290,7 +290,7 @@ public class Empire {
             new Document("_id", this.id),
             new Document(
                 "$addToSet",
-                new Document("allies", allies)
+                new Document("allies", id)
             )
         );
     }
@@ -301,7 +301,7 @@ public class Empire {
             new Document("_id", this.id),
             new Document(
                 "$pull",
-                new Document("allies", allies)
+                new Document("allies", id)
             )
         );
     }
