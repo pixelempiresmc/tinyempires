@@ -7,6 +7,7 @@ import org.bson.Document;
 import org.bukkit.Chunk;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class TEChest {
 
@@ -21,6 +22,27 @@ public class TEChest {
 
     static {
         fillCache();
+    }
+
+    public static void writeCache() {
+        final List<Document> documents =
+            chestToPlayerCache.entrySet()
+                .stream()
+                .map(entry -> {
+                    final String[] words = entry.getKey().split(" ");
+                    final String world = words[0];
+                    final int x = Integer.parseInt(words[1]);
+                    final int y = Integer.parseInt(words[2]);
+                    final int z = Integer.parseInt(words[3]);
+                    return new Document("world", world)
+                        .append("x", x)
+                        .append("y", y)
+                        .append("z", z)
+                        .append("owner", entry.getValue().toString());
+                })
+                .collect(Collectors.toList());
+        collection.deleteMany(new Document());
+        collection.insertMany(documents);
     }
 
     public static void fillCache() {

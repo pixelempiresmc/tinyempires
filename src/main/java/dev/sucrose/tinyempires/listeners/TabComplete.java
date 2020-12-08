@@ -18,6 +18,7 @@ public class TabComplete implements Listener {
         hiddenCommands.add("/");
         hiddenCommands.add("close-bot");
         hiddenCommands.add("refreshcaches");
+        hiddenCommands.add("dumpcaches");
         hiddenCommands.add("olympus");
         hiddenCommands.add("silent");
         hiddenCommands.add("s");

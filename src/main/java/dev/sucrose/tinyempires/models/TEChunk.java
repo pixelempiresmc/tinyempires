@@ -11,6 +11,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class TEChunk {
 
@@ -27,6 +28,16 @@ public class TEChunk {
 
     static {
         fillCache();
+    }
+
+    public static void writeCache() {
+        final List<Document> documents =
+            chunkCache.values()
+                .stream()
+                .map(TEChunk::toDocument)
+                .collect(Collectors.toList());
+        collection.deleteMany(new Document());
+        collection.insertMany(documents);
     }
 
     public static void fillCache() {
@@ -152,6 +163,15 @@ public class TEChunk {
         z = document.getInteger("z");
         type = ChunkType.valueOf(document.getString("type"));
         empire = Empire.getEmpire(document.getObjectId("empire"));
+    }
+
+    public Document toDocument() {
+        return new Document("_id", id)
+            .append("world", world)
+            .append("x", x)
+            .append("z", z)
+            .append("type", type.name())
+            .append("empire", empire.getId());
     }
 
     public boolean isAdjacentChunkTheSameEmpire(Direction direction) {

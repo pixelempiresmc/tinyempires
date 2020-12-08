@@ -68,6 +68,14 @@ public class DeclareWar implements CommandOption {
             return;
         }
 
+        if (defender.getAtWarWith() != null) {
+            sender.sendMessage(ChatColor.RED + String.format(
+                "%s is already at war and cannot have multiple attackers",
+                "" + defender.getChatColor() + ChatColor.BOLD + defender.getName() + ChatColor.RED
+            ));
+            return;
+        }
+
         if (empire.getAllies().contains(defender.getId())) {
             sender.sendMessage(ChatColor.RED + String.format(
                 "You cannot go to war against your own allies. (%s/e unally%s to unally)",

@@ -17,6 +17,8 @@ commands:
     aliases: [e]
   refreshcaches:
     description: OP - Clear cache for debugging
+  dumpcaches:
+    description: OP - Write in-memory caches to Mongo in case of data loss
   dimension:
     description: OP - Teleport to the spawn location of another world
   flyspeed:

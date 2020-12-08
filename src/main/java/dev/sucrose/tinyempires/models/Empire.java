@@ -3,6 +3,7 @@ package dev.sucrose.tinyempires.models;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.lang.Nullable;
+import com.sun.tools.classfile.Opcode;
 import dev.sucrose.tinyempires.TinyEmpires;
 import dev.sucrose.tinyempires.discord.DiscordBot;
 import dev.sucrose.tinyempires.utils.DrawEmpire;
@@ -15,6 +16,8 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Empire {
 
@@ -50,6 +53,16 @@ public class Empire {
 
     static {
         fillCache();
+    }
+
+    public static void writeCache() {
+        final List<Document> documents =
+            empireCache.values()
+                .stream()
+                .map(Empire::toDocument)
+                .collect(Collectors.toList());
+        collection.deleteMany(new Document());
+        collection.insertMany(documents);
     }
 
     public static void fillCache() {
@@ -149,6 +162,35 @@ public class Empire {
         final Document positionsDocument = document.get("positions", Document.class);
         for (final String positionName : positionsDocument.keySet())
             positions.put(positionName, new Position(positionsDocument.getList(positionName, String.class)));
+    }
+
+    public Document toDocument() {
+        return new Document("_id", id)
+            .append("name", name)
+            .append("reserve", reserve)
+            .append("description", description)
+            .append("owner", owner)
+            .append("color", color)
+            .append("discord_id", discordRoleId)
+            .append("allies", allies)
+            .append("home",
+                homeLocation == null
+                        || homeLocation.getWorld() == null
+                    ? null
+                    : new Document("world", homeLocation.getWorld().getName())
+                        .append("x", homeLocation.getX())
+                        .append("y", homeLocation.getY())
+                        .append("z", homeLocation.getZ())
+            )
+            .append("laws", laws.values().stream().map(Law::toDocument))
+            .append("debt", memberDebt)
+            .append("members", members.stream().map(p -> p.getPlayerUUID().toString()))
+            .append("positions",
+                positions.values()
+                    .stream()
+                    .map(Position::getPermissions)
+                    .map(perms -> perms.stream().map(Permission::name))
+            );
     }
 
     public static Empire getEmpire(String name) {

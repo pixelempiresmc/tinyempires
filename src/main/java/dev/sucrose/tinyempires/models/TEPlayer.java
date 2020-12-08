@@ -11,8 +11,10 @@ import org.bukkit.scoreboard.*;
 import sun.jvm.hotspot.debugger.NoSuchSymbolException;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class TEPlayer {
 
@@ -30,6 +32,16 @@ public class TEPlayer {
 
     static {
         fillCache();
+    }
+
+    public static void writeCache() {
+        final List<Document> documents =
+            playerCache.values()
+                .stream()
+                .map(TEPlayer::toDocument)
+                .collect(Collectors.toList());
+        collection.deleteMany(new Document());
+        collection.insertMany(documents);
     }
 
     public static void fillCache() {
@@ -87,6 +99,16 @@ public class TEPlayer {
         this.position = document.getString("position");
         this.jumpedInAdvancement = document.getBoolean("jumped_in");
         this.discordId = document.getString("discord_id");
+    }
+
+    public Document toDocument() {
+        return new Document("uuid", playerUUID)
+            .append("name", name)
+            .append("balance", balance)
+            .append("empire", empire)
+            .append("position", position)
+            .append("jumped_in", jumpedInAdvancement)
+            .append("discord_id", discordId);
     }
 
     private static final ScoreboardManager manager;

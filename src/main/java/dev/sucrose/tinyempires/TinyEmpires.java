@@ -7,6 +7,7 @@ import dev.sucrose.tinyempires.commands.LinkDiscordAccount;
 import dev.sucrose.tinyempires.commands.Nick;
 import dev.sucrose.tinyempires.commands.ProximityChat;
 import dev.sucrose.tinyempires.commands.debug.CloseBot;
+import dev.sucrose.tinyempires.commands.debug.DumpCache;
 import dev.sucrose.tinyempires.commands.debug.RefreshCaches;
 import dev.sucrose.tinyempires.commands.arena.Atlantis;
 import dev.sucrose.tinyempires.commands.arena.Yggdrasil;
@@ -99,6 +100,7 @@ public final class TinyEmpires extends JavaPlugin {
         registerCommand("pay", new Pay());
         registerCommand("take", new Take());
         registerCommand("refreshcaches", new RefreshCaches());
+        registerCommand("dumpcaches", new DumpCache());
         registerCommand("dimension", new Dimension());
         registerCommand("flyspeed", new Flyspeed());
         registerCommand("invisible", new Invisible());
