@@ -203,7 +203,8 @@ public class TerritoryProtection implements Listener {
                 && block.getState() instanceof Farmland) {
             event.setCancelled(true);
             player.sendMessage(startOfResponse + "trample crops");
-        } else if (block.getState() instanceof Gate) {
+        } else if (block.getType().name().contains("GATE")) {
+        //} else if (block.getState() instanceof Gate) {
             event.setCancelled(true);
             player.sendMessage(startOfResponse + "interact with gates");
         } else if (event.getAction() == Action.LEFT_CLICK_BLOCK
