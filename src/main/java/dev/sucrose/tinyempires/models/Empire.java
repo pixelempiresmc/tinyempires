@@ -287,10 +287,10 @@ public class Empire {
     public void addAlliedEmpire(ObjectId id) {
         allies.add(id);
         collection.updateOne(
-            new Document("_id", id),
+            new Document("_id", this.id),
             new Document(
                 "$addToSet",
-                new Document("allies", id)
+                new Document("allies", allies)
             )
         );
     }
@@ -298,10 +298,10 @@ public class Empire {
     public void removeAlliedEmpire(ObjectId id) {
         allies.remove(id);
         collection.updateOne(
-            new Document("_id", id),
+            new Document("_id", this.id),
             new Document(
                 "$pull",
-                new Document("allies", id)
+                new Document("allies", allies)
             )
         );
     }

@@ -49,7 +49,7 @@ public class EmpireCommand implements CommandExecutor, Listener {
         options.put("fine", new Fine());
         options.put("home", new Home());
         options.put("sethome", new SetHome());
-        options.put("warp", new Warp());
+        options.put("warp", new GoToWarp());
         options.put("setwarp", new SetWarp());
         options.put("delwarp", new DelWarp());
         options.put("name", new ChangeEmpireName());

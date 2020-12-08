@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class Warp implements CommandOption, Listener {
+public class GoToWarp implements CommandOption, Listener {
 
     private static final Map<UUID, Integer> playerToTeleportationTask = new HashMap<>();
 

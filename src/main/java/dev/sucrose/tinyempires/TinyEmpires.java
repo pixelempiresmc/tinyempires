@@ -26,6 +26,7 @@ import dev.sucrose.tinyempires.discord.DiscordBot;
 import dev.sucrose.tinyempires.listeners.*;
 import dev.sucrose.tinyempires.listeners.WorldBorder;
 import dev.sucrose.tinyempires.models.TEPlayer;
+import dev.sucrose.tinyempires.models.Warp;
 import dev.sucrose.tinyempires.utils.DrawEmpire;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import org.bukkit.*;
@@ -39,7 +40,9 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.dynmap.DynmapAPI;
 
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 public final class TinyEmpires extends JavaPlugin {
 
@@ -55,6 +58,9 @@ public final class TinyEmpires extends JavaPlugin {
     public static final int WORLD_BORDER_TOP_Z = -5376;
     public static final int WORLD_BORDER_BOTTOM_Z = 5377;
     public static final int MARGIN = 20;
+    
+    //public warps
+    private static Set<Warp> publicWarps = new HashSet<Warp>();
 
     @Override
     public void onEnable() {
@@ -161,6 +167,10 @@ public final class TinyEmpires extends JavaPlugin {
 
     public static MongoDatabase getDatabase() {
         return database;
+    }
+    
+    public static Set<Warp> getPublicWarps() {
+    	return publicWarps;
     }
 
     private void registerCommand(String name, CommandExecutor commandExecutor) {
