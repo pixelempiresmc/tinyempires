@@ -178,6 +178,10 @@ public class TerritoryProtection implements Listener {
         } else if (block.getState() instanceof NoteBlock) {
             event.setCancelled(true);
             player.sendMessage(startOfResponse + "interact with note blocks");
+        } else if (event.getAction() == Action.PHYSICAL
+                && block.getState() instanceof Farmland) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "trample crops");
         } else if (block.getType() == Material.DROPPER) {
             event.setCancelled(true);
             player.sendMessage(startOfResponse + "interact with droppers");
@@ -199,10 +203,6 @@ public class TerritoryProtection implements Listener {
         } else if (block.getType() == Material.REDSTONE) {
             event.setCancelled(true);
             player.sendMessage(startOfResponse + "interact with redstone dust");
-        } else if (event.getAction() == Action.PHYSICAL
-                && block.getState() instanceof Farmland) {
-            event.setCancelled(true);
-            player.sendMessage(startOfResponse + "trample crops");
         } else if (block.getType().name().contains("GATE")) {
         //} else if (block.getState() instanceof Gate) {
             event.setCancelled(true);
