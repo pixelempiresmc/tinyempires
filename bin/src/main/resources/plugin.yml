@@ -1,0 +1,51 @@
+name: TinyEmpires
+version: ${project.version}
+main: dev.sucrose.tinyempires.TinyEmpires
+api-version: 1.16
+depend: [dynmap]
+commands:
+  convert:
+    description: Convert diamonds to coins
+  gift:
+    description: Gift coins to player
+  pay:
+    description: OP - Pay coins to play
+  take:
+    description: OP - Take coins from player
+  empire:
+    description: Empire command
+    aliases: [e]
+  refreshcaches:
+    description: OP - Clear cache for debugging
+  dumpcaches:
+    description: OP - Write in-memory caches to Mongo in case of data loss
+  dimension:
+    description: OP - Teleport to the spawn location of another world
+  flyspeed:
+    description: OP - Change player flyspeed
+  invisible:
+    description: OP - Toggle player server invisibility
+  smite:
+    description: OP - Smite player
+  olympus:
+    description: OP - Teleport to Olympus
+  censor:
+    description: OP - Manage censored words
+  yggdrasil:
+    description: Command for Yggdrasil arena
+  atlantis:
+    description: Command for Atlantis arena
+  discord:
+    description: Link Pixel Empires Discord and Minecraft accounts
+  prox:
+    description: Send chat message to all players within a specific range
+  close-bot:
+    description: Close bot
+#  tpa:
+#    description: Make teleport request
+#  tpreject:
+#    description: Reject teleport request
+#  tpaccept:
+#    description: Accept teleport request
+  nick:
+    description: Nickname player
