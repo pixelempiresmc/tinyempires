@@ -49,9 +49,9 @@ public class EmpireCommand implements CommandExecutor, Listener {
         options.put("fine", new Fine());
         options.put("home", new Home());
         options.put("sethome", new SetHome());
-        options.put("warp", new GoToWarp());
-        options.put("setwarp", new SetWarp());
-        options.put("delwarp", new DelWarp());
+        //options.put("warp", new GoToWarp());
+        //options.put("setwarp", new SetWarp());
+        //options.put("delwarp", new DelWarp());
         options.put("name", new ChangeEmpireName());
         options.put("kick", new KickEmpireMember());
         options.put("accept", new AcceptEmpireMember());

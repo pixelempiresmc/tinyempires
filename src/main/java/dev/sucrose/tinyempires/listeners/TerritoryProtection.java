@@ -17,6 +17,7 @@ import org.bukkit.block.data.type.NoteBlock;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Monster;
+import org.bukkit.entity.Phantom;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
@@ -228,13 +229,13 @@ public class TerritoryProtection implements Listener {
     }
 
     @EventHandler
-    public static void onEntityDamage(EntityDamageByEntityEvent event) {
+    public void onEntityDamage(EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player))
             return;
 
-        // players aren't protected
+        // players / monsters / phantoms aren't protected
         if (event.getEntity() instanceof Player
-                || event.getEntity() instanceof Monster)
+                || event.getEntity() instanceof Monster || event.getEntityType() == EntityType.PHANTOM)
             return;
 
         final Player player = (Player) event.getDamager();
@@ -244,6 +245,10 @@ public class TerritoryProtection implements Listener {
 
         final Location location = event.getEntity().getLocation();
         final TEChunk teChunk = TEChunk.getChunk(location.getChunk());
+        
+        if (playerInChunkOwnerOrAllyAndUnopped(tePlayer, teChunk))
+            return;
+        
         if (teChunk != null
                 && !teChunk.getEmpire().getId().equals(
                     tePlayer.getEmpire() == null
