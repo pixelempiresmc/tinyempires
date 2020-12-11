@@ -195,9 +195,9 @@ public class EmpireClaimFill implements CommandOption {
         
         int size = result.getChunks().size();
         double discountMultiplier = 1;
-        if(size > 1000) discountMultiplier = 0.3;
-        else if(size > 500) discountMultiplier = 0.5;
-        else if(size > 300) discountMultiplier = 0.7;
+        if(size >= 1000) discountMultiplier = 0.3;
+        else if(size >= 500) discountMultiplier = 0.5;
+        else if(size >= 300) discountMultiplier = 0.7;
         
         final double cost = result.getChunks().size() * TEChunk.CHUNK_COST * discountMultiplier;
         if (args.length > 0) {
