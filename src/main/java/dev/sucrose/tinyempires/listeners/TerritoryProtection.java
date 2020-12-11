@@ -19,6 +19,7 @@ import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Phantom;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Slime;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -233,9 +234,11 @@ public class TerritoryProtection implements Listener {
         if (!(event.getDamager() instanceof Player))
             return;
 
-        // players / monsters / phantoms aren't protected
+        // players / monsters / phantoms / slimes aren't protected
         if (event.getEntity() instanceof Player
-                || event.getEntity() instanceof Monster || event.getEntityType() == EntityType.PHANTOM)
+                || event.getEntity() instanceof Monster 
+                || event.getEntityType() == EntityType.PHANTOM
+                || event.getEntity() instanceof Slime)
             return;
 
         final Player player = (Player) event.getDamager();

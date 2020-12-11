@@ -114,3 +114,8 @@ run/
 
 # ignore bot token
 .DISCORD_BOT_TOKEN
+
+bin/
+.settings/
+.classpath
+.project
