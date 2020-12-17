@@ -53,4 +53,10 @@ public class StringUtils {
             .toString();
     }
 
+    public static String sanitizeDiscordText(String text) {
+        return text.replace("`", "\u200B`")
+            .replace("*", "\u200B*")
+            .replace("_", "\u200B_");
+    }
+
 }

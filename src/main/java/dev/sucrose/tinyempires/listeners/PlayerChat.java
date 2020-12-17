@@ -7,6 +7,7 @@ import dev.sucrose.tinyempires.models.Empire;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.CensorUtils;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
+import dev.sucrose.tinyempires.utils.StringUtils;
 import org.bson.Document;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -60,14 +61,7 @@ public class PlayerChat implements Listener {
                     ? "Unaffiliated"
                     : empire.getName(),
             player.getDisplayName(),
-            CensorUtils.censorCurses(
-                event.getMessage()
-                    .replace("`", "\\`")
-                    .replace("*", "\\*")
-                    .replace("_", "\\_")
-                    .replace("@everyone", "everyone")
-                    .replace("@here", "here")
-            )
+            CensorUtils.censorCurses(StringUtils.sanitizeDiscordText(event.getMessage()))
         );
         DiscordBot.sendMessageInBridgeChat(player.isOp() ? "**" + message + "**" : message);
     }
