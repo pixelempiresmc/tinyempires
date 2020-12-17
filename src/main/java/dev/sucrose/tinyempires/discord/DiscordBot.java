@@ -390,7 +390,20 @@ public class DiscordBot extends ListenerAdapter implements Listener {
                                 TEChunk.getEmpireChunks(e.getId()).size() != 1 ? "s" : ""
                             ));
                         }
-                        channel.sendMessage("```" + messageBuilder.toString() + "```").queue();
+                        // 2000 character limit
+                        if (messageBuilder.length() > 2000) {
+                            int messages = messageBuilder.length() / 2000;
+                            for (int i = 0; i < messages; i++) {
+                                int end = (i + 1) * 2000;
+                                if (end > messageBuilder.length()) {
+                                    end = messageBuilder.length();
+                                }
+                                String message = messageBuilder.subString(i * 2000, end);
+                                channel.sendMessage(message).queue();
+                            }
+                        } else {
+                            channel.sendMessage("```" + messageBuilder.toString() + "```").queue();
+                        }
                         return;
                     case "run":
                         // /run <command>
