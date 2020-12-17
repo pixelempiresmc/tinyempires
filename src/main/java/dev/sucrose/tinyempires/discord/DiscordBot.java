@@ -390,15 +390,13 @@ public class DiscordBot extends ListenerAdapter implements Listener {
                                 TEChunk.getEmpireChunks(e.getId()).size() != 1 ? "s" : ""
                             ));
                         }
-                        // 2000 character limit
+
+                        // break up bot message if over 2000 character limit
                         if (messageBuilder.length() > 2000) {
-                            int messages = messageBuilder.length() / 2000;
-                            for (int i = 0; i < messages; i++) {
-                                int end = (i + 1) * 2000;
-                                if (end > messageBuilder.length()) {
-                                    end = messageBuilder.length();
-                                }
-                                String message = messageBuilder.subString(i * 2000, end);
+                            // loop through and send each 2000 char substring
+                            for (int i = 0; i < messageBuilder.length() / 2000; i++) {
+                                int end = Math.min((i + 1) * 2000, messageBuilder.length());
+                                String message = messageBuilder.substring(i * 2000, end);
                                 channel.sendMessage(message).queue();
                             }
                         } else {
