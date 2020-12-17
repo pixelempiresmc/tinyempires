@@ -392,12 +392,13 @@ public class DiscordBot extends ListenerAdapter implements Listener {
                         }
 
                         // break up bot message if over 2000 character limit
-                        if (messageBuilder.length() > 2000) {
+                        final int MAX_MESSAGE_LENGTH = 2000 - 6; // subtract 6 to account for tildes for code block
+                        if (messageBuilder.length() > MAX_MESSAGE_LENGTH) {
                             // loop through and send each 2000 char substring
-                            for (int i = 0; i < messageBuilder.length() / 2000; i++) {
-                                int end = Math.min((i + 1) * 2000, messageBuilder.length());
-                                String message = messageBuilder.substring(i * 2000, end);
-                                channel.sendMessage(message).queue();
+                            for (int i = 0; i < messageBuilder.length() / MAX_MESSAGE_LENGTH; i++) {
+                                final int end = Math.min((i + 1) * MAX_MESSAGE_LENGTH, messageBuilder.length());
+                                final String message = messageBuilder.substring(i * MAX_MESSAGE_LENGTH, end);
+                                channel.sendMessage(String.format("```%s```", message)).queue();
                             }
                         } else {
                             channel.sendMessage("```" + messageBuilder.toString() + "```").queue();
