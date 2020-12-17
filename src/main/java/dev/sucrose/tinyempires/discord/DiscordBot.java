@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.requests.restaction.RoleAction;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -396,8 +397,8 @@ public class DiscordBot extends ListenerAdapter implements Listener {
                         final Member discordMember = event.getMember();
                         // Discord opped Minecraft commands
                         if (discordMember == null
-                                || !memberHasRole(discordMember, "God")) {
-                            channel.sendMessage("`You must have the God role to run a server command!`").queue();
+                                || !discordMember.hasPermission(Permission.ADMINISTRATOR)) {
+                            channel.sendMessage("`You must be an administrator to run a server command!`").queue();
                             return;
                         }
 
