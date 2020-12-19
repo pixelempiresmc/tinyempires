@@ -14,12 +14,11 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.requests.restaction.RoleAction;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.Server;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -36,8 +35,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 public class DiscordBot extends ListenerAdapter implements Listener {
@@ -104,7 +101,7 @@ public class DiscordBot extends ListenerAdapter implements Listener {
         }
 
         final StringBuilder message = new StringBuilder(String.format(
-            "**%s** of empire *%s* burnt **%d %s** at %.1f, %.1f, %.1f",
+            "**%s** of empire *%s* burnt **%d %s** with display name set to \"%s\" at %.1f, %.1f, %.1f",
             player.getName(),
             player.getEmpire() == null
                 ? "[Unaffiliated]"
@@ -113,6 +110,9 @@ public class DiscordBot extends ListenerAdapter implements Listener {
             burntItems.getType()
                 .toString()
                 .replace('_', ' '),
+            burntItems.getItemMeta() != null
+                ? burntItems.getItemMeta().getDisplayName()
+                : "[Could not fetch display name]",
             burnLocation.getX(),
             burnLocation.getY(),
             burnLocation.getZ()
@@ -389,15 +389,28 @@ public class DiscordBot extends ListenerAdapter implements Listener {
                                 TEChunk.getEmpireChunks(e.getId()).size() != 1 ? "s" : ""
                             ));
                         }
-                        channel.sendMessage("```" + messageBuilder.toString() + "```").queue();
+
+                        final String messageString = StringUtils.sanitizeDiscordText(messageBuilder.toString());
+                        // break up bot message if over 2000 character limit
+                        final int MAX_MESSAGE_LENGTH = 2000 - 6; // subtract 6 to account for tildes for code block
+                        if (messageString.length() > MAX_MESSAGE_LENGTH) {
+                            // loop through and send each 2000 char substring
+                            for (int i = 0; i < messageString.length() / MAX_MESSAGE_LENGTH; i++) {
+                                final int end = Math.min((i + 1) * MAX_MESSAGE_LENGTH, messageString.length());
+                                final String message = messageString.substring(i * MAX_MESSAGE_LENGTH, end);
+                                channel.sendMessage(String.format("```%s```", message)).queue();
+                            }
+                        } else {
+                            channel.sendMessage(String.format("```%s```", messageString)).queue();
+                        }
                         return;
                     case "run":
                         // /run <command>
                         final Member discordMember = event.getMember();
-                        // Discord opped Minecraft commands
+                        // Discord op-ed Minecraft commands, check for god role ID
                         if (discordMember == null
-                                || !memberHasRole(discordMember, "God")) {
-                            channel.sendMessage("`You must have the God role to run a server command!`").queue();
+                                || discordMember.getRoles().stream().noneMatch(role -> role.getId().equals("787469851207401482"))) {
+                            channel.sendMessage("`You must be an administrator to run a server command!`").queue();
                             return;
                         }
 

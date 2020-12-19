@@ -284,13 +284,13 @@ public class Empire {
         DrawEmpire.updateEmpireChunkDescriptions(this);
     }
 
-    public void addAlliedEmpire(ObjectId id) {
-        allies.add(id);
+    public void addAlliedEmpire(ObjectId ally) {
+        allies.add(ally);
         collection.updateOne(
             new Document("_id", this.id),
             new Document(
                 "$addToSet",
-                new Document("allies", id)
+                new Document("allies", ally)
             )
         );
     }
@@ -301,7 +301,7 @@ public class Empire {
             new Document("_id", this.id),
             new Document(
                 "$pull",
-                new Document("allies", id)
+                new Document("allies", ally)
             )
         );
     }
