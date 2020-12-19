@@ -192,8 +192,14 @@ public class EmpireClaimFill implements CommandOption {
             sender.sendMessage(ChatColor.RED + message);
             return;
         }
-
-        final double cost = result.getChunks().size() * TEChunk.CHUNK_COST;
+        
+        int size = result.getChunks().size();
+        double discountMultiplier = 1;
+        if(size >= 1000) discountMultiplier = 0.3;
+        else if(size >= 500) discountMultiplier = 0.5;
+        else if(size >= 300) discountMultiplier = 0.7;
+        
+        final double cost = result.getChunks().size() * TEChunk.CHUNK_COST * discountMultiplier;
         if (args.length > 0) {
             final String option = args[0];
             if (option.equals("confirm")) {
@@ -212,10 +218,11 @@ public class EmpireClaimFill implements CommandOption {
                 }
                 empire.takeReserveCoins(cost);
                 empire.broadcast(ChatColor.GREEN, String.format(
-                    "%s claim-filled %d chunks for %.1f coins (%.1f in reserve)",
+                    "%s claim-filled %d chunks for %.1f coins (%d%% discount), %.1f left in reserve.",
                     sender.getName(),
                     result.getChunks().size(),
                     cost,
+                    (int) ((1 - discountMultiplier) * 100),
                     empire.getReserve()
                 ));
                 return;

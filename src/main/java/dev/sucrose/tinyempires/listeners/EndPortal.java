@@ -4,12 +4,15 @@ import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.BoundUtils;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
 import org.bukkit.*;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.entity.EnderSignal;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
@@ -88,4 +91,17 @@ public class EndPortal implements Listener {
         }
     }
 
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        final Player player = event.getPlayer();
+        final Block block = event.getBlock();
+
+        if (player.getWorld().getName().equals("world_the_end")) {
+            Location loc = block.getLocation();
+            if(loc.getY() == 48 && 98 <= loc.getX() && loc.getX() <= 102 && -2 <= loc.getZ() && loc.getZ() <= 2) {
+                block.breakNaturally();
+                block.setType(Material.OBSIDIAN);
+            }
+        }
+    }
 }

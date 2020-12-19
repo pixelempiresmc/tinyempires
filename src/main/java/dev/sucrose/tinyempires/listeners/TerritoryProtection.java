@@ -17,7 +17,9 @@ import org.bukkit.block.data.type.NoteBlock;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Monster;
+import org.bukkit.entity.Phantom;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Slime;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -178,6 +180,10 @@ public class TerritoryProtection implements Listener {
         } else if (block.getState() instanceof NoteBlock) {
             event.setCancelled(true);
             player.sendMessage(startOfResponse + "interact with note blocks");
+        } else if (event.getAction() == Action.PHYSICAL
+                && block.getState() instanceof Farmland) {
+            event.setCancelled(true);
+            player.sendMessage(startOfResponse + "trample crops");
         } else if (block.getType() == Material.DROPPER) {
             event.setCancelled(true);
             player.sendMessage(startOfResponse + "interact with droppers");
@@ -199,11 +205,8 @@ public class TerritoryProtection implements Listener {
         } else if (block.getType() == Material.REDSTONE) {
             event.setCancelled(true);
             player.sendMessage(startOfResponse + "interact with redstone dust");
-        } else if (event.getAction() == Action.PHYSICAL
-                && block.getState() instanceof Farmland) {
-            event.setCancelled(true);
-            player.sendMessage(startOfResponse + "trample crops");
-        } else if (block.getState() instanceof Gate) {
+        } else if (block.getType().name().contains("GATE")) {
+        //} else if (block.getState() instanceof Gate) {
             event.setCancelled(true);
             player.sendMessage(startOfResponse + "interact with gates");
         } else if (event.getAction() == Action.LEFT_CLICK_BLOCK
@@ -227,13 +230,15 @@ public class TerritoryProtection implements Listener {
     }
 
     @EventHandler
-    public static void onEntityDamage(EntityDamageByEntityEvent event) {
+    public void onEntityDamage(EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player))
             return;
 
-        // players aren't protected
+        // players / monsters / phantoms / slimes aren't protected
         if (event.getEntity() instanceof Player
-                || event.getEntity() instanceof Monster)
+                || event.getEntity() instanceof Monster 
+                || event.getEntityType() == EntityType.PHANTOM
+                || event.getEntity() instanceof Slime)
             return;
 
         final Player player = (Player) event.getDamager();
@@ -243,6 +248,10 @@ public class TerritoryProtection implements Listener {
 
         final Location location = event.getEntity().getLocation();
         final TEChunk teChunk = TEChunk.getChunk(location.getChunk());
+        
+        if (playerInChunkOwnerOrAllyAndUnopped(tePlayer, teChunk))
+            return;
+        
         if (teChunk != null
                 && !teChunk.getEmpire().getId().equals(
                     tePlayer.getEmpire() == null
