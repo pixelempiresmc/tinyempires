@@ -30,11 +30,17 @@ public class GoToWarp implements CommandOption, Listener {
     @Override
     public void execute(Player sender, String[] args) {
         // teleports player to warp after staying in place for 5s
-        // /e warp <name>
+        // /e warp [empire] <name>
         final UUID senderUUID = sender.getUniqueId();
         final TEPlayer tePlayer = TEPlayer.getTEPlayer(senderUUID);
         if (tePlayer == null) {
             sender.sendMessage(ChatColor.RED + ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
+            return;
+        }
+
+        if (Yggdrasil.isPlayerInGame(senderUUID)
+                || Atlantis.isPlayerInGame(senderUUID)) {
+            sender.sendMessage(ChatColor.RED + "You cannot warp while in an arena");
             return;
         }
 
@@ -49,24 +55,58 @@ public class GoToWarp implements CommandOption, Listener {
             return;
         }
 
-        final String name = StringUtils.buildWordsFromArray(args, 0);
-        if (empire.getWarpLocation(name) != null) {
-            sender.sendMessage(ChatColor.RED + String.format(
-                "Warp %s does not exist",
-                name
+        Empire selectedEmpire;
+        if (args.length == 1) {
+            selectedEmpire = tePlayer.getEmpire();
+        } else {
+            final String empireName = args[1];
+            selectedEmpire = Empire.getEmpire(empireName);
+            if (selectedEmpire == null) {
+                sender.sendMessage(ChatColor.RED + String.format(
+                    "%s is not an existing empire",
+                    empireName
+                ));
+                return;
+            }
+        }
+
+        final String warpName = StringUtils.buildWordsFromArray(args, 0);
+        final Warp warp = selectedEmpire.getWarp(warpName);
+        if (warp == null) {
+            sender.sendMessage(ChatColor.RED +
+                String.format(
+                    "Warp point '%s' does not exist in %s (%s)",
+                    warpName,
+                    selectedEmpire.getName(),
+                    selectedEmpire.getWarps()
+                        .stream()
+                        .filter(entry ->
+                            entry.getValue().isPublic()
+                        )
+                        .map(Map.Entry::getKey)
             ));
             return;
         }
 
-        if (Yggdrasil.isPlayerInGame(senderUUID)
-                || Atlantis.isPlayerInGame(senderUUID)) {
-            sender.sendMessage(ChatColor.RED + "You cannot warp while in an arena");
+        final double cost = warp.getCost();
+        if (tePlayer.getBalance() < cost) {
+            sender.sendMessage(ChatColor.RED + String.format(
+                "%.1f more coins required to teleport to point %s (Warp costs %.1f coins)",
+                cost - tePlayer.getBalance(),
+                warpName,
+                cost
+            ));
             return;
         }
 
-        // clone so player is teleported to original location if warp is changed mid-teleport-countdown
-        final Location warpLocation = empire.getWarpLocation(name).clone();
-        sender.sendMessage(ChatColor.GREEN + "Warping in 5 seconds, don't move...");
+        // method creates new Spiot#Location instance so is constant if warp changes mid-teleport
+        final Location warpLocation = warp.getCoordinatesAsSpigotLocation();
+        sender.sendMessage(ChatColor.GREEN + String.format(
+            "Warping to point %s of empire %s for %.1f coins in 5 seconds...",
+            warpName,
+            empire.getName(),
+            cost
+        ));
         playerToTeleportationTask.put(
             senderUUID,
             Bukkit.getScheduler().scheduleSyncRepeatingTask(
@@ -76,9 +116,20 @@ public class GoToWarp implements CommandOption, Listener {
 
                     @Override
                     public void run() {
+                        if (tePlayer.getBalance() < cost) {
+                            sender.sendMessage(ChatColor.RED + String.format(
+                                "Lost coins while teleporting! %.1f more coins required to teleport to point %s (Warp costs %.1f coins)",
+                                cost - tePlayer.getBalance(),
+                                warpName,
+                                cost
+                            ));
+                            cancelPlayerTeleport(senderUUID);
+                            return;
+                        }
                         if (timer == 0) {
                             sender.teleport(warpLocation);
                             sender.sendMessage(ChatColor.GREEN + "Warped!");
+                            tePlayer.takeCoins(cost);
                             cancelPlayerTeleport(senderUUID);
                             return;
                         }
@@ -129,7 +180,7 @@ public class GoToWarp implements CommandOption, Listener {
 
     @Override
     public String getDescription() {
-        return "Teleport to empire warp after waiting in place for 5 seconds)";
+        return "Teleport to an empire warp point after waiting in place for 5 seconds)";
     }
 
     @Override
@@ -139,7 +190,7 @@ public class GoToWarp implements CommandOption, Listener {
 
     @Override
     public String getUsage() {
-        return "/e warp <name>";
+        return "/e warp [empire] [name]";
     }
 
 }

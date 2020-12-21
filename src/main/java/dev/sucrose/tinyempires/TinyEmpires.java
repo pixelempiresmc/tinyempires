@@ -19,9 +19,6 @@ import dev.sucrose.tinyempires.commands.empire.EmpireCommand;
 import dev.sucrose.tinyempires.commands.empire.options.CreateEmpireLaw;
 import dev.sucrose.tinyempires.commands.empire.options.Home;
 import dev.sucrose.tinyempires.commands.godsuite.*;
-import dev.sucrose.tinyempires.commands.tpa.AcceptTeleportRequest;
-import dev.sucrose.tinyempires.commands.tpa.RejectTeleportRequest;
-import dev.sucrose.tinyempires.commands.tpa.TeleportRequest;
 import dev.sucrose.tinyempires.discord.DiscordBot;
 import dev.sucrose.tinyempires.listeners.*;
 import dev.sucrose.tinyempires.listeners.WorldBorder;
@@ -60,7 +57,7 @@ public final class TinyEmpires extends JavaPlugin {
     public static final int MARGIN = 20;
     
     //public warps
-    private static Set<Warp> publicWarps = new HashSet<Warp>();
+    private static final Set<Warp> publicWarps = new HashSet<Warp>();
 
     @Override
     public void onEnable() {
@@ -138,7 +135,7 @@ public final class TinyEmpires extends JavaPlugin {
 
         // create recipe
         addHoneyStickyPistonRecipe();
-        addGodAppleRecipe();
+        addEnchantedGoldenAppleRecipe();
 
         DiscordBot.sendMessageInBridgeChat("**The server has started up!**");
     }
@@ -185,7 +182,7 @@ public final class TinyEmpires extends JavaPlugin {
 
     private void addHoneyStickyPistonRecipe() {
         // honey bottle sticky piston recipe
-        ShapedRecipe stickyPiston = new ShapedRecipe(
+        final ShapedRecipe stickyPiston = new ShapedRecipe(
             new NamespacedKey(this, NamespacedKey.BUKKIT),
             new ItemStack(Material.STICKY_PISTON)
         );
@@ -199,20 +196,20 @@ public final class TinyEmpires extends JavaPlugin {
         getServer().addRecipe(stickyPiston);
     }
     
-    private void addGodAppleRecipe() {
+    private void addEnchantedGoldenAppleRecipe() {
         //enchanted golden apple recipe
-        ShapedRecipe godApple = new ShapedRecipe(
+        final ShapedRecipe enchantedApple = new ShapedRecipe(
             new NamespacedKey(this, NamespacedKey.BUKKIT),
-            new ItemStack(Material.GOLDEN_APPLE, 1, (short)1)
+            new ItemStack(Material.ENCHANTED_GOLDEN_APPLE)
         );
 
-        godApple.shape("DGD", "GAG", "DGD");
+        enchantedApple.shape("DGD", "GAG", "DGD");
 
-        godApple.setIngredient('D', Material.DIAMOND_BLOCK);
-        godApple.setIngredient('G', Material.GOLD_BLOCK);
-        godApple.setIngredient('A', Material.APPLE);
+        enchantedApple.setIngredient('D', Material.DIAMOND_BLOCK);
+        enchantedApple.setIngredient('G', Material.GOLD_BLOCK);
+        enchantedApple.setIngredient('A', Material.APPLE);
 
-        getServer().addRecipe(godApple);
+        getServer().addRecipe(enchantedApple);
     }
 
 }

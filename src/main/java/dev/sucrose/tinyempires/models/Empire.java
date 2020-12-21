@@ -3,7 +3,6 @@ package dev.sucrose.tinyempires.models;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.lang.Nullable;
-import com.sun.tools.classfile.Opcode;
 import dev.sucrose.tinyempires.TinyEmpires;
 import dev.sucrose.tinyempires.discord.DiscordBot;
 import dev.sucrose.tinyempires.utils.DrawEmpire;
@@ -17,7 +16,6 @@ import org.bukkit.entity.Player;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Empire {
 
@@ -29,7 +27,7 @@ public class Empire {
     private static final Map<UUID, ObjectId> playerToEmpireJoinRequest = new HashMap<>();
     private static final Map<ObjectId, ObjectId> empireAllyRequests = new HashMap<>();
 
-    private ObjectId id;
+    private final ObjectId id;
     private String name;
     private double reserve;
     private String description;
@@ -41,6 +39,7 @@ public class Empire {
     // name of law to law
     private final Map<String, Law> laws = new HashMap<>();
     private final Map<UUID, Double> memberDebt = new HashMap<>();
+    private final Map<String, Warp> warps = new HashMap<>();
     private final String discordRoleId;
     private final Set<ObjectId> allies = new HashSet<>();
 
@@ -105,7 +104,8 @@ public class Empire {
                         .append("z", homeZ)
                     )
                     .append("discord_id", role.getId())
-                    .append("allies", new ArrayList<>());
+                    .append("allies", new ArrayList<>())
+                    .append("warps", new Document());
                 final InsertOneResult result = collection.insertOne(document);
                 if (result.getInsertedId() == null)
                     throw new NullPointerException("Unable to insert document");
@@ -165,6 +165,11 @@ public class Empire {
     }
 
     public Document toDocument() {
+        final Document warpsDocument = new Document();
+        warps.forEach((key, value) ->
+            warpsDocument.put(key, value.toDocument())
+        );
+
         return new Document("_id", id)
             .append("name", name)
             .append("reserve", reserve)
@@ -184,6 +189,7 @@ public class Empire {
             )
             .append("laws", laws.values().stream().map(Law::toDocument))
             .append("debt", memberDebt)
+            .append("warps", warpsDocument)
             .append("members", members.stream().map(p -> p.getPlayerUUID().toString()))
             .append("positions",
                 positions.values()
@@ -287,7 +293,7 @@ public class Empire {
     public void addAlliedEmpire(ObjectId ally) {
         allies.add(ally);
         collection.updateOne(
-            new Document("_id", this.id),
+            new Document("_id", id),
             new Document(
                 "$addToSet",
                 new Document("allies", ally)
@@ -295,10 +301,10 @@ public class Empire {
         );
     }
 
-    public void removeAlliedEmpire(ObjectId id) {
-        allies.remove(id);
+    public void removeAlliedEmpire(ObjectId ally) {
+        allies.remove(ally);
         collection.updateOne(
-            new Document("_id", this.id),
+            new Document("_id", id),
             new Document(
                 "$pull",
                 new Document("allies", ally)
@@ -660,6 +666,14 @@ public class Empire {
 
     public int getTimeLeftToWar() {
         return timeLeftToWar;
+    }
+
+    public Set<Map.Entry<String, Warp>> getWarps() {
+        return warps.entrySet();
+    }
+
+    public Warp getWarp(String name) {
+        return warps.get(name);
     }
 
 }
