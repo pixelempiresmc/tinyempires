@@ -8,6 +8,7 @@ import dev.sucrose.tinyempires.models.Empire;
 import dev.sucrose.tinyempires.models.Permission;
 import dev.sucrose.tinyempires.models.TEPlayer;
 import dev.sucrose.tinyempires.utils.ErrorUtils;
+import me.xdrop.fuzzywuzzy.FuzzySearch;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -21,6 +22,7 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -37,6 +39,7 @@ public class TeleportRequest implements CommandExecutor {
         final Player player = (Player) sender;
         final UUID senderUUID = player.getUniqueId();
         final TEPlayer tePlayer = TEPlayer.getTEPlayer(senderUUID);
+
         if (tePlayer == null) {
             sender.sendMessage(ChatColor.RED + ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
             return false;

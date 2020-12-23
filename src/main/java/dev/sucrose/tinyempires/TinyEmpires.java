@@ -197,7 +197,7 @@ public final class TinyEmpires extends JavaPlugin {
     }
     
     private void addEnchantedGoldenAppleRecipe() {
-        //enchanted golden apple recipe
+        /*enchanted golden apple recipe
         final ShapedRecipe enchantedApple = new ShapedRecipe(
             new NamespacedKey(this, NamespacedKey.BUKKIT),
             new ItemStack(Material.ENCHANTED_GOLDEN_APPLE)
@@ -209,7 +209,6 @@ public final class TinyEmpires extends JavaPlugin {
         enchantedApple.setIngredient('G', Material.GOLD_BLOCK);
         enchantedApple.setIngredient('A', Material.APPLE);
 
-        getServer().addRecipe(enchantedApple);
+        getServer().addRecipe(enchantedApple);*/
     }
-
 }
