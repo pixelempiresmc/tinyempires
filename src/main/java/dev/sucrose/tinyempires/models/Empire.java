@@ -6,6 +6,7 @@ import com.mongodb.lang.Nullable;
 import dev.sucrose.tinyempires.TinyEmpires;
 import dev.sucrose.tinyempires.discord.DiscordBot;
 import dev.sucrose.tinyempires.utils.DrawEmpire;
+import me.xdrop.fuzzywuzzy.FuzzySearch;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.bukkit.Bukkit;
@@ -85,6 +86,7 @@ public class Empire {
                                         TEPlayer tePlayer, EmpireCreationCallback callback) {
         final String uuidString = tePlayer.getPlayerUUID().toString();
         final String colorName = Color.values()[new Random().nextInt(Color.values().length - 1)].name();
+
         DiscordBot.createRoleAction(name, colorName)
             .queue(role -> {
                 final Document document = new Document("name", name)
@@ -217,6 +219,14 @@ public class Empire {
 
     public static Collection<Empire> getEmpires() {
         return empireCache.values();
+    }
+
+    public static Collection<String> getEmpireNames() {
+        HashSet<String> toReturn = new HashSet<>();
+        empireCache.values().forEach(empire -> {
+            toReturn.add(empire.name);
+        });
+        return toReturn;
     }
 
     @Nullable
@@ -676,4 +686,15 @@ public class Empire {
         return warps.get(name);
     }
 
+    public void setWarpLocation(Location senderLocation, String name) {
+    }
+
+    public Location getWarpLocation(String name) {
+        // Dummy func because tangy is bad
+        return new Location(getHomeLocation().getWorld(), 0, 0, 0);
+    }
+
+    public void removeWarpLocation(String name) {
+        // Dummy func because tangy is bad
+    }
 }
