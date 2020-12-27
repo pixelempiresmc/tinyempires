@@ -25,144 +25,146 @@ public class PlayerMove implements Listener {
 
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
-        final Player player = event.getPlayer();
-        final UUID uuid = player.getUniqueId();
-        final Chunk gameChunk = player.getLocation().getChunk();
-        final TEChunk currentChunk = TEChunk.getChunk(gameChunk);
-        final LastChunkEntry lastChunkEntry = playerToLastChunk.get(uuid);
+        if(!event.isCancelled()) {
+            final Player player = event.getPlayer();
+            final UUID uuid = player.getUniqueId();
+            final Chunk gameChunk = player.getLocation().getChunk();
+            final TEChunk currentChunk = TEChunk.getChunk(gameChunk);
+            final LastChunkEntry lastChunkEntry = playerToLastChunk.get(uuid);
 
-        final ObjectId lastChunkEmpireId =
-            lastChunkEntry == null
-                ? null
-                : lastChunkEntry.getChunk() == null
-                ? null
-                : lastChunkEntry.getChunk().getEmpire().getId();
-        final ObjectId currentChunkEmpireId =
-            currentChunk == null
-                ? null
-                : currentChunk.getEmpire().getId();
-        final boolean empireIdsEqual = Objects.equals(lastChunkEmpireId, currentChunkEmpireId);
-        // return if last and current chunks are equal
-        if (lastChunkEntry != null
-                && lastChunkEntry.getWorld().equals(gameChunk.getWorld().getName())
-                && lastChunkEntry.getX() == gameChunk.getX()
-                && lastChunkEntry.getZ() == gameChunk.getZ()
-                && empireIdsEqual)
-            return;
+            final ObjectId lastChunkEmpireId =
+                    lastChunkEntry == null
+                            ? null
+                            : lastChunkEntry.getChunk() == null
+                            ? null
+                            : lastChunkEntry.getChunk().getEmpire().getId();
+            final ObjectId currentChunkEmpireId =
+                    currentChunk == null
+                            ? null
+                            : currentChunk.getEmpire().getId();
+            final boolean empireIdsEqual = Objects.equals(lastChunkEmpireId, currentChunkEmpireId);
+            // return if last and current chunks are equal
+            if (lastChunkEntry != null
+                    && lastChunkEntry.getWorld().equals(gameChunk.getWorld().getName())
+                    && lastChunkEntry.getX() == gameChunk.getX()
+                    && lastChunkEntry.getZ() == gameChunk.getZ()
+                    && empireIdsEqual)
+                return;
 
-        final TEPlayer tePlayer = TEPlayer.getTEPlayer(uuid);
-        if (tePlayer == null)
-            throw new NullPointerException(ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
+            final TEPlayer tePlayer = TEPlayer.getTEPlayer(uuid);
+            if (tePlayer == null)
+                throw new NullPointerException(ErrorUtils.YOU_DO_NOT_EXIST_IN_THE_DATABASE);
 
-        tePlayer.updatePlayerScoreboard();
-        if (currentChunk == null) {
-            // autoclaiming
-            if (AutoClaimEmpireChunk.isAutoclaiming(uuid)) {
-                if (tePlayer.getEmpire().getReserve() < TEChunk.CHUNK_COST) {
-                    AutoClaimEmpireChunk.removeAutoclaimer(uuid);
-                    player.sendMessage(ChatColor.RED + String.format(
-                        "Empire lacks enough coins for a new chunk. (%.1f required, %.1f in reserve)",
-                        TEChunk.CHUNK_COST,
-                        tePlayer.getEmpire().getReserve()
+            tePlayer.updatePlayerScoreboard();
+            if (currentChunk == null) {
+                // autoclaiming
+                if (AutoClaimEmpireChunk.isAutoclaiming(uuid)) {
+                    if (tePlayer.getEmpire().getReserve() < TEChunk.CHUNK_COST) {
+                        AutoClaimEmpireChunk.removeAutoclaimer(uuid);
+                        player.sendMessage(ChatColor.RED + String.format(
+                                "Empire lacks enough coins for a new chunk. (%.1f required, %.1f in reserve)",
+                                TEChunk.CHUNK_COST,
+                                tePlayer.getEmpire().getReserve()
+                        ));
+                    } else if (!BoundUtils.isChunkInBoundsOfSpecialTerritory(gameChunk)) {
+                        AutoClaimEmpireChunk.claimChunkForEmpire(
+                                player.getName(),
+                                gameChunk.getWorld().getName(),
+                                gameChunk.getX(),
+                                gameChunk.getZ(),
+                                tePlayer.getEmpire()
+                        );
+                        return;
+                    }
+                }
+            }
+
+            // automatic war claiming if in war and war has started
+            final Empire empire = tePlayer.getEmpire();
+            if (empire != null
+                    && !empire.isWaitingForWar()
+                    && empire.getAtWarWith() != null
+                    && empire.getAtWarWith().getId().equals(currentChunk == null ? null :
+                    currentChunk.getEmpire().getId())) {
+                final Empire enemy = empire.getAtWarWith();
+                // send leaving message
+    //            if (lastChunkEntry != null
+    //                    && lastChunkEntry.getChunk() != null
+    //                    && conquerTaskIds.containsKey(lastChunkEntry.getChunk().toString())) {
+    //                player.sendMessage(ChatColor.DARK_RED + String.format(
+    //                    "Stopped contesting %s chunk at %d, %d in %s",
+    //                    "" + enemy.getChatColor() + ChatColor.BOLD + enemy.getName() + ChatColor.DARK_RED,
+    //                    lastChunkEntry.getChunk().getWorldX(),
+    //                    lastChunkEntry.getChunk().getWorldZ(),
+    //                    StringUtils.worldDirToName(gameChunk.getWorld().getName())
+    //                ));
+    //            }
+
+                if (!conquerTaskIds.containsKey(currentChunk.toString())) {
+                    // can't conquer unless on perimeter of defender territory
+                    if (currentChunk.isSurroundedByOppositeEmpireChunks()) {
+                        if (lastChunkEntry != null
+                                && lastChunkEntry.getChunk().isSurroundedByOppositeEmpireChunks())
+                            player.sendMessage(ChatColor.YELLOW + "You cannot contest chunks surrounded by enemy" +
+                                    " territory");
+                        return;
+                    }
+                    final Empire atWarWith = empire.getAtWarWith();
+                    atWarWith.broadcastText(ChatColor.RED + String.format(
+                            "%s of attacker %s is contesting a chunk at %s, %s in the %s!",
+                            ChatColor.BOLD + player.getName() + ChatColor.RED,
+                            "" + atWarWith.getChatColor() + ChatColor.BOLD + atWarWith.getName() + ChatColor.RED,
+                            currentChunk.getWorldX(),
+                            currentChunk.getWorldZ(),
+                            StringUtils.worldDirToName(currentChunk.getWorld())
                     ));
-                } else if (!BoundUtils.isChunkInBoundsOfSpecialTerritory(gameChunk)) {
-                    AutoClaimEmpireChunk.claimChunkForEmpire(
-                        player.getName(),
-                        gameChunk.getWorld().getName(),
-                        gameChunk.getX(),
-                        gameChunk.getZ(),
-                        tePlayer.getEmpire()
+                    empire.broadcastText(ChatColor.GREEN + String.format(
+                            "%s is contesting enemy chunk at %s, %s in the %s!",
+                            ChatColor.BOLD + player.getName() + ChatColor.GREEN,
+                            currentChunk.getWorldX(),
+                            currentChunk.getWorldZ(),
+                            StringUtils.worldDirToName(currentChunk.getWorld())
+                    ));
+
+                    final WarClaimChunkTask task = new WarClaimChunkTask(currentChunk, empire, enemy);
+                    conquerTaskIds.put(
+                            currentChunk.toString(),
+                            Bukkit.getScheduler().scheduleSyncRepeatingTask(
+                                    TinyEmpires.getInstance(),
+                                    task,
+                                    0,
+                                    20
+                            )
                     );
-                    return;
+                    conquerTasks.put(currentChunk.toString(), task);
                 }
             }
-        }
 
-        // automatic war claiming if in war and war has started
-        final Empire empire = tePlayer.getEmpire();
-        if (empire != null
-                && !empire.isWaitingForWar()
-                && empire.getAtWarWith() != null
-                && empire.getAtWarWith().getId().equals(currentChunk == null ? null :
-            currentChunk.getEmpire().getId())) {
-            final Empire enemy = empire.getAtWarWith();
-            // send leaving message
-//            if (lastChunkEntry != null
-//                    && lastChunkEntry.getChunk() != null
-//                    && conquerTaskIds.containsKey(lastChunkEntry.getChunk().toString())) {
-//                player.sendMessage(ChatColor.DARK_RED + String.format(
-//                    "Stopped contesting %s chunk at %d, %d in %s",
-//                    "" + enemy.getChatColor() + ChatColor.BOLD + enemy.getName() + ChatColor.DARK_RED,
-//                    lastChunkEntry.getChunk().getWorldX(),
-//                    lastChunkEntry.getChunk().getWorldZ(),
-//                    StringUtils.worldDirToName(gameChunk.getWorld().getName())
-//                ));
-//            }
-
-            if (!conquerTaskIds.containsKey(currentChunk.toString())) {
-                // can't conquer unless on perimeter of defender territory
-                if (currentChunk.isSurroundedByOppositeEmpireChunks()) {
-                    if (lastChunkEntry != null
-                            && lastChunkEntry.getChunk().isSurroundedByOppositeEmpireChunks())
-                        player.sendMessage(ChatColor.YELLOW + "You cannot contest chunks surrounded by enemy" +
-                            " territory");
-                    return;
-                }
-                final Empire atWarWith = empire.getAtWarWith();
-                atWarWith.broadcastText(ChatColor.RED + String.format(
-                    "%s of attacker %s is contesting a chunk at %s, %s in the %s!",
-                    ChatColor.BOLD + player.getName() + ChatColor.RED,
-                    "" + atWarWith.getChatColor() + ChatColor.BOLD + atWarWith.getName() + ChatColor.RED,
-                    currentChunk.getWorldX(),
-                    currentChunk.getWorldZ(),
-                    StringUtils.worldDirToName(currentChunk.getWorld())
-                ));
-                empire.broadcastText(ChatColor.GREEN + String.format(
-                    "%s is contesting enemy chunk at %s, %s in the %s!",
-                    ChatColor.BOLD + player.getName() + ChatColor.GREEN,
-                    currentChunk.getWorldX(),
-                    currentChunk.getWorldZ(),
-                    StringUtils.worldDirToName(currentChunk.getWorld())
-                ));
-
-                final WarClaimChunkTask task = new WarClaimChunkTask(currentChunk, empire, enemy);
-                conquerTaskIds.put(
-                    currentChunk.toString(),
-                    Bukkit.getScheduler().scheduleSyncRepeatingTask(
-                        TinyEmpires.getInstance(),
-                        task,
-                        0,
-                        20
+            playerToLastChunk.put(
+                    uuid,
+                    new LastChunkEntry(
+                            currentChunk,
+                            gameChunk.getWorld().getName(),
+                            gameChunk.getX(),
+                            gameChunk.getZ()
                     )
-                );
-                conquerTasks.put(currentChunk.toString(), task);
-            }
-        }
-
-        playerToLastChunk.put(
-            uuid,
-            new LastChunkEntry(
-                currentChunk,
-                gameChunk.getWorld().getName(),
-                gameChunk.getX(),
-                gameChunk.getZ()
-            )
-        );
-
-        if (!empireIdsEqual)
-            player.sendTitle(
-                currentChunk == null
-                    ? ChatColor.BOLD
-                        + "Wilderness"
-                    : ""
-                        + currentChunk.getEmpire().getChatColor()
-                        + ChatColor.BOLD
-                        + currentChunk.getEmpire().getName(),
-                "",
-                10,
-                70,
-                20
             );
+
+            if (!empireIdsEqual)
+                player.sendTitle(
+                        currentChunk == null
+                                ? ChatColor.BOLD
+                                + "Wilderness"
+                                : ""
+                                + currentChunk.getEmpire().getChatColor()
+                                + ChatColor.BOLD
+                                + currentChunk.getEmpire().getName(),
+                        "",
+                        10,
+                        70,
+                        20
+                );
+        }
     }
 
     public static void cancelChunkWarClaimTask(TEChunk chunk) {
