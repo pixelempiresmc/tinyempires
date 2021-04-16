@@ -121,6 +121,16 @@ public class Convert implements CommandExecutor, Listener {
                         ));
                         e.getCursor().setAmount(0);
                         break;
+                    case IRON_INGOT:
+                        tePlayer.giveCoins(amountOfItemsInCursor * 10);
+                        player.sendMessage(ChatColor.GREEN + String.format(
+                            "Converted %d iron ingots%s to %d coins",
+                            amountOfItemsInCursor,
+                            amountOfItemsInCursor > 1 ? "s" : "",
+                            amountOfItemsInCursor * 0.05
+                        ));
+                        e.getCursor().setAmount(0);
+                        break;
                     case NETHERITE_INGOT:
                         tePlayer.giveCoins(amountOfItemsInCursor * 100);
                         player.sendMessage(ChatColor.GREEN + String.format(
